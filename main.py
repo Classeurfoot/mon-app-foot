@@ -9,7 +9,7 @@ st.set_page_config(page_title="Classeur Foot", layout="wide")
 # 🎨 TA BANQUE DE LOGOS LOCALE
 # ==========================================
 # Inscris ici le nom exact des fichiers images que tu as mis sur ton GitHub
-Logos = {
+LOGOS = {
     "Coupe du Monde 1998": "cdm1998.png",
     "Coupe du Monde 2022": "cdm2022.png",
     "Ligue 1": "ligue1.png",
@@ -288,4 +288,5 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             st.metric("Matchs trouvés", len(df_final))
             st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
+
 
