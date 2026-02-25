@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import os # Ajouté pour vérifier si tes images existent bien
+import os
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
@@ -8,12 +8,15 @@ st.set_page_config(page_title="Classeur Foot", layout="wide")
 # ==========================================
 # 🎨 TA BANQUE DE LOGOS LOCALE
 # ==========================================
-# Inscris ici le nom exact des fichiers images que tu as mis sur ton GitHub
+# C'est ici que tu indiques le chemin vers tes images. 
+# Le dossier s'appelle bien "Logos" avec un grand L.
 LOGOS = {
-    "Coupe du Monde 1998": "cdm1998.png",
-    "Coupe du Monde 2022": "cdm2022.png",
-    "Ligue 1": "ligue1.png",
-    "Champions League": "championsleague.png"
+    "Coupe du Monde 1998": "Logos/cdm1998.png",
+    
+    # Exemples à adapter selon les fichiers que tu vas ajouter dans ton dossier Logos :
+    "Ligue 1": "Logos/ligue1.png",
+    "Champions League": "Logos/championsleague.png",
+    "Coupe du Monde 2022": "Logos/cdm2022.png"
 }
 
 # ==========================================
@@ -79,6 +82,7 @@ def load_data():
 
 df = load_data()
 
+# Vérification des colonnes, incluant la Qualité
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
@@ -264,7 +268,7 @@ elif st.session_state.page == 'arborescence':
                         if os.path.exists(chemin_image):
                             st.image(chemin_image, width=100)
                         else:
-                            st.caption("(Logo introuvable)")
+                            st.caption("(Logo introuvable : vérifie le nom de l'image)")
 
                 df_final = df[df['Compétition'] == st.session_state.edition_choisie]
                 st.metric("Matchs trouvés", len(df_final))
@@ -282,11 +286,9 @@ elif st.session_state.page == 'arborescence':
                     if os.path.exists(chemin_image):
                         st.image(chemin_image, width=100)
                     else:
-                        st.caption("(Logo introuvable)")
+                        st.caption("(Logo introuvable : vérifie le nom de l'image)")
 
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             st.metric("Matchs trouvés", len(df_final))
             st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
-
-
