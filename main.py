@@ -5,9 +5,8 @@ import pandas as pd
 st.set_page_config(page_title="Classeur Foot", layout="wide")
 
 # ==========================================
-# 🎨 LE BAZAR À LOGOS (Ajoute tes liens d'images ici)
+# 🎨 LE BAZAR À LOGOS 
 # ==========================================
-# Tu peux mettre soit un lien internet (https://...), soit le nom d'un fichier image (ex: "logo_cdm98.png") si tu l'as mis sur ton GitHub.
 LOGOS = {
     "Coupe du Monde 1998": "https://upload.wikimedia.org/wikipedia/fr/thumb/2/23/Coupe_du_monde_de_football_1998_%28logo%29.svg/120px-Coupe_du_monde_de_football_1998_%28logo%29.svg.png",
     "Coupe du Monde 2022": "https://upload.wikimedia.org/wikipedia/fr/thumb/e/e3/Logo_de_la_Coupe_du_monde_de_football_2022.svg/120px-Logo_de_la_Coupe_du_monde_de_football_2022.svg.png",
@@ -78,7 +77,7 @@ def load_data():
 
 df = load_data()
 
-# AJOUT DE LA COLONNE "QUALITÉ" ICI
+# La colonne 'Qualité' est bien présente ici
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
@@ -211,9 +210,6 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, cle in enumerate(noeud_actuel.keys()):
             with cols[i % 3]:
-                # Affichage du logo si trouvé dans le dico
-                if cle in LOGOS:
-                    st.image(LOGOS[cle], width=60)
                 if st.button(cle, use_container_width=True):
                     st.session_state.chemin.append(cle)
                     st.rerun()
@@ -223,14 +219,11 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, element in enumerate(noeud_actuel):
             with cols[i % 3]:
-                # Affichage du logo si trouvé dans le dico
-                if element in LOGOS:
-                    st.image(LOGOS[element], width=60)
                 if st.button(element, use_container_width=True):
                     st.session_state.chemin.append(element)
                     st.rerun()
 
-    # --- RÉSULTATS ET ÉDITIONS ---
+    # --- RÉSULTATS ET ÉDITIONS (C'EST ICI QUE LE LOGO APPARAÎT) ---
     elif isinstance(noeud_actuel, str):
         
         # Cas Nations : Choix des années
@@ -244,6 +237,7 @@ elif st.session_state.page == 'arborescence':
             elif noeud_actuel == "FILTER_EURO_ELIM":
                 mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
             
+            # Affichage des boutons d'éditions (sans logo)
             if st.session_state.edition_choisie is None:
                 editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
                 if editions:
@@ -251,22 +245,35 @@ elif st.session_state.page == 'arborescence':
                     cols = st.columns(4)
                     for i, ed in enumerate(editions):
                         with cols[i % 4]:
-                            # Affichage du logo dynamique pour l'année
-                            if ed in LOGOS:
-                                st.image(LOGOS[ed], width=70)
                             if st.button(str(ed), use_container_width=True):
                                 st.session_state.edition_choisie = ed
                                 st.rerun()
                 else:
                     st.warning("Aucune édition trouvée pour ce choix.")
+            
+            # Affichage du Tableau Final (AVEC LOGO)
             else:
-                st.header(f"📍 {st.session_state.edition_choisie}")
+                col_titre, col_logo = st.columns([4, 1])
+                with col_titre:
+                    st.header(f"📍 {st.session_state.edition_choisie}")
+                with col_logo:
+                    if st.session_state.edition_choisie in LOGOS:
+                        st.image(LOGOS[st.session_state.edition_choisie], width=80)
+
                 df_final = df[df['Compétition'] == st.session_state.edition_choisie]
+                st.metric("Matchs trouvés", len(df_final))
                 st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
         
-        # Cas standard
+        # Cas standard (AVEC LOGO)
         else:
-            st.header(f"🏆 {noeud_actuel}")
+            col_titre, col_logo = st.columns([4, 1])
+            with col_titre:
+                st.header(f"🏆 {noeud_actuel}")
+            with col_logo:
+                if noeud_actuel in LOGOS:
+                    st.image(LOGOS[noeud_actuel], width=80)
+
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
+            st.metric("Matchs trouvés", len(df_final))
             st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
