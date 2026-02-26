@@ -8,14 +8,23 @@ import re
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
 
+# CSS pour forcer le centrage des images Streamlit et l'alignement vertical
+st.markdown("""
+    <style>
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
 def nettoyer_nom_equipe(nom):
     """Transforme 'Côte d'Ivoire' en 'cotedivoire' pour trouver l'image facilement"""
-    # 1. Enlever les accents
+    if pd.isna(nom): return ""
     nom_sans_accents = ''.join(c for c in unicodedata.normalize('NFD', str(nom)) if unicodedata.category(c) != 'Mn')
-    # 2. Tout en minuscules et enlever les espaces, tirets, apostrophes
     nom_propre = re.sub(r'[^a-z0-9]', '', nom_sans_accents.lower())
     return nom_propre
 
@@ -113,14 +122,13 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS (AVEC LOGOS D'ÉQUIPES) ---
+# --- OUTIL : FICHES DE MATCHS (CORRIGÉ POUR LE CENTRAGE) ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
         return
         
     st.metric("Matchs trouvés", len(df_resultats))
-    
     mode = st.radio("Mode d'affichage :", ["📊 Tableau classique", "🃏 Fiches détaillées"], horizontal=True)
     
     if mode == "📊 Tableau classique":
@@ -136,30 +144,30 @@ def afficher_resultats(df_resultats):
                     comp_m = row.get('Compétition', 'Compétition inconnue')
                     st.caption(f"🗓️ {date_m} | 🏆 {comp_m}")
                     
-                    # Récupération des noms
                     dom = row.get('Domicile', '')
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    # Chemins des logos générés automatiquement
                     logo_dom = f"Logos/Equipes/{nettoyer_nom_equipe(dom)}.png"
                     logo_ext = f"Logos/Equipes/{nettoyer_nom_equipe(ext)}.png"
                     
                     # Mise en page : Logo | Score | Logo
-                    c_dom, c_score, c_ext = st.columns([1, 2, 1])
+                    # J'utilise 3 colonnes égales pour un centrage parfait
+                    c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
                     with c_dom:
                         if os.path.exists(logo_dom):
-                            st.image(logo_dom, use_column_width=True)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px;'>{dom}</p>", unsafe_allow_html=True)
+                            st.image(logo_dom, width=65)
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px;'>{dom}</p>", unsafe_allow_html=True)
                         
                     with c_score:
-                        st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
+                        # On centre verticalement le score par rapport aux logos
+                        st.markdown(f"<h2 style='text-align: center; margin-top: 25px;'>{score}</h2>", unsafe_allow_html=True)
                         
                     with c_ext:
                         if os.path.exists(logo_ext):
-                            st.image(logo_ext, use_column_width=True)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px;'>{ext}</p>", unsafe_allow_html=True)
+                            st.image(logo_ext, width=65)
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px;'>{ext}</p>", unsafe_allow_html=True)
                     
                     # Détails
                     details = []
@@ -168,7 +176,7 @@ def afficher_resultats(df_resultats):
                     if 'Qualité' in row and pd.notna(row['Qualité']): details.append(f"⭐ {row['Qualité']}")
                     
                     if details:
-                        st.markdown(f"<p style='text-align: center; color: gray; font-size:12px;'>{' | '.join(details)}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='text-align: center; color: gray; font-size:12px; border-top: 0.5px solid #eee; padding-top: 5px;'>{' | '.join(details)}</p>", unsafe_allow_html=True)
 
 # --- GESTION DE LA NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
@@ -181,7 +189,7 @@ def go_home():
     st.session_state.edition_choisie = None
 
 if st.session_state.page != 'accueil':
-    if st.sidebar.button("🏠 Menu Principal", use_container_width=True):
+    if st.sidebar.button("🏠 Menu Principal", key="btn_home", use_container_width=True):
         go_home()
         st.rerun()
 
@@ -350,7 +358,7 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, cle in enumerate(noeud_actuel.keys()):
             with cols[i % 3]:
-                if st.button(cle, use_container_width=True):
+                if st.button(cle, use_container_width=True, key=f"btn_{cle}"):
                     st.session_state.chemin.append(cle)
                     st.rerun()
 
@@ -358,7 +366,7 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, element in enumerate(noeud_actuel):
             with cols[i % 3]:
-                if st.button(element, use_container_width=True):
+                if st.button(element, use_container_width=True, key=f"btn_{element}"):
                     st.session_state.chemin.append(element)
                     st.rerun()
 
@@ -376,7 +384,7 @@ elif st.session_state.page == 'arborescence':
                     cols = st.columns(4)
                     for i, ed in enumerate(editions):
                         with cols[i % 4]:
-                            if st.button(str(ed), use_container_width=True):
+                            if st.button(str(ed), use_container_width=True, key=f"ed_{ed}"):
                                 st.session_state.edition_choisie = ed
                                 st.rerun()
                 else:
