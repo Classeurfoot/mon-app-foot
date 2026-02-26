@@ -8,16 +8,6 @@ import re
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
 
-# CSS pour forcer le centrage des images Streamlit et l'alignement vertical
-st.markdown("""
-    <style>
-    [data-testid="stImage"] {
-        display: flex;
-        justify-content: center;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
 # ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
@@ -122,13 +112,14 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS (CORRIGÉ POUR LE CENTRAGE) ---
+# --- OUTIL : FICHES DE MATCHS (AVEC LOGOS CENTRÉS SOUS LES NOMS) ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
         return
         
     st.metric("Matchs trouvés", len(df_resultats))
+    
     mode = st.radio("Mode d'affichage :", ["📊 Tableau classique", "🃏 Fiches détaillées"], horizontal=True)
     
     if mode == "📊 Tableau classique":
@@ -148,35 +139,41 @@ def afficher_resultats(df_resultats):
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
+                    # Chemins des logos
                     logo_dom = f"Logos/Equipes/{nettoyer_nom_equipe(dom)}.png"
                     logo_ext = f"Logos/Equipes/{nettoyer_nom_equipe(ext)}.png"
                     
-                    # Mise en page : Logo | Score | Logo
-                    # J'utilise 3 colonnes égales pour un centrage parfait
+                    # Disposition : [NOM + LOGO] | [SCORE] | [NOM + LOGO]
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
                     with c_dom:
+                        # Nom en haut
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:16px; margin-bottom:5px;'>{dom}</p>", unsafe_allow_html=True)
+                        # Logo centré en dessous
                         if os.path.exists(logo_dom):
-                            st.image(logo_dom, width=65)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px;'>{dom}</p>", unsafe_allow_html=True)
+                            st.markdown(f'<div style="display: flex; justify-content: center;"><img src="data:image/png;base64,{st.image(logo_dom, width=60)}" style="width:60px;"></div>', unsafe_allow_html=True)
+                            # Note: On utilise le centrage natif de Streamlit si le HTML pose souci :
+                            # st.image(logo_dom, width=60)
                         
                     with c_score:
-                        # On centre verticalement le score par rapport aux logos
-                        st.markdown(f"<h2 style='text-align: center; margin-top: 25px;'>{score}</h2>", unsafe_allow_html=True)
+                        # Score centré verticalement
+                        st.markdown(f"<h1 style='text-align: center; margin-top: 20px;'>{score}</h1>", unsafe_allow_html=True)
                         
                     with c_ext:
+                        # Nom en haut
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:16px; margin-bottom:5px;'>{ext}</p>", unsafe_allow_html=True)
+                        # Logo centré en dessous
                         if os.path.exists(logo_ext):
-                            st.image(logo_ext, width=65)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px;'>{ext}</p>", unsafe_allow_html=True)
+                            st.image(logo_ext, width=60)
                     
-                    # Détails
+                    # Détails (Stade, Diffuseur, Qualité)
                     details = []
                     if 'Stade' in row and pd.notna(row['Stade']): details.append(f"🏟️ {row['Stade']}")
                     if 'Diffuseur' in row and pd.notna(row['Diffuseur']): details.append(f"📺 {row['Diffuseur']}")
                     if 'Qualité' in row and pd.notna(row['Qualité']): details.append(f"⭐ {row['Qualité']}")
                     
                     if details:
-                        st.markdown(f"<p style='text-align: center; color: gray; font-size:12px; border-top: 0.5px solid #eee; padding-top: 5px;'>{' | '.join(details)}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='text-align: center; color: gray; font-size:13px; border-top: 0.5px solid #555; margin-top:10px; padding-top:5px;'>{' | '.join(details)}</div>", unsafe_allow_html=True)
 
 # --- GESTION DE LA NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
@@ -189,7 +186,7 @@ def go_home():
     st.session_state.edition_choisie = None
 
 if st.session_state.page != 'accueil':
-    if st.sidebar.button("🏠 Menu Principal", key="btn_home", use_container_width=True):
+    if st.sidebar.button("🏠 Menu Principal", use_container_width=True):
         go_home()
         st.rerun()
 
@@ -358,7 +355,7 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, cle in enumerate(noeud_actuel.keys()):
             with cols[i % 3]:
-                if st.button(cle, use_container_width=True, key=f"btn_{cle}"):
+                if st.button(cle, use_container_width=True):
                     st.session_state.chemin.append(cle)
                     st.rerun()
 
@@ -366,7 +363,7 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, element in enumerate(noeud_actuel):
             with cols[i % 3]:
-                if st.button(element, use_container_width=True, key=f"btn_{element}"):
+                if st.button(element, use_container_width=True):
                     st.session_state.chemin.append(element)
                     st.rerun()
 
@@ -384,7 +381,7 @@ elif st.session_state.page == 'arborescence':
                     cols = st.columns(4)
                     for i, ed in enumerate(editions):
                         with cols[i % 4]:
-                            if st.button(str(ed), use_container_width=True, key=f"ed_{ed}"):
+                            if st.button(str(ed), use_container_width=True):
                                 st.session_state.edition_choisie = ed
                                 st.rerun()
                 else:
