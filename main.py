@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+from datetime import datetime # NOUVEAU : Pour lire la date du jour !
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
@@ -33,7 +34,6 @@ LOGOS = {
     "Ligue 1": "Logos/ligue1.png",
     "Champions League": "Logos/championsleague.png"
 }
-
 # ==========================================
 # 🧠 LE CERVEAU DE L'ARBORESCENCE EXACTE
 # ==========================================
@@ -85,6 +85,7 @@ def load_data():
         df = df.dropna(subset=['Domicile', 'Extérieur'])
         df.columns = df.columns.str.strip()
         
+        # On uniformise les dates en format JJ/MM/AAAA
         if 'Date' in df.columns:
             dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
             masque_excel = dates_numeriques.notna()
@@ -129,6 +130,16 @@ if st.session_state.page == 'accueil':
         st.session_state.page = 'catalogue'
         st.rerun()
     
+    # 📅 LE BOUTON ÉPHÉMÉRIDE DYNAMIQUE
+    aujourdhui = datetime.now()
+    mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    date_affichee = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
+    
+    st.write("---")
+    if st.button(f"📅 Ce jour-là dans l'Histoire ({date_affichee})", use_container_width=True):
+        st.session_state.page = 'ephemeride'
+        st.rerun()
+    
     st.write("---") 
     st.subheader("📂 Explorer par Compétition")
     
@@ -152,7 +163,6 @@ if st.session_state.page == 'accueil':
     st.write("---")
     st.subheader("🔍 Outils & Statistiques")
 
-    # Nouveaux boutons bien alignés
     col_outils1, col_outils2 = st.columns(2)
     with col_outils1:
         if st.button("🛡️ Par Équipe", use_container_width=True):
@@ -175,6 +185,32 @@ if st.session_state.page == 'accueil':
 elif st.session_state.page == 'catalogue':
     st.header("📖 Catalogue Complet")
     st.dataframe(df[colonnes_presentes], use_container_width=True, height=800)
+
+# ==========================================
+# PAGE ÉPHÉMÉRIDE (NOUVEAU)
+# ==========================================
+elif st.session_state.page == 'ephemeride':
+    aujourdhui = datetime.now()
+    mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    date_texte = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
+    jour_mois_num = aujourdhui.strftime("%d/%m") # Format: 26/02
+    
+    st.header(f"📅 Les matchs joués un {date_texte}")
+    st.write("Voyage dans le temps ! Voici tous les matchs de vos archives qui se sont déroulés à cette même date.")
+    
+    if 'Date' in df.columns:
+        # On cherche tous les matchs dont la date commence par "26/02" (par exemple)
+        # On utilise une expression régulière pour être très tolérant (ex: 26/02, 26/2, etc.)
+        motif_date = r'^0?' + str(aujourdhui.day) + r'/0?' + str(aujourdhui.month) + r'/'
+        df_ephem = df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)]
+        
+        if not df_ephem.empty:
+            st.success(f"🎉 **{len(df_ephem)} matchs** ont été trouvés pour un {date_texte} !")
+            st.dataframe(df_ephem[colonnes_presentes], use_container_width=True, height=600)
+        else:
+            st.info(f"Aucun match dans vos archives ne s'est joué un {date_texte}.")
+    else:
+        st.warning("La colonne 'Date' n'est pas trouvée dans votre fichier.")
 
 # ==========================================
 # PAGE RECHERCHE PAR ÉQUIPE
@@ -201,14 +237,13 @@ elif st.session_state.page == 'face_a_face':
     st.dataframe(df_face[colonnes_presentes], use_container_width=True, height=600)
 
 # ==========================================
-# PAGE RECHERCHE AVANCÉE (NOUVEAU)
+# PAGE RECHERCHE AVANCÉE
 # ==========================================
 elif st.session_state.page == 'recherche_avancee':
     st.header("🕵️ Recherche Avancée")
     st.write("Cumulez les filtres pour trouver des matchs précis.")
 
     col1, col2, col3 = st.columns(3)
-    
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
     competitions = sorted(df['Compétition'].dropna().unique())
     saisons = sorted(df['Saison'].dropna().unique(), reverse=True) if 'Saison' in df.columns else []
@@ -218,15 +253,11 @@ elif st.session_state.page == 'recherche_avancee':
     with col2:
         f_comps = st.multiselect("Compétitions :", competitions)
     with col3:
-        if saisons:
-            f_saisons = st.multiselect("Saisons :", saisons)
-        else:
-            f_saisons = []
+        if saisons: f_saisons = st.multiselect("Saisons :", saisons)
+        else: f_saisons = []
 
-    # Application des filtres
     df_filtre = df.copy()
     if f_equipes:
-        # Cherche si l'équipe est à Domicile OU à l'Extérieur
         df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
     if f_comps:
         df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
@@ -237,21 +268,18 @@ elif st.session_state.page == 'recherche_avancee':
     st.dataframe(df_filtre[colonnes_presentes], use_container_width=True, height=600)
 
 # ==========================================
-# PAGE STATISTIQUES (NOUVEAU)
+# PAGE STATISTIQUES
 # ==========================================
 elif st.session_state.page == 'statistiques':
     st.header("📊 Tableau de Bord")
-    
     st.metric("Total des matchs dans la base", len(df))
     st.write("---")
 
     col_stat1, col_stat2 = st.columns(2)
-    
     with col_stat1:
         st.subheader("🏆 Top 10 Compétitions")
         top_comp = df['Compétition'].value_counts().head(10)
         st.bar_chart(top_comp)
-
     with col_stat2:
         st.subheader("🛡️ Top 10 Équipes (Apparitions)")
         toutes_equipes = pd.concat([df['Domicile'], df['Extérieur']]).dropna()
@@ -309,7 +337,6 @@ elif st.session_state.page == 'arborescence':
     # --- RÉSULTATS FINAUX (AVEC LOGO) ---
     elif isinstance(noeud_actuel, str):
         
-        # Filtres Spéciaux (Nations)
         if noeud_actuel.startswith("FILTER_"):
             if noeud_actuel == "FILTER_CDM_FINALE":
                 mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
@@ -349,7 +376,6 @@ elif st.session_state.page == 'arborescence':
                 st.metric("Matchs trouvés", len(df_final))
                 st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
         
-        # Cas standard
         else:
             c1, c2 = st.columns([4, 1])
             with c1:
