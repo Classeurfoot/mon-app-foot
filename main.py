@@ -4,14 +4,53 @@ import os
 from datetime import datetime
 import unicodedata
 import re
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
 
 # ==========================================
+# ✉️ FONCTION D'ENVOI D'EMAIL
+# ==========================================
+def envoyer_email(nom, email_visiteur, message):
+    try:
+        # On récupère tes identifiants secrets configurés dans Streamlit
+        mon_email = st.secrets["EMAIL_ADDRESS"]
+        mon_mdp = st.secrets["EMAIL_PASSWORD"]
+        
+        # Création du message
+        msg = MIMEMultipart()
+        msg['From'] = mon_email
+        msg['To'] = mon_email # Tu t'envoies le mail à toi-même
+        msg['Subject'] = f"⚽ Nouveau message de {nom} via le site Classeur Foot"
+        
+        corps_email = f"""
+        Nouveau message depuis l'application Classeur Foot :
+        
+        Nom du contact : {nom}
+        Email de réponse : {email_visiteur}
+        
+        Message :
+        {message}
+        """
+        msg.attach(MIMEText(corps_email, 'plain'))
+        
+        # Connexion au serveur Gmail et envoi
+        serveur = smtplib.SMTP('smtp.gmail.com', 587)
+        serveur.starttls()
+        serveur.login(mon_email, mon_mdp)
+        serveur.send_message(msg)
+        serveur.quit()
+        return True
+    except Exception as e:
+        print(f"Erreur d'envoi d'email: {e}")
+        return False
+
+# ==========================================
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
-# Le décorateur @st.dialog crée automatiquement une fenêtre pop-up élégante
 
 @st.dialog("📖 Contenu de la collection")
 def popup_contenu():
@@ -30,8 +69,9 @@ def popup_formats():
     st.markdown("""
     * 🗓️ Date et saison du match
     * 🏆 Compétition et phase
-    * 🏟️ Stade 
+    * 🏟️ Lieu et stade
     * 📺 Diffuseur d'origine (TF1, Canal+, etc.)
+    * 🎙️ Langue des commentaires
     """)
     st.divider()
     st.markdown("### 📼 Formats disponibles")
@@ -56,22 +96,36 @@ def popup_tarifs():
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
 
-@st.dialog("🤝 Échanges & Contact")
+@st.dialog("🤝 Formulaire de Contact & Échanges")
 def popup_contact():
     st.markdown("""
-    **Comment obtenir un match ?**
-    * 🛒 **Achat direct :** À l'unité ou en créant votre propre pack.
-    * 🔄 **Échange :** Vous possédez vos propres archives ? Je suis toujours ouvert aux échanges de matchs rares !
-    * 🚀 **Livraison :** Les fichiers numériques sont envoyés rapidement et de manière sécurisée via *Swisstransfer*, *WeTransfer* ou *Grosfichiers*.
-    
-    📩 **Une demande spécifique ?** N'hésitez pas à me contacter directement si vous cherchez un match qui n'apparaît pas encore dans le catalogue ou pour toute autre question.
+    **Une question ? Une recherche de match ? Un échange à proposer ?** Remplissez ce formulaire et je vous répondrai très rapidement sur votre adresse mail.
     """)
+    st.divider()
+    
+    # Le formulaire intégré
+    nom = st.text_input("Votre Prénom / Nom")
+    email_visiteur = st.text_input("Votre adresse E-mail (pour vous répondre)")
+    message = st.text_area("Votre Message (ex: Je cherche la finale de 1998, je propose un échange...)")
+    
+    if st.button("Envoyer le message", type="primary"):
+        if nom and email_visiteur and message:
+            # On vérifie grossièrement que l'email ressemble à un email
+            if "@" in email_visiteur and "." in email_visiteur:
+                envoi = envoyer_email(nom, email_visiteur, message)
+                if envoi:
+                    st.success("✅ Votre message a bien été envoyé ! Je vous réponds au plus vite.")
+                else:
+                    st.error("❌ Une erreur technique est survenue. L'envoi a échoué.")
+            else:
+                st.warning("⚠️ Merci de saisir une adresse e-mail valide.")
+        else:
+            st.warning("⚠️ Merci de remplir tous les champs avant d'envoyer.")
 
 # ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
 def nettoyer_nom_equipe(nom):
-    """Transforme 'Côte d'Ivoire' en 'cotedivoire' pour trouver l'image facilement"""
     if pd.isna(nom): return ""
     nom_sans_accents = ''.join(c for c in unicodedata.normalize('NFD', str(nom)) if unicodedata.category(c) != 'Mn')
     nom_propre = re.sub(r'[^a-z0-9]', '', nom_sans_accents.lower())
@@ -192,7 +246,6 @@ def afficher_resultats(df_resultats):
         for i, (index, row) in enumerate(df_resultats.iterrows()):
             with cols[i % 2]:
                 with st.container(border=True):
-                    # En-tête
                     date_m = row.get('Date', 'Date inconnue')
                     comp_m = row.get('Compétition', 'Compétition inconnue')
                     st.caption(f"🗓️ {date_m} | 🏆 {comp_m}")
@@ -283,7 +336,7 @@ if st.session_state.page == 'accueil':
         if st.button("💶 Tarifs", use_container_width=True):
             popup_tarifs()
     with col_btn4:
-        if st.button("🤝 Échanges", use_container_width=True):
+        if st.button("✉️ Contact / Échanges", use_container_width=True):
             popup_contact()
     # -------------------------------------------------
 
@@ -496,4 +549,3 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
