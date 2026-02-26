@@ -172,7 +172,7 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS ---
+# --- OUTIL : FICHES DE MATCHS (MISE À JOUR) ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
@@ -187,12 +187,34 @@ def afficher_resultats(df_resultats):
     else:
         st.write("---")
         cols = st.columns(2)
+        
+        # Dictionnaires pour la traduction des dates
+        jours_fr = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+        mois_fr = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+
         for i, (index, row) in enumerate(df_resultats.iterrows()):
             with cols[i % 2]:
                 with st.container(border=True):
-                    date_m = row.get('Date', 'Date inconnue')
-                    comp_m = row.get('Compétition', 'Compétition inconnue')
-                    st.caption(f"🗓️ {date_m} | 🏆 {comp_m}")
+                    
+                    # --- 1. FORMATTAGE DE LA DATE EN FRANÇAIS ---
+                    date_brute = row.get('Date', '')
+                    date_formatee = date_brute
+                    if pd.notna(date_brute) and date_brute:
+                        try:
+                            # Transforme "10/06/1998" en objet date
+                            dt = datetime.strptime(date_brute, "%d/%m/%Y")
+                            # Formate en "mercredi 10 juin 1998"
+                            date_formatee = f"{jours_fr[dt.weekday()]} {dt.day} {mois_fr[dt.month - 1]} {dt.year}"
+                        except ValueError:
+                            date_formatee = date_brute # Fallback au cas où la date est mal écrite
+
+                    # --- 2. EN-TÊTE (Date | Stade) ---
+                    stade = row.get('Stade', 'Stade inconnu')
+                    if pd.isna(stade) or not str(stade).strip(): 
+                        stade = "Stade inconnu"
+                    
+                    # On affiche avec une majuscule au jour (ex: Mercredi)
+                    st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade}")
                     
                     dom = row.get('Domicile', '')
                     ext = row.get('Extérieur', '')
@@ -216,13 +238,30 @@ def afficher_resultats(df_resultats):
                         if os.path.exists(logo_ext):
                             st.image(logo_ext, width=60)
                     
-                    details = []
-                    if 'Stade' in row and pd.notna(row['Stade']): details.append(f"🏟️ {row['Stade']}")
-                    if 'Diffuseur' in row and pd.notna(row['Diffuseur']): details.append(f"📺 {row['Diffuseur']}")
-                    if 'Qualité' in row and pd.notna(row['Qualité']): details.append(f"⭐ {row['Qualité']}")
+                    # --- 3. PIED DE FICHE (Diffuseur agrandi | Qualité) ---
+                    diffuseur = row.get('Diffuseur', '')
+                    qualite = row.get('Qualité', '')
                     
-                    if details:
-                        st.markdown(f"<div style='text-align: center; color: gray; font-size:12px; border-top: 0.5px solid #444; margin-top:10px; padding-top:5px;'>{' | '.join(details)}</div>", unsafe_allow_html=True)
+                    has_diff = pd.notna(diffuseur) and str(diffuseur).strip() != ""
+                    has_qual = pd.notna(qualite) and str(qualite).strip() != ""
+                    
+                    if has_diff or has_qual:
+                        # On prépare la structure HTML
+                        html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:5px;'>"
+                        parts = []
+                        
+                        if has_diff:
+                            # Diffuseur avec une police plus grande (15px)
+                            parts.append(f"<span style='font-size: 15px; font-weight: 500;'>📺 {diffuseur}</span>")
+                        if has_qual:
+                            # Qualité en police classique (12px)
+                            parts.append(f"<span style='font-size: 12px;'>⭐ {qualite}</span>")
+                            
+                        # On assemble avec un séparateur
+                        html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
+                        html_footer += "</div>"
+                        
+                        st.markdown(html_footer, unsafe_allow_html=True)
 
 # --- GESTION DE LA NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
@@ -240,7 +279,7 @@ if st.session_state.page != 'accueil':
         st.rerun()
 
 # ==========================================
-# PAGE D'ACCUEIL (NOUVELLE HIÉRARCHIE)
+# PAGE D'ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
     st.markdown("<h1 style='text-align: center;'>⚽ Archives Football</h1>", unsafe_allow_html=True)
@@ -276,7 +315,7 @@ if st.session_state.page == 'accueil':
             
     st.write("---")
     
-    # --- 2. LE CŒUR DE L'APP : EXPLORER PAR COMPÉTITION (Mis en valeur) ---
+    # --- 2. LE CŒUR DE L'APP : EXPLORER PAR COMPÉTITION ---
     st.markdown("### 📂 Explorer le Classeur")
     st.markdown("<p style='color: gray; margin-bottom: 15px;'>Sélectionnez une catégorie pour naviguer dans l'arborescence des archives.</p>", unsafe_allow_html=True)
     
