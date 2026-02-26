@@ -35,7 +35,7 @@ LOGOS = {
 }
 
 # ==========================================
-# 🧠 LE CERVEAU DE L'ARBORESCENCE (MIS À JOUR)
+# 🧠 LE CERVEAU DE L'ARBORESCENCE (CORRIGÉ SELON TON FICHIER)
 # ==========================================
 MENU_ARBO = {
     "Nations": {
@@ -53,18 +53,24 @@ MENU_ARBO = {
         "Jeux Olympiques": "Jeux Olympiques"
     },
     "Clubs": {
-        # Boutons directs dans "Clubs"
-        "Coupe d’Europe des clubs champions": "Coupe d’Europe des clubs champions",
-        "Champions League": "Champions League",
-        "Europa League": "Europa League",
-        "C4-Europa Conference": "C4-Europa Conference",
-        "Supercoupe d’Europe": "Supercoupe d’Europe",
-        "Coupe du monde des clubs de la FIFA": "Coupe du monde des clubs de la FIFA",
-        "Coupe du Monde des clubs 2025": "Coupe du Monde des clubs 2025",
-        "Coupe intercontinentale": "Coupe intercontinentale",
-        
-        # Les championnats restent bien rangés
-        "Championnat de France": ["Division 1", "Ligue 1", "Division 2", "Ligue 2"],
+        "Coupe d'Europe": {
+            "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
+            "C2": ["Coupe des Coupes"],
+            "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
+            "C4": ["C4 Europa Conference"]
+        },
+        "Supercoupe d'Europe": "Supercoupe d'Europe",
+        "Coupe intercontinentale": {
+            "Coupe intercontinentale": ["Coupe intercontinentale"],
+            "Coupe du monde des clubs de la FIFA": ["Coupe du monde des clubs de la FIFA"]
+        },
+        "Coupe du Monde des Clubs": ["Coupe du Monde des clubs 2025"],
+        "Championnat de France": {
+            "Division 1": ["Division 1"],
+            "Ligue 1": ["Ligue 1"],
+            "Division 2": ["Division 2"],
+            "Ligue 2": ["Ligue 2"]
+        },
         "Coupe Nationale": ["Coupe de France", "Coupe de la Ligue", "Trophée des Champions"],
         "Championnats étrangers": {
             "Italie": ["Serie A", "Coppa Italia"],
@@ -292,19 +298,4 @@ elif st.session_state.page == 'arborescence':
         
         # Cas standard
         else:
-            col_titre, col_logo = st.columns([4, 1])
-            with col_titre:
-                st.header(f"🏆 {noeud_actuel}")
-            with col_logo:
-                # GESTION DU LOGO LOCAL
-                if noeud_actuel in LOGOS:
-                    chemin_image = LOGOS[noeud_actuel]
-                    if os.path.exists(chemin_image):
-                        st.image(chemin_image, width=100)
-                    else:
-                        st.caption("(Image introuvable)")
-
-            mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
-            df_final = df[mask]
-            st.metric("Matchs trouvés", len(df_final))
-            st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
+            col_titre
