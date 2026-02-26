@@ -184,16 +184,17 @@ if st.session_state.page != 'accueil':
         st.rerun()
 
 # ==========================================
-# PAGE D'ACCUEIL (NOUVELLE VERSION AMÉLIORÉE)
+# PAGE D'ACCUEIL AVEC RECHERCHE ET ONGLETS
 # ==========================================
 if st.session_state.page == 'accueil':
     st.title("⚽ Archives Football")
+    st.markdown(f"**Plongez dans l'histoire.** Retrouvez plus de **{len(df)}** matchs mythiques documentés et détaillés.")
     
-    # --- LA NOUVEAUTÉ : BARRE DE RECHERCHE GLOBALE ---
+    # --- 🔍 MOTEUR DE RECHERCHE GLOBAL ---
+    st.write("")
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
     
     if recherche_rapide:
-        # On cherche le mot tapé dans toutes les colonnes importantes
         mask = (
             df['Domicile'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
             df['Extérieur'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
@@ -204,56 +205,95 @@ if st.session_state.page == 'accueil':
                 mask = mask | df[col].astype(str).str.contains(recherche_rapide, case=False, na=False)
                 
         df_trouve = df[mask]
-        st.write(f"**Résultats trouvés pour :** {recherche_rapide}")
+        st.write(f"**Résultats trouvés pour :** '{recherche_rapide}'")
         afficher_resultats(df_trouve)
         st.write("---")
     # -------------------------------------------------
 
-    # --- POINT 1 : L'ACCROCHE ---
-    st.markdown(f"**Plongez dans l'histoire.** Retrouvez plus de **{len(df)}** matchs mythiques documentés et détaillés.")
+    # --- 📑 LES ONGLETS D'INFORMATION (Inspirés de ta capture) ---
+    st.write("### ℹ️ Informations Pratiques")
+    tab1, tab2, tab3, tab4 = st.tabs(["📖 Contenu", "💾 Formats & Organisation", "💶 Tarifs & Packs", "🤝 Échanges & Contact"])
+    
+    with tab1:
+        st.info("""
+        **Ce que vous trouverez dans cette collection :**
+        * ✅ Des **matchs de clubs** et de **sélections nationales**.
+        * ✅ Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
+        * ✅ Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
+        * ✅ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, etc.
+        * ✅ Des matchs **amicaux, historiques et rares**.
+        """)
+        
+    with tab2:
+        col_org, col_form = st.columns(2)
+        with col_org:
+            st.success("""
+            **🗂️ Organisation des matchs :**
+            * 🗓️ Date et saison
+            * 🏆 Compétition et phase
+            * ⚽ Équipes et score final
+            * 🏟️ Lieu et stade
+            * 📺 Diffuseur d'origine (TF1, Canal+, etc.)
+            * 🎙️ Langue et qualité du fichier
+            * 📝 Remarques (qualité d'image, match incomplet...)
+            """)
+        with col_form:
+            st.warning("""
+            **📼 Formats disponibles :**
+            * 💻 **Numérique :** formats courants (.mp4, .avi, .mkv) – parfaits pour ordi, tablette ou TV.
+            * 💿 **DVD :** fichiers .VOB stockés sur disque dur pour un gain de place (plus besoin de stocker des boîtiers).
+            * 📼 **VHS d'origine :** pour les collectionneurs et puristes, quelques exemplaires sont disponibles au format original.
+            """)
+            
+    with tab3:
+        st.success("""
+        **💰 Grille Tarifaire :**
+        * 💿 **1 match au format DVD** (indiqué dans le classeur) = **5 €**
+        * 💻 **1 match autre format** (mp4, mkv...) = **3 €**
+        
+        **🎁 Offres & Réductions :**
+        * 🆓 **1 match offert** tous les 10 (hors DVD).
+        * 📉 **Réduc' dès 20 matchs achetés** (-10% sur le prix total).
+        * 📦 **Packs thématiques dispos** (ex : France 98, campagne de clubs en Coupe d'Europe...).
+        """)
+        
+    with tab4:
+        st.info("""
+        **🤝 Comment ça marche ?**
+        * 🛒 Vous pouvez **acheter** un match à l'unité ou en **pack personnalisé**.
+        * 🔄 **Échange possible :** Vous pouvez aussi proposer un échange si vous avez vos propres enregistrements !
+        * 🚀 **Envoi numérique :** Les fichiers sont envoyés via Swisstransfer, WeTransfer ou Grosfichiers.
+        * 📩 **Une question ou recherche précise ?** Contactez-moi directement, je me ferai un plaisir de vous répondre.
+        """)
+    # -------------------------------------------------
+
+    st.write("---")
     
     if st.button("📖 PARCOURIR LE CATALOGUE COMPLET", use_container_width=True):
         st.session_state.page = 'catalogue'
         st.rerun()
     
-    st.write("---")
-    
-    # --- POINT 3 : L'ÉPHÉMÉRIDE VIP ---
     aujourdhui = datetime.now()
     mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     date_affichee = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
     
-    # Petit calcul pour savoir combien de matchs ont eu lieu ce jour-là
-    nb_matchs_jour = 0
-    if 'Date' in df.columns:
-        motif_date = r'^0?' + str(aujourdhui.day) + r'/0?' + str(aujourdhui.month) + r'/'
-        nb_matchs_jour = len(df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)])
-
-    with st.container(border=True):
-        st.subheader("📅 L'Éphéméride du Classeur")
-        if nb_matchs_jour > 0:
-            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. Le catalogue contient **{nb_matchs_jour}** matchs de légende joués à cette date exacte !")
-        else:
-            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. Que s'est-il passé dans l'histoire du foot à cette date ?")
-            
-        col_date1, col_date2 = st.columns(2)
-        with col_date1:
-            if st.button(f"⏳ Voir les matchs du {date_affichee}", use_container_width=True):
-                st.session_state.page = 'ephemeride'
-                st.rerun()
-        with col_date2:
-            if st.button("🔎 Chercher une autre date", use_container_width=True):
-                st.session_state.page = 'recherche_date'
-                st.rerun()
+    st.write("---")
+    col_date1, col_date2 = st.columns(2)
+    with col_date1:
+        if st.button(f"📅 Ça s'est joué aujourd'hui ({date_affichee})", use_container_width=True):
+            st.session_state.page = 'ephemeride'
+            st.rerun()
+    with col_date2:
+        if st.button("🔎 Recherche par date", use_container_width=True):
+            st.session_state.page = 'recherche_date'
+            st.rerun()
     
     st.write("---") 
-    
-    # --- POINT 2 : COPYWRITING (NOUVEAUX NOMS) ---
     st.subheader("📂 Explorer par Compétition")
     
     col_n, col_c, col_d = st.columns(3)
     with col_n:
-        if st.button("🌍 SÉLECTIONS NATIONALES", use_container_width=True):
+        if st.button("🌍 NATIONS", use_container_width=True):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
@@ -263,32 +303,28 @@ if st.session_state.page == 'accueil':
             st.session_state.chemin = ['Clubs']
             st.rerun()
     with col_d:
-        if st.button("🎲 MATCHS DE GALA & TOURNOIS", use_container_width=True):
+        if st.button("🎲 DIVERS", use_container_width=True):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Divers']
             st.rerun()
 
     st.write("---")
-    
-    # --- SÉPARATION DES OUTILS EN DEUX BLOCS ---
-    col_labo, col_stats = st.columns(2)
-    
-    with col_labo:
-        st.subheader("🔬 Laboratoire Tactique")
-        if st.button("🛡️ Recherche par Équipe", use_container_width=True):
+    st.subheader("🔍 Outils & Statistiques")
+
+    col_outils1, col_outils2 = st.columns(2)
+    with col_outils1:
+        if st.button("🛡️ Par Équipe", use_container_width=True):
             st.session_state.page = 'recherche_equipe'
             st.rerun()
+        if st.button("📊 Statistiques", use_container_width=True):
+            st.session_state.page = 'statistiques'
+            st.rerun()
+    with col_outils2:
         if st.button("⚔️ Face-à-Face", use_container_width=True):
             st.session_state.page = 'face_a_face'
             st.rerun()
         if st.button("🕵️ Recherche Avancée", use_container_width=True):
             st.session_state.page = 'recherche_avancee'
-            st.rerun()
-
-    with col_stats:
-        st.subheader("📈 Le Coin des Stats")
-        if st.button("📊 Statistiques Générales", use_container_width=True):
-            st.session_state.page = 'statistiques'
             st.rerun()
 
 # ==========================================
