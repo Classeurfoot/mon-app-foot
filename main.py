@@ -96,7 +96,7 @@ def popup_tarifs():
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
 
-@st.dialog("🤝 Formulaire de Contact & Échanges")
+@st.dialog("🤝 Contact")
 def popup_contact():
     st.markdown("""
     **Une question ? Une recherche de match ? Un échange à proposer ?** Remplissez ce formulaire et je vous répondrai très rapidement sur votre adresse mail.
@@ -549,3 +549,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
