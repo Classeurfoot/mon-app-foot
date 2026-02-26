@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-import time
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
@@ -210,8 +209,8 @@ if st.session_state.page == 'accueil':
             st.session_state.page = 'statistiques'
             st.rerun()
     with col_outils2:
-        if st.button("🗺️ Carte des Stades", use_container_width=True):
-            st.session_state.page = 'carte_stades'
+        if st.button("⚔️ Face-à-Face", use_container_width=True):
+            st.session_state.page = 'face_a_face'
             st.rerun()
         if st.button("🕵️ Recherche Avancée", use_container_width=True):
             st.session_state.page = 'recherche_avancee'
@@ -223,47 +222,6 @@ if st.session_state.page == 'accueil':
 elif st.session_state.page == 'catalogue':
     st.header("📖 Catalogue Complet")
     afficher_resultats(df)
-
-# ==========================================
-# PAGE CARTE DES STADES (NOUVEAU)
-# ==========================================
-elif st.session_state.page == 'carte_stades':
-    st.header("🗺️ Carte Interactive des Stades")
-    st.write("L'application tente de placer vos stades sur la carte. (Seuls les stades reconnus s'afficheront).")
-    
-    try:
-        from geopy.geocoders import Nominatim
-        
-        # On récupère les 30 stades les plus fréquents pour ne pas faire planter la carte
-        stades_uniques = df['Stade'].dropna().value_counts().head(30).index.tolist()
-        
-        @st.cache_data
-        def geocode_stades(liste_stades):
-            geolocator = Nominatim(user_agent="app_foot_archives")
-            coords = []
-            for s in liste_stades:
-                try:
-                    # On rajoute un petit délai pour ne pas bloquer le serveur
-                    time.sleep(0.5)
-                    loc = geolocator.geocode(s)
-                    if loc:
-                        coords.append({"Stade": s, "lat": loc.latitude, "lon": loc.longitude})
-                except:
-                    pass
-            return pd.DataFrame(coords)
-
-        with st.spinner("Recherche des coordonnées GPS en cours (cela peut prendre quelques secondes)..."):
-            df_coords = geocode_stades(stades_uniques)
-            
-        if not df_coords.empty:
-            st.success(f"📍 {len(df_coords)} stades trouvés et placés sur la carte !")
-            st.map(df_coords, zoom=4)
-        else:
-            st.warning("Impossible de trouver les coordonnées de vos stades. Vérifiez l'orthographe ou votre connexion internet.")
-            
-    except ImportError:
-        st.error("⚠️ Il manque un composant pour afficher la carte.")
-        st.info("Pour activer la carte, ajoutez un fichier nommé `requirements.txt` sur votre GitHub contenant le mot `geopy`.")
 
 # ==========================================
 # PAGES EXISTANTES AVEC NOUVEL AFFICHAGE
