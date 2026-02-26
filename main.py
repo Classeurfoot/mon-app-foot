@@ -8,26 +8,13 @@ st.set_page_config(page_title="Classeur Foot", layout="wide")
 # ==========================================
 # 🎨 TA BANQUE DE LOGOS LOCALE
 # ==========================================
-# C'est ici que tu indiques le chemin vers tes images. 
-# Le dossier s'appelle bien "Logos" avec un grand L.
+# C'est ici que tu ajoutes tes futurs logos. 
+# La règle d'or : le nom à gauche doit être EXACTEMENT celui de l'arborescence.
 LOGOS = {
     "Coupe du Monde 1998": "Logos/cdm1998.png",
-    
-    # Exemples à adapter selon les fichiers que tu vas ajouter dans ton dossier Logos :
+    "Coupe du Monde 2022": "Logos/cdm2022.png",
     "Ligue 1": "Logos/ligue1.png",
-    "Champions League": "Logos/championsleague.png",
-    "Coupe du Monde 2022": "Logos/cdm2022.png"
-    "Coupe du Monde 1978": "Logos/cdm1978.png"
-"Coupe du Monde 1982": "Logos/cdm1982.png"
-"Coupe du Monde 1986": "Logos/cdm1986.png"
-"Coupe du Monde 1990": "Logos/cdm1990.png"
-"Coupe du Monde 1994": "Logos/cdm1994.png"
-"Coupe du Monde 2002": "Logos/cdm2002.png"
-"Coupe du Monde 2006": "Logos/cdm2006.png"
-"Coupe du Monde 2010": "Logos/cdm2010.png"
-"Coupe du Monde 2014": "Logos/cdm2014.png"
-"Coupe du Monde 2018": "Logos/cdm2018.png"
-
+    "Champions League": "Logos/championsleague.png"
 }
 
 # ==========================================
@@ -93,7 +80,6 @@ def load_data():
 
 df = load_data()
 
-# Vérification des colonnes, incluant la Qualité
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
@@ -242,7 +228,6 @@ elif st.session_state.page == 'arborescence':
     # --- RÉSULTATS ET ÉDITIONS (AVEC LOGO LOCAL) ---
     elif isinstance(noeud_actuel, str):
         
-        # Cas Nations : Choix des années
         if noeud_actuel.startswith("FILTER_"):
             if noeud_actuel == "FILTER_CDM_FINALE":
                 mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
@@ -253,7 +238,6 @@ elif st.session_state.page == 'arborescence':
             elif noeud_actuel == "FILTER_EURO_ELIM":
                 mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
             
-            # Affichage des boutons d'éditions
             if st.session_state.edition_choisie is None:
                 editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
                 if editions:
@@ -267,40 +251,35 @@ elif st.session_state.page == 'arborescence':
                 else:
                     st.warning("Aucune édition trouvée pour ce choix.")
             
-            # Affichage du Tableau Final
             else:
                 col_titre, col_logo = st.columns([4, 1])
                 with col_titre:
                     st.header(f"📍 {st.session_state.edition_choisie}")
                 with col_logo:
-                    # GESTION DU LOGO LOCAL
                     if st.session_state.edition_choisie in LOGOS:
                         chemin_image = LOGOS[st.session_state.edition_choisie]
                         if os.path.exists(chemin_image):
                             st.image(chemin_image, width=100)
                         else:
-                            st.caption("(Logo introuvable : vérifie le nom de l'image)")
+                            st.caption("(Image introuvable)")
 
                 df_final = df[df['Compétition'] == st.session_state.edition_choisie]
                 st.metric("Matchs trouvés", len(df_final))
                 st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
         
-        # Cas standard
         else:
             col_titre, col_logo = st.columns([4, 1])
             with col_titre:
                 st.header(f"🏆 {noeud_actuel}")
             with col_logo:
-                # GESTION DU LOGO LOCAL
                 if noeud_actuel in LOGOS:
                     chemin_image = LOGOS[noeud_actuel]
                     if os.path.exists(chemin_image):
                         st.image(chemin_image, width=100)
                     else:
-                        st.caption("(Logo introuvable : vérifie le nom de l'image)")
+                        st.caption("(Image introuvable)")
 
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             st.metric("Matchs trouvés", len(df_final))
             st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
-
