@@ -4,54 +4,13 @@ import os
 from datetime import datetime
 import unicodedata
 import re
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
 
 # ==========================================
-# ✉️ FONCTION D'ENVOI D'EMAIL
-# ==========================================
-def envoyer_email(nom, email_visiteur, message):
-    try:
-        # On récupère tes identifiants secrets configurés dans Streamlit
-        mon_email = st.secrets["EMAIL_ADDRESS"]
-        mon_mdp = st.secrets["EMAIL_PASSWORD"]
-        
-        # Création du message
-        msg = MIMEMultipart()
-        msg['From'] = mon_email
-        msg['To'] = mon_email # Tu t'envoies le mail à toi-même
-        msg['Subject'] = f"⚽ Nouveau message de {nom} via le site Classeur Foot"
-        
-        corps_email = f"""
-        Nouveau message depuis l'application Classeur Foot :
-        
-        Nom du contact : {nom}
-        Email de réponse : {email_visiteur}
-        
-        Message :
-        {message}
-        """
-        msg.attach(MIMEText(corps_email, 'plain'))
-        
-        # Connexion au serveur Gmail et envoi
-        serveur = smtplib.SMTP('smtp.gmail.com', 587)
-        serveur.starttls()
-        serveur.login(mon_email, mon_mdp)
-        serveur.send_message(msg)
-        serveur.quit()
-        return True
-    except Exception as e:
-        print(f"Erreur d'envoi d'email: {e}")
-        return False
-
-# ==========================================
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
-
 @st.dialog("📖 Contenu de la collection")
 def popup_contenu():
     st.markdown("""
@@ -96,31 +55,16 @@ def popup_tarifs():
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
 
-@st.dialog("🤝 Contact")
+@st.dialog("🤝 Échanges & Contact")
 def popup_contact():
     st.markdown("""
-    **Une question ? Une recherche de match ? Un échange à proposer ?** Remplissez ce formulaire et je vous répondrai très rapidement sur votre adresse mail.
+    **Comment obtenir un match ?**
+    * 🛒 **Achat direct :** À l'unité ou en créant votre propre pack.
+    * 🔄 **Échange :** Vous possédez vos propres archives ? Je suis toujours ouvert aux échanges de matchs rares !
+    * 🚀 **Livraison :** Les fichiers numériques sont envoyés rapidement et de manière sécurisée via *Swisstransfer*, *WeTransfer* ou *Grosfichiers*.
+    
+    📩 **Me contacter :** N'hésitez pas à m'envoyer un message via mon bouton de contact pour toute demande ou recherche spécifique !
     """)
-    st.divider()
-    
-    # Le formulaire intégré
-    nom = st.text_input("Votre Prénom / Nom")
-    email_visiteur = st.text_input("Votre adresse E-mail (pour vous répondre)")
-    message = st.text_area("Votre Message (ex: Je cherche la finale de 1998, je propose un échange...)")
-    
-    if st.button("Envoyer le message", type="primary"):
-        if nom and email_visiteur and message:
-            # On vérifie grossièrement que l'email ressemble à un email
-            if "@" in email_visiteur and "." in email_visiteur:
-                envoi = envoyer_email(nom, email_visiteur, message)
-                if envoi:
-                    st.success("✅ Votre message a bien été envoyé ! Je vous réponds au plus vite.")
-                else:
-                    st.error("❌ Une erreur technique est survenue. L'envoi a échoué.")
-            else:
-                st.warning("⚠️ Merci de saisir une adresse e-mail valide.")
-        else:
-            st.warning("⚠️ Merci de remplir tous les champs avant d'envoyer.")
 
 # ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
@@ -228,7 +172,7 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS (VOTRE CODE EXACT) ---
+# --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
@@ -296,14 +240,15 @@ if st.session_state.page != 'accueil':
         st.rerun()
 
 # ==========================================
-# PAGE D'ACCUEIL AVEC RECHERCHE ET POP-UPS
+# PAGE D'ACCUEIL AMÉLIORÉE (DESIGN & UX)
 # ==========================================
 if st.session_state.page == 'accueil':
-    st.title("⚽ Archives Football")
-    st.markdown(f"**Plongez dans l'histoire.** Retrouvez plus de **{len(df)}** matchs mythiques documentés et détaillés.")
+    # En-tête centré pour faire plus "Site Web"
+    st.markdown("<h1 style='text-align: center;'>⚽ Archives Football</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>{len(df)}</b> matchs mythiques documentés et détaillés.</p>", unsafe_allow_html=True)
+    st.write("")
     
     # --- 🔍 MOTEUR DE RECHERCHE GLOBAL ---
-    st.write("")
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
     
     if recherche_rapide:
@@ -323,9 +268,7 @@ if st.session_state.page == 'accueil':
     # -------------------------------------------------
 
     # --- 📑 LES BOUTONS POP-UPS (INFORMATIONS) ---
-    st.write("### ℹ️ Informations Pratiques")
     col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
-    
     with col_btn1:
         if st.button("📖 Contenu", use_container_width=True):
             popup_contenu()
@@ -338,30 +281,45 @@ if st.session_state.page == 'accueil':
     with col_btn4:
         if st.button("✉️ Contact / Échanges", use_container_width=True):
             popup_contact()
-    # -------------------------------------------------
-
+            
     st.write("---")
     
-    if st.button("📖 PARCOURIR LE CATALOGUE COMPLET", use_container_width=True):
-        st.session_state.page = 'catalogue'
-        st.rerun()
+    # --- BOUTON CATALOGUE MIS EN ÉVIDENCE ET CENTRÉ ---
+    col_vide1, col_catalogue, col_vide2 = st.columns([1, 2, 1])
+    with col_catalogue:
+        # L'attribut type="primary" va lui donner une couleur d'accentuation pour qu'il ressorte
+        if st.button("📖 PARCOURIR LE CATALOGUE COMPLET", type="primary", use_container_width=True):
+            st.session_state.page = 'catalogue'
+            st.rerun()
+    st.write("---")
     
+    # --- 📅 L'ÉPHÉMÉRIDE MIS EN VALEUR ---
     aujourdhui = datetime.now()
     mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     date_affichee = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
     
-    st.write("---")
-    col_date1, col_date2 = st.columns(2)
-    with col_date1:
-        if st.button(f"📅 Ça s'est joué aujourd'hui ({date_affichee})", use_container_width=True):
-            st.session_state.page = 'ephemeride'
-            st.rerun()
-    with col_date2:
-        if st.button("🔎 Recherche par date", use_container_width=True):
-            st.session_state.page = 'recherche_date'
-            st.rerun()
-    
+    nb_matchs_jour = 0
+    if 'Date' in df.columns:
+        motif_date = r'^0?' + str(aujourdhui.day) + r'/0?' + str(aujourdhui.month) + r'/'
+        nb_matchs_jour = len(df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)])
+
+    with st.container(border=True):
+        st.markdown(f"### 📅 Ça s'est joué un {date_affichee}...")
+        
+        if nb_matchs_jour > 0:
+            st.success(f"🔥 Le catalogue contient **{nb_matchs_jour} matchs de légende** joués exactement à cette date dans l'histoire !")
+        else:
+            st.info(f"Que s'est-il passé dans l'histoire du foot à cette date ? Lancez la recherche pour le découvrir !")
+            
+        col_eph1, col_eph2, col_eph3 = st.columns([1, 2, 1])
+        with col_eph2:
+            if st.button(f"⏳ Voir les matchs du {date_affichee}", use_container_width=True):
+                st.session_state.page = 'ephemeride'
+                st.rerun()
+                
     st.write("---") 
+    
+    # --- LE RESTE DES MENUS ---
     st.subheader("📂 Explorer par Compétition")
     
     col_n, col_c, col_d = st.columns(3)
@@ -549,4 +507,3 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
