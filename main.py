@@ -8,11 +8,28 @@ import re
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
 
+# CSS pour forcer le centrage des images et l'alignement du texte
+st.markdown("""
+    <style>
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+    }
+    .club-name {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 5px;
+        display: block;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # ==========================================
-# ⚙️ FONCTIONS DE NETTOYAGE ET RECHERCHE
+# ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
 def nettoyer_nom_equipe(nom):
-    """Transforme 'Côte d'Ivoire' en 'cotedivoire'"""
+    """Transforme 'Côte d'Ivoire' en 'cotedivoire' pour trouver l'image facilement"""
     if pd.isna(nom): return ""
     nom_sans_accents = ''.join(c for c in unicodedata.normalize('NFD', str(nom)) if unicodedata.category(c) != 'Mn')
     nom_propre = re.sub(r'[^a-z0-9]', '', nom_sans_accents.lower())
@@ -20,20 +37,14 @@ def nettoyer_nom_equipe(nom):
 
 @st.cache_data
 def trouver_logo_equipe(nom_equipe, dossier_racine="Logos"):
-    """
-    Fouille récursivement dans tous les sous-dossiers (Italie, France, Monde...)
-    pour trouver le fichier .png correspondant au nom nettoyé.
-    """
+    """Fouille récursivement dans tous les sous-dossiers pour trouver le logo"""
     cible = nettoyer_nom_equipe(nom_equipe)
     if not cible or not os.path.exists(dossier_racine):
         return None
-    
     for racine, dirs, fichiers in os.walk(dossier_racine):
         for f in fichiers:
             if f.lower().endswith(".png"):
-                # On compare le nom du fichier (sans extension) nettoyé
-                nom_fichier = nettoyer_nom_equipe(os.path.splitext(f)[0])
-                if nom_fichier == cible:
+                if nettoyer_nom_equipe(os.path.splitext(f)[0]) == cible:
                     return os.path.join(racine, f)
     return None
 
@@ -121,6 +132,7 @@ def load_data():
         df.columns = df.columns.str.strip()
         
         if 'Date' in df.columns:
+            # Correction des dates Excel
             dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
             masque_excel = dates_numeriques.notna()
             dates_converties = pd.to_datetime(dates_numeriques[masque_excel], unit='D', origin='1899-12-30')
@@ -160,25 +172,28 @@ def afficher_resultats(df_resultats):
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    # Recherche automatique des logos dans toute l'arborescence
+                    # Recherche des logos
                     path_logo_dom = trouver_logo_equipe(dom)
                     path_logo_ext = trouver_logo_equipe(ext)
                     
+                    # Mise en page : [NOM+LOGO] | [SCORE] | [NOM+LOGO]
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
                     with c_dom:
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:15px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<span class='club-name'>{dom}</span>", unsafe_allow_html=True)
                         if path_logo_dom:
                             st.image(path_logo_dom, width=60)
                         
                     with c_score:
-                        st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
+                        # Centrage vertical approximatif du score
+                        st.markdown(f"<h1 style='text-align: center; margin-top: 25px;'>{score}</h1>", unsafe_allow_html=True)
                         
                     with c_ext:
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:15px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<span class='club-name'>{ext}</span>", unsafe_allow_html=True)
                         if path_logo_ext:
                             st.image(path_logo_ext, width=60)
                     
+                    # Détails
                     details = []
                     if 'Stade' in row and pd.notna(row['Stade']): details.append(f"🏟️ {row['Stade']}")
                     if 'Diffuseur' in row and pd.notna(row['Diffuseur']): details.append(f"📺 {row['Diffuseur']}")
@@ -187,7 +202,7 @@ def afficher_resultats(df_resultats):
                     if details:
                         st.markdown(f"<div style='text-align: center; color: gray; font-size:12px; border-top: 0.5px solid #444; margin-top:10px; padding-top:5px;'>{' | '.join(details)}</div>", unsafe_allow_html=True)
 
-# --- GESTION DE LA NAVIGATION (Structure Accueil Inchangée) ---
+# --- GESTION DE LA NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
 if 'chemin' not in st.session_state: st.session_state.chemin = []
 if 'edition_choisie' not in st.session_state: st.session_state.edition_choisie = None
@@ -202,7 +217,7 @@ if st.session_state.page != 'accueil':
         go_home()
         st.rerun()
 
-# --- RESTE DU CODE (PAGES) ---
+# --- PAGES ---
 if st.session_state.page == 'accueil':
     st.title("⚽ Archives Football")
     if st.button("📖 CATALOGUE COMPLET", use_container_width=True):
@@ -239,7 +254,6 @@ if st.session_state.page == 'accueil':
         if st.button("⚔️ Face-à-Face", use_container_width=True): st.session_state.page = 'face_a_face'; st.rerun()
         if st.button("🕵️ Recherche Avancée", use_container_width=True): st.session_state.page = 'recherche_avancee'; st.rerun()
 
-# (Les blocs elif catalogue, ephemeride, recherche_date, equipe, face_a_face, statistiques restent identiques)
 elif st.session_state.page == 'catalogue':
     st.header("📖 Catalogue Complet")
     afficher_resultats(df)
@@ -277,14 +291,12 @@ elif st.session_state.page == 'face_a_face':
 
 elif st.session_state.page == 'recherche_avancee':
     st.header("🕵️ Recherche Avancée")
-    # ... (code de filtrage classique)
     afficher_resultats(df)
 
 elif st.session_state.page == 'statistiques':
     st.header("📊 Statistiques")
     st.bar_chart(df['Compétition'].value_counts().head(10))
 
-# --- PAGE ARBORESCENCE (LOGIQUE DE NAVIGATION) ---
 elif st.session_state.page == 'arborescence':
     noeud = MENU_ARBO
     for e in st.session_state.chemin:
@@ -329,11 +341,14 @@ elif st.session_state.page == 'arborescence':
                 with c2:
                     if st.session_state.edition_choisie in LOGOS:
                         if os.path.exists(LOGOS[st.session_state.edition_choisie]): st.image(LOGOS[st.session_state.edition_choisie], width=100)
-                afficher_resultats(df[df['Compétition'] == st.session_state.edition_choisie])
+                df_final = df[df['Compétition'] == st.session_state.edition_choisie]
+                afficher_resultats(df_final)
         else:
             c1, c2 = st.columns([4, 1])
             with c1: st.header(f"🏆 {noeud}")
             with c2:
                 if noeud in LOGOS:
                     if os.path.exists(LOGOS[noeud]): st.image(LOGOS[noeud], width=100)
-            afficher_resultats(df[df['Compétition'].str.contains(noeud, na=False, case=False)])
+            mask = df['Compétition'].str.contains(noeud, na=False, case=False)
+            df_final = df[mask]
+            afficher_resultats(df_final)
