@@ -208,10 +208,20 @@ def afficher_resultats(df_resultats):
                         except ValueError:
                             date_formatee = date_brute # Fallback au cas où la date est mal écrite
 
-                    # --- 2. EN-TÊTE (Date | Stade) ---
+                    # --- 2. EN-TÊTE (Date | Stade + Journée/Phase) ---
                     stade = row.get('Stade', 'Stade inconnu')
                     if pd.isna(stade) or not str(stade).strip(): 
                         stade = "Stade inconnu"
+                    
+                    # On récupère la Phase et/ou la Journée pour les accoler au stade
+                    ajouts_stade = []
+                    if 'Phase' in row and pd.notna(row['Phase']) and str(row['Phase']).strip():
+                        ajouts_stade.append(str(row['Phase']))
+                    if 'Journée' in row and pd.notna(row['Journée']) and str(row['Journée']).strip():
+                        ajouts_stade.append(str(row['Journée']))
+                        
+                    if ajouts_stade:
+                        stade += f" - {' / '.join(ajouts_stade)}"
                     
                     # On affiche avec une majuscule au jour (ex: Mercredi)
                     st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade}")
