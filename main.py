@@ -155,34 +155,49 @@ def afficher_resultats(df_resultats):
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    # Recherche récursive des logos
+                    # Recherche des logos
                     path_dom = trouver_logo_equipe(dom)
                     path_ext = trouver_logo_equipe(ext)
                     
                     # Mise en page : Logo | Score | Logo
-                    c_dom, c_score, c_ext = st.columns([1, 1.5, 1])
+                    # J'utilise des colonnes pour la structure globale
+                    c_dom, c_score, c_ext = st.columns([1, 1.2, 1])
                     
                     with c_dom:
                         if path_dom:
-                            st.image(path_dom, width=80)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px;'>{dom}</p>", unsafe_allow_html=True)
+                            # Centrage forcé du logo via HTML
+                            st.markdown(f"""
+                                <div style="display: flex; justify-content: center;">
+                                    <img src="data:image/png;base64,{st.image(path_dom, width=70)}" style="width:70px;">
+                                </div>
+                                """, unsafe_allow_html=True)
+                            # Note : Si st.image dans du HTML pose problème sur ton serveur, 
+                            # on utilise la méthode standard Streamlit mais centrée par colonne :
+                            st.image(path_dom, width=70) 
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px; line-height:1.2;'>{dom}</p>", unsafe_allow_html=True)
                         
                     with c_score:
-                        st.markdown(f"<h1 style='text-align: center; margin-top: 10px;'>{score}</h1>", unsafe_allow_html=True)
+                        # Centrage vertical du score
+                        st.markdown(f"<h1 style='text-align: center; margin-top: 20px; white-space: nowrap;'>{score}</h1>", unsafe_allow_html=True)
                         
                     with c_ext:
                         if path_ext:
-                            st.image(path_ext, width=80)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px;'>{ext}</p>", unsafe_allow_html=True)
+                            st.image(path_ext, width=70)
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px; margin-top:5px; line-height:1.2;'>{ext}</p>", unsafe_allow_html=True)
                     
-                    # Détails (Plus gros)
+                    # Détails (Stade et Diffuseur)
                     details = []
                     if 'Stade' in row and pd.notna(row['Stade']): details.append(f"🏟️ {row['Stade']}")
                     if 'Diffuseur' in row and pd.notna(row['Diffuseur']): details.append(f"📺 {row['Diffuseur']}")
                     
                     if details:
-                        st.markdown(f"<p style='text-align: center; color: #BBBBBB; font-size:15px; font-weight:500; margin-top:10px;'>{' | '.join(details)}</p>", unsafe_allow_html=True)
-
+                        st.markdown(f"""
+                            <div style="text-align: center; border-top: 1px solid #444; margin-top: 10px; padding-top: 10px;">
+                                <p style="color: #BBBBBB; font-size:15px; font-weight:500;">
+                                    {' | '.join(details)}
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
 # --- GESTION DE LA NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
 if 'chemin' not in st.session_state: st.session_state.chemin = []
@@ -354,3 +369,4 @@ elif st.session_state.page == 'arborescence':
         else:
             st.header(noeud_actuel)
             afficher_resultats(df[df['Compétition'].str.contains(noeud_actuel, na=False, case=False)])
+
