@@ -115,7 +115,7 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS (VOTRE CODE EXACT) ---
+# --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
@@ -184,56 +184,62 @@ if st.session_state.page != 'accueil':
         st.rerun()
 
 # ==========================================
-# PAGE D'ACCUEIL (NOUVELLE VERSION AMÉLIORÉE)
+# PAGE D'ACCUEIL AVEC RECHERCHE GLOBALE
 # ==========================================
 if st.session_state.page == 'accueil':
     st.title("⚽ Archives Football")
     
-    # --- POINT 1 : L'ACCROCHE ---
-    st.markdown(f"**Plongez dans l'histoire.** Retrouvez plus de **{len(df)}** matchs mythiques documentés et détaillés.")
+    # --- 🔍 MOTEUR DE RECHERCHE GLOBAL ---
+    st.markdown("### 🔍 Recherche Rapide")
+    recherche = st.text_input("", placeholder="Ex: Milan, Finale, 1998, Wembley...")
     
-    if st.button("📖 PARCOURIR LE CATALOGUE COMPLET", use_container_width=True):
+    if recherche:
+        # Filtre sur plusieurs colonnes si elles existent
+        mask = (
+            df['Domicile'].astype(str).str.contains(recherche, case=False, na=False) |
+            df['Extérieur'].astype(str).str.contains(recherche, case=False, na=False) |
+            df['Compétition'].astype(str).str.contains(recherche, case=False, na=False)
+        )
+        if 'Phase' in df.columns:
+            mask = mask | df['Phase'].astype(str).str.contains(recherche, case=False, na=False)
+        if 'Stade' in df.columns:
+            mask = mask | df['Stade'].astype(str).str.contains(recherche, case=False, na=False)
+        if 'Saison' in df.columns:
+            mask = mask | df['Saison'].astype(str).str.contains(recherche, case=False, na=False)
+        if 'Date' in df.columns:
+            mask = mask | df['Date'].astype(str).str.contains(recherche, case=False, na=False)
+            
+        df_recherche = df[mask]
+        st.write(f"**Résultats de la recherche pour :** '{recherche}'")
+        afficher_resultats(df_recherche)
+        st.write("---") # Sépare les résultats du reste de la page d'accueil
+
+    # --- RESTE DU MENU CLASSIQUE ---
+    if st.button("📖 CATALOGUE COMPLET", use_container_width=True):
         st.session_state.page = 'catalogue'
         st.rerun()
     
-    st.write("---")
-    
-    # --- POINT 3 : L'ÉPHÉMÉRIDE VIP ---
     aujourdhui = datetime.now()
     mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     date_affichee = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
     
-    # Petit calcul pour savoir combien de matchs ont eu lieu ce jour-là
-    nb_matchs_jour = 0
-    if 'Date' in df.columns:
-        motif_date = r'^0?' + str(aujourdhui.day) + r'/0?' + str(aujourdhui.month) + r'/'
-        nb_matchs_jour = len(df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)])
-
-    with st.container(border=True):
-        st.subheader("📅 L'Éphéméride du Classeur")
-        if nb_matchs_jour > 0:
-            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. le catalogue contient **{nb_matchs_jour}** matchs de légende joués à cette date exacte !")
-        else:
-            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. Que s'est-il passé dans l'histoire du foot à cette date ?")
-            
-        col_date1, col_date2 = st.columns(2)
-        with col_date1:
-            if st.button(f"⏳ Voir les matchs du {date_affichee}", use_container_width=True):
-                st.session_state.page = 'ephemeride'
-                st.rerun()
-        with col_date2:
-            if st.button("🔎 Chercher une autre date", use_container_width=True):
-                st.session_state.page = 'recherche_date'
-                st.rerun()
+    st.write("---")
+    col_date1, col_date2 = st.columns(2)
+    with col_date1:
+        if st.button(f"📅 Ça s'est joué aujourd'hui ({date_affichee})", use_container_width=True):
+            st.session_state.page = 'ephemeride'
+            st.rerun()
+    with col_date2:
+        if st.button("🔎 Recherche par date", use_container_width=True):
+            st.session_state.page = 'recherche_date'
+            st.rerun()
     
     st.write("---") 
-    
-    # --- POINT 2 : COPYWRITING (NOUVEAUX NOMS) ---
     st.subheader("📂 Explorer par Compétition")
     
     col_n, col_c, col_d = st.columns(3)
     with col_n:
-        if st.button("🌍 SÉLECTIONS NATIONALES", use_container_width=True):
+        if st.button("🌍 NATIONS", use_container_width=True):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
@@ -243,32 +249,28 @@ if st.session_state.page == 'accueil':
             st.session_state.chemin = ['Clubs']
             st.rerun()
     with col_d:
-        if st.button("🎲 MATCHS DE GALA & TOURNOIS", use_container_width=True):
+        if st.button("🎲 DIVERS", use_container_width=True):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Divers']
             st.rerun()
 
     st.write("---")
-    
-    # --- SÉPARATION DES OUTILS EN DEUX BLOCS ---
-    col_labo, col_stats = st.columns(2)
-    
-    with col_labo:
-        st.subheader("🔬 Laboratoire Tactique")
-        if st.button("🛡️ Recherche par Équipe", use_container_width=True):
+    st.subheader("🔍 Outils & Statistiques")
+
+    col_outils1, col_outils2 = st.columns(2)
+    with col_outils1:
+        if st.button("🛡️ Par Équipe", use_container_width=True):
             st.session_state.page = 'recherche_equipe'
             st.rerun()
+        if st.button("📊 Statistiques", use_container_width=True):
+            st.session_state.page = 'statistiques'
+            st.rerun()
+    with col_outils2:
         if st.button("⚔️ Face-à-Face", use_container_width=True):
             st.session_state.page = 'face_a_face'
             st.rerun()
         if st.button("🕵️ Recherche Avancée", use_container_width=True):
             st.session_state.page = 'recherche_avancee'
-            st.rerun()
-
-    with col_stats:
-        st.subheader("📈 Le Coin des Stats")
-        if st.button("📊 Statistiques Générales", use_container_width=True):
-            st.session_state.page = 'statistiques'
             st.rerun()
 
 # ==========================================
@@ -387,37 +389,4 @@ elif st.session_state.page == 'arborescence':
     elif isinstance(noeud_actuel, str):
         if noeud_actuel.startswith("FILTER_"):
             if noeud_actuel == "FILTER_CDM_FINALE": mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-            elif noeud_actuel == "FILTER_CDM_ELIM": mask = df['Compétition'].str.contains("Eliminatoires Coupe du Monde", na=False, case=False)
-            elif noeud_actuel == "FILTER_EURO_FINALE": mask = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-            elif noeud_actuel == "FILTER_EURO_ELIM": mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
-            
-            if st.session_state.edition_choisie is None:
-                editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
-                if editions:
-                    st.subheader("🗓️ Choisissez l'édition :")
-                    cols = st.columns(4)
-                    for i, ed in enumerate(editions):
-                        with cols[i % 4]:
-                            if st.button(str(ed), use_container_width=True):
-                                st.session_state.edition_choisie = ed
-                                st.rerun()
-                else:
-                    st.warning("Aucune édition trouvée pour ce choix.")
-            else:
-                c1, c2 = st.columns([4, 1])
-                with c1: st.header(f"📍 {st.session_state.edition_choisie}")
-                with c2:
-                    if st.session_state.edition_choisie in LOGOS:
-                        if os.path.exists(LOGOS[st.session_state.edition_choisie]): st.image(LOGOS[st.session_state.edition_choisie], width=100)
-                df_final = df[df['Compétition'] == st.session_state.edition_choisie]
-                afficher_resultats(df_final)
-        else:
-            c1, c2 = st.columns([4, 1])
-            with c1: st.header(f"🏆 {noeud_actuel}")
-            with c2:
-                if noeud_actuel in LOGOS:
-                    if os.path.exists(LOGOS[noeud_actuel]): st.image(LOGOS[noeud_actuel], width=100)
-            mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
-            df_final = df[mask]
-            afficher_resultats(df_final)
-
+            elif noeud_actuel == "FILTER_CDM_ELIM": mask = df['Compétition'].str.contains("Eliminatoires
