@@ -23,6 +23,15 @@ LOGOS = {
 "Coupe du Monde 2014": "Logos/cdm2014.png",
 "Coupe du Monde 2018": "Logos/cdm2018.png",
     "Coupe du Monde 2022": "Logos/cdm2022.png",
+    "Euro 1992": "Logos/euro92.png",
+"Euro 1996": "Logos/euro96.png",
+"Euro 2000": "Logos/euro2000.png",
+"Euro 2004": "Logos/euro2004.png",
+"Euro 2008": "Logos/euro2008.png",
+"Euro 2012": "Logos/euro2012.png",
+"Euro 2016": "Logos/euro2016.png",
+"Euro 2020": "Logos/euro2020.png",
+"Euro 2024": "Logos/euro20024.png",
     "Ligue 1": "Logos/ligue1.png",
     "Champions League": "Logos/championsleague.png"
 }
@@ -293,4 +302,5 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             st.metric("Matchs trouvés", len(df_final))
             st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
+
 
