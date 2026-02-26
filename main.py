@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+import time
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
@@ -97,24 +98,56 @@ def load_data():
         return pd.DataFrame()
 
 df = load_data()
-
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
+# --- OUTIL : FICHES DE MATCHS ---
+def afficher_resultats(df_resultats):
+    if df_resultats.empty:
+        st.warning("Aucun match trouvé.")
+        return
+        
+    st.metric("Matchs trouvés", len(df_resultats))
+    
+    # Toggle (Bouton pour choisir l'affichage)
+    mode = st.radio("Mode d'affichage :", ["📊 Tableau classique", "🃏 Fiches détaillées"], horizontal=True)
+    
+    if mode == "📊 Tableau classique":
+        st.dataframe(df_resultats[colonnes_presentes], use_container_width=True, height=600)
+    else:
+        st.write("---")
+        # Affichage en grille de fiches
+        cols = st.columns(2) # 2 fiches par ligne
+        for i, (index, row) in enumerate(df_resultats.iterrows()):
+            with cols[i % 2]:
+                with st.container(border=True): # Crée un joli cadre autour du match
+                    # En-tête de la fiche
+                    date_m = row.get('Date', 'Date inconnue')
+                    comp_m = row.get('Compétition', 'Compétition inconnue')
+                    st.caption(f"🗓️ {date_m} | 🏆 {comp_m}")
+                    
+                    # Score centré et mis en valeur
+                    st.markdown(f"<h3 style='text-align: center;'>{row.get('Domicile', '')} &nbsp; {row.get('Score', '-')} &nbsp; {row.get('Extérieur', '')}</h3>", unsafe_allow_html=True)
+                    
+                    # Détails en bas de fiche
+                    details = []
+                    if 'Stade' in row and pd.notna(row['Stade']): details.append(f"🏟️ {row['Stade']}")
+                    if 'Diffuseur' in row and pd.notna(row['Diffuseur']): details.append(f"📺 {row['Diffuseur']}")
+                    if 'Qualité' in row and pd.notna(row['Qualité']): details.append(f"⭐ {row['Qualité']}")
+                    
+                    if details:
+                        st.markdown(f"<p style='text-align: center; color: gray;'>{' | '.join(details)}</p>", unsafe_allow_html=True)
+
 # --- GESTION DE LA NAVIGATION ---
-if 'page' not in st.session_state:
-    st.session_state.page = 'accueil'
-if 'chemin' not in st.session_state:
-    st.session_state.chemin = []
-if 'edition_choisie' not in st.session_state:
-    st.session_state.edition_choisie = None
+if 'page' not in st.session_state: st.session_state.page = 'accueil'
+if 'chemin' not in st.session_state: st.session_state.chemin = []
+if 'edition_choisie' not in st.session_state: st.session_state.edition_choisie = None
 
 def go_home():
     st.session_state.page = 'accueil'
     st.session_state.chemin = []
     st.session_state.edition_choisie = None
 
-# --- BARRE LATÉRALE ---
 if st.session_state.page != 'accueil':
     if st.sidebar.button("🏠 Menu Principal", use_container_width=True):
         go_home()
@@ -130,7 +163,6 @@ if st.session_state.page == 'accueil':
         st.session_state.page = 'catalogue'
         st.rerun()
     
-    # 📅 BOUTONS DE RECHERCHE PAR DATE
     aujourdhui = datetime.now()
     mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     date_affichee = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
@@ -178,8 +210,8 @@ if st.session_state.page == 'accueil':
             st.session_state.page = 'statistiques'
             st.rerun()
     with col_outils2:
-        if st.button("⚔️ Face-à-Face", use_container_width=True):
-            st.session_state.page = 'face_a_face'
+        if st.button("🗺️ Carte des Stades", use_container_width=True):
+            st.session_state.page = 'carte_stades'
             st.rerun()
         if st.button("🕵️ Recherche Avancée", use_container_width=True):
             st.session_state.page = 'recherche_avancee'
@@ -190,74 +222,83 @@ if st.session_state.page == 'accueil':
 # ==========================================
 elif st.session_state.page == 'catalogue':
     st.header("📖 Catalogue Complet")
-    st.dataframe(df[colonnes_presentes], use_container_width=True, height=800)
+    afficher_resultats(df)
 
 # ==========================================
-# PAGE ÉPHÉMÉRIDE (Aujourd'hui)
+# PAGE CARTE DES STADES (NOUVEAU)
+# ==========================================
+elif st.session_state.page == 'carte_stades':
+    st.header("🗺️ Carte Interactive des Stades")
+    st.write("L'application tente de placer vos stades sur la carte. (Seuls les stades reconnus s'afficheront).")
+    
+    try:
+        from geopy.geocoders import Nominatim
+        
+        # On récupère les 30 stades les plus fréquents pour ne pas faire planter la carte
+        stades_uniques = df['Stade'].dropna().value_counts().head(30).index.tolist()
+        
+        @st.cache_data
+        def geocode_stades(liste_stades):
+            geolocator = Nominatim(user_agent="app_foot_archives")
+            coords = []
+            for s in liste_stades:
+                try:
+                    # On rajoute un petit délai pour ne pas bloquer le serveur
+                    time.sleep(0.5)
+                    loc = geolocator.geocode(s)
+                    if loc:
+                        coords.append({"Stade": s, "lat": loc.latitude, "lon": loc.longitude})
+                except:
+                    pass
+            return pd.DataFrame(coords)
+
+        with st.spinner("Recherche des coordonnées GPS en cours (cela peut prendre quelques secondes)..."):
+            df_coords = geocode_stades(stades_uniques)
+            
+        if not df_coords.empty:
+            st.success(f"📍 {len(df_coords)} stades trouvés et placés sur la carte !")
+            st.map(df_coords, zoom=4)
+        else:
+            st.warning("Impossible de trouver les coordonnées de vos stades. Vérifiez l'orthographe ou votre connexion internet.")
+            
+    except ImportError:
+        st.error("⚠️ Il manque un composant pour afficher la carte.")
+        st.info("Pour activer la carte, ajoutez un fichier nommé `requirements.txt` sur votre GitHub contenant le mot `geopy`.")
+
+# ==========================================
+# PAGES EXISTANTES AVEC NOUVEL AFFICHAGE
 # ==========================================
 elif st.session_state.page == 'ephemeride':
     aujourdhui = datetime.now()
     mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     date_texte = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
-    
     st.header(f"📅 Ça s'est joué un {date_texte}")
-    st.write("Voyage dans le temps ! Voici tous les matchs de vos archives qui se sont déroulés à cette même date.")
-    
     if 'Date' in df.columns:
         motif_date = r'^0?' + str(aujourdhui.day) + r'/0?' + str(aujourdhui.month) + r'/'
         df_ephem = df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)]
-        
-        if not df_ephem.empty:
-            st.success(f"🎉 **{len(df_ephem)} matchs** ont été trouvés !")
-            st.dataframe(df_ephem[colonnes_presentes], use_container_width=True, height=600)
-        else:
-            st.info(f"Aucun match dans vos archives ne s'est joué un {date_texte}.")
-    else:
-        st.warning("La colonne 'Date' n'est pas trouvée dans votre fichier.")
+        afficher_resultats(df_ephem)
 
-# ==========================================
-# PAGE RECHERCHE PAR DATE (Manuel)
-# ==========================================
 elif st.session_state.page == 'recherche_date':
     st.header("🔎 Recherche par Date")
-    st.write("Choisissez un jour et un mois pour voir ce qui s'est passé à cette date dans l'Histoire.")
-    
     c1, c2 = st.columns(2)
     jours_possibles = [str(i) for i in range(1, 32)]
     mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-    
-    with c1:
-        jour_choisi = st.selectbox("Jour", jours_possibles)
-    with c2:
-        mois_choisi = st.selectbox("Mois", mois_francais)
-        
+    with c1: jour_choisi = st.selectbox("Jour", jours_possibles)
+    with c2: mois_choisi = st.selectbox("Mois", mois_francais)
     mois_num = mois_francais.index(mois_choisi) + 1
-    
     if 'Date' in df.columns:
         motif_date = r'^0?' + str(jour_choisi) + r'/0?' + str(mois_num) + r'/'
         df_date = df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)]
-        
         st.write("---")
-        if not df_date.empty:
-            st.success(f"🎉 **{len(df_date)} matchs** trouvés pour un {jour_choisi} {mois_choisi} !")
-            st.dataframe(df_date[colonnes_presentes], use_container_width=True, height=600)
-        else:
-            st.info(f"Aucun match dans vos archives ne s'est joué un {jour_choisi} {mois_choisi}.")
+        afficher_resultats(df_date)
 
-# ==========================================
-# PAGE RECHERCHE PAR ÉQUIPE
-# ==========================================
 elif st.session_state.page == 'recherche_equipe':
     st.header("🛡️ Recherche par Équipe")
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
     choix = st.selectbox("Sélectionne une équipe :", toutes_les_equipes)
     df_filtre = df[(df['Domicile'] == choix) | (df['Extérieur'] == choix)]
-    st.metric("Matchs trouvés", len(df_filtre))
-    st.dataframe(df_filtre[colonnes_presentes], use_container_width=True, height=600)
+    afficher_resultats(df_filtre)
 
-# ==========================================
-# PAGE FACE-À-FACE
-# ==========================================
 elif st.session_state.page == 'face_a_face':
     st.header("⚔️ Face-à-Face")
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
@@ -265,70 +306,39 @@ elif st.session_state.page == 'face_a_face':
     with colA: eq1 = st.selectbox("Équipe A", toutes_les_equipes, index=0)
     with colB: eq2 = st.selectbox("Équipe B", toutes_les_equipes, index=1 if len(toutes_les_equipes)>1 else 0)
     df_face = df[((df['Domicile'] == eq1) & (df['Extérieur'] == eq2)) | ((df['Domicile'] == eq2) & (df['Extérieur'] == eq1))]
-    st.metric("Confrontations", len(df_face))
-    st.dataframe(df_face[colonnes_presentes], use_container_width=True, height=600)
+    afficher_resultats(df_face)
 
-# ==========================================
-# PAGE RECHERCHE AVANCÉE
-# ==========================================
 elif st.session_state.page == 'recherche_avancee':
     st.header("🕵️ Recherche Avancée")
-    st.write("Cumulez les filtres pour trouver des matchs précis.")
-
     col1, col2, col3 = st.columns(3)
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
     competitions = sorted(df['Compétition'].dropna().unique())
     saisons = sorted(df['Saison'].dropna().unique(), reverse=True) if 'Saison' in df.columns else []
-
-    with col1:
-        f_equipes = st.multiselect("Équipes impliquées :", toutes_les_equipes)
-    with col2:
-        f_comps = st.multiselect("Compétitions :", competitions)
-    with col3:
-        if saisons: f_saisons = st.multiselect("Saisons :", saisons)
-        else: f_saisons = []
-
+    with col1: f_equipes = st.multiselect("Équipes impliquées :", toutes_les_equipes)
+    with col2: f_comps = st.multiselect("Compétitions :", competitions)
+    with col3: f_saisons = st.multiselect("Saisons :", saisons) if saisons else []
     df_filtre = df.copy()
-    if f_equipes:
-        df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
-    if f_comps:
-        df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
-    if f_saisons:
-        df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
+    if f_equipes: df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
+    if f_comps: df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
+    if f_saisons: df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
+    afficher_resultats(df_filtre)
 
-    st.metric("Matchs trouvés", len(df_filtre))
-    st.dataframe(df_filtre[colonnes_presentes], use_container_width=True, height=600)
-
-# ==========================================
-# PAGE STATISTIQUES
-# ==========================================
 elif st.session_state.page == 'statistiques':
     st.header("📊 Tableau de Bord")
     st.metric("Total des matchs dans la base", len(df))
     st.write("---")
-
     col_stat1, col_stat2 = st.columns(2)
     with col_stat1:
         st.subheader("🏆 Top 10 Compétitions")
-        top_comp = df['Compétition'].value_counts().head(10)
-        st.bar_chart(top_comp)
+        st.bar_chart(df['Compétition'].value_counts().head(10))
     with col_stat2:
         st.subheader("🛡️ Top 10 Équipes (Apparitions)")
-        toutes_equipes = pd.concat([df['Domicile'], df['Extérieur']]).dropna()
-        top_equipes = toutes_equipes.value_counts().head(10)
-        st.bar_chart(top_equipes)
-
-    if 'Diffuseur' in df.columns:
-        st.write("---")
-        st.subheader("📺 Répartition par Diffuseur (Top 10)")
-        top_diffuseurs = df['Diffuseur'].dropna().value_counts().head(10)
-        st.bar_chart(top_diffuseurs)
+        st.bar_chart(pd.concat([df['Domicile'], df['Extérieur']]).dropna().value_counts().head(10))
 
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
 # ==========================================
 elif st.session_state.page == 'arborescence':
-    
     noeud_actuel = MENU_ARBO
     for etape in st.session_state.chemin:
         if isinstance(noeud_actuel, dict): noeud_actuel = noeud_actuel[etape]
@@ -348,7 +358,6 @@ elif st.session_state.page == 'arborescence':
         
     st.divider()
     
-    # --- SOUS-MENUS ---
     if isinstance(noeud_actuel, dict):
         cols = st.columns(3)
         for i, cle in enumerate(noeud_actuel.keys()):
@@ -357,7 +366,6 @@ elif st.session_state.page == 'arborescence':
                     st.session_state.chemin.append(cle)
                     st.rerun()
 
-    # --- LISTE DE COMPÉTITIONS ---
     elif isinstance(noeud_actuel, list):
         cols = st.columns(3)
         for i, element in enumerate(noeud_actuel):
@@ -366,18 +374,12 @@ elif st.session_state.page == 'arborescence':
                     st.session_state.chemin.append(element)
                     st.rerun()
 
-    # --- RÉSULTATS FINAUX (AVEC LOGO) ---
     elif isinstance(noeud_actuel, str):
-        
         if noeud_actuel.startswith("FILTER_"):
-            if noeud_actuel == "FILTER_CDM_FINALE":
-                mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-            elif noeud_actuel == "FILTER_CDM_ELIM":
-                mask = df['Compétition'].str.contains("Eliminatoires Coupe du Monde", na=False, case=False)
-            elif noeud_actuel == "FILTER_EURO_FINALE":
-                mask = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-            elif noeud_actuel == "FILTER_EURO_ELIM":
-                mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
+            if noeud_actuel == "FILTER_CDM_FINALE": mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+            elif noeud_actuel == "FILTER_CDM_ELIM": mask = df['Compétition'].str.contains("Eliminatoires Coupe du Monde", na=False, case=False)
+            elif noeud_actuel == "FILTER_EURO_FINALE": mask = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+            elif noeud_actuel == "FILTER_EURO_ELIM": mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
             
             if st.session_state.edition_choisie is None:
                 editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
@@ -391,36 +393,20 @@ elif st.session_state.page == 'arborescence':
                                 st.rerun()
                 else:
                     st.warning("Aucune édition trouvée pour ce choix.")
-            
             else:
                 c1, c2 = st.columns([4, 1])
-                with c1:
-                    st.header(f"📍 {st.session_state.edition_choisie}")
+                with c1: st.header(f"📍 {st.session_state.edition_choisie}")
                 with c2:
                     if st.session_state.edition_choisie in LOGOS:
-                        chemin_image = LOGOS[st.session_state.edition_choisie]
-                        if os.path.exists(chemin_image):
-                            st.image(chemin_image, width=100)
-                        else:
-                            st.caption("(Logo introuvable)")
-
+                        if os.path.exists(LOGOS[st.session_state.edition_choisie]): st.image(LOGOS[st.session_state.edition_choisie], width=100)
                 df_final = df[df['Compétition'] == st.session_state.edition_choisie]
-                st.metric("Matchs trouvés", len(df_final))
-                st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
-        
+                afficher_resultats(df_final)
         else:
             c1, c2 = st.columns([4, 1])
-            with c1:
-                st.header(f"🏆 {noeud_actuel}")
+            with c1: st.header(f"🏆 {noeud_actuel}")
             with c2:
                 if noeud_actuel in LOGOS:
-                    chemin_image = LOGOS[noeud_actuel]
-                    if os.path.exists(chemin_image):
-                        st.image(chemin_image, width=100)
-                    else:
-                        st.caption("(Logo introuvable)")
-
+                    if os.path.exists(LOGOS[noeud_actuel]): st.image(LOGOS[noeud_actuel], width=100)
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
-            st.metric("Matchs trouvés", len(df_final))
-            st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
+            afficher_resultats(df_final)
