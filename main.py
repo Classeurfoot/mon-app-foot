@@ -8,8 +8,6 @@ st.set_page_config(page_title="Classeur Foot", layout="wide")
 # ==========================================
 # 🎨 TA BANQUE DE LOGOS LOCALE
 # ==========================================
-# C'est ici que tu ajoutes tes futurs logos. 
-# La règle d'or : le nom à gauche doit être EXACTEMENT celui de l'arborescence.
 LOGOS = {
     "Coupe du Monde 1998": "Logos/cdm1998.png",
     "Coupe du Monde 1978": "Logos/cdm1978.png",
@@ -37,7 +35,7 @@ LOGOS = {
 }
 
 # ==========================================
-# 🧠 LE CERVEAU DE L'ARBORESCENCE
+# 🧠 LE CERVEAU DE L'ARBORESCENCE (MIS À JOUR)
 # ==========================================
 MENU_ARBO = {
     "Nations": {
@@ -55,15 +53,17 @@ MENU_ARBO = {
         "Jeux Olympiques": "Jeux Olympiques"
     },
     "Clubs": {
-        "Coupe d'Europe": {
-            "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
-            "C2": ["Coupe des Coupes"],
-            "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
-            "C4": ["Conference League"]
-        },
-        "Supercoupe d'Europe": "Supercoupe d'Europe",
-        "Coupe intercontinentale": ["Coupe intercontinentale", "Coupe du Monde des clubs de la FIFA"],
-        "Coupe du Monde des Clubs": ["Coupe du Monde des Clubs 2025"],
+        # Boutons directs dans "Clubs"
+        "Coupe d’Europe des clubs champions": "Coupe d’Europe des clubs champions",
+        "Champions League": "Champions League",
+        "Europa League": "Europa League",
+        "C4-Europa Conference": "C4-Europa Conference",
+        "Supercoupe d’Europe": "Supercoupe d’Europe",
+        "Coupe du monde des clubs de la FIFA": "Coupe du monde des clubs de la FIFA",
+        "Coupe du Monde des clubs 2025": "Coupe du Monde des clubs 2025",
+        "Coupe intercontinentale": "Coupe intercontinentale",
+        
+        # Les championnats restent bien rangés
         "Championnat de France": ["Division 1", "Ligue 1", "Division 2", "Ligue 2"],
         "Coupe Nationale": ["Coupe de France", "Coupe de la Ligue", "Trophée des Champions"],
         "Championnats étrangers": {
@@ -247,6 +247,7 @@ elif st.session_state.page == 'arborescence':
     # --- RÉSULTATS ET ÉDITIONS (AVEC LOGO LOCAL) ---
     elif isinstance(noeud_actuel, str):
         
+        # Cas Nations : Choix des années
         if noeud_actuel.startswith("FILTER_"):
             if noeud_actuel == "FILTER_CDM_FINALE":
                 mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
@@ -257,6 +258,7 @@ elif st.session_state.page == 'arborescence':
             elif noeud_actuel == "FILTER_EURO_ELIM":
                 mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
             
+            # Affichage des boutons d'éditions
             if st.session_state.edition_choisie is None:
                 editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
                 if editions:
@@ -270,11 +272,13 @@ elif st.session_state.page == 'arborescence':
                 else:
                     st.warning("Aucune édition trouvée pour ce choix.")
             
+            # Affichage du Tableau Final
             else:
                 col_titre, col_logo = st.columns([4, 1])
                 with col_titre:
                     st.header(f"📍 {st.session_state.edition_choisie}")
                 with col_logo:
+                    # GESTION DU LOGO LOCAL
                     if st.session_state.edition_choisie in LOGOS:
                         chemin_image = LOGOS[st.session_state.edition_choisie]
                         if os.path.exists(chemin_image):
@@ -286,11 +290,13 @@ elif st.session_state.page == 'arborescence':
                 st.metric("Matchs trouvés", len(df_final))
                 st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
         
+        # Cas standard
         else:
             col_titre, col_logo = st.columns([4, 1])
             with col_titre:
                 st.header(f"🏆 {noeud_actuel}")
             with col_logo:
+                # GESTION DU LOGO LOCAL
                 if noeud_actuel in LOGOS:
                     chemin_image = LOGOS[noeud_actuel]
                     if os.path.exists(chemin_image):
@@ -302,5 +308,3 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             st.metric("Matchs trouvés", len(df_final))
             st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
-
-
