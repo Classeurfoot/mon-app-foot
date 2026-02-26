@@ -13,8 +13,9 @@ st.set_page_config(page_title="Classeur Foot", layout="wide")
 # ==========================================
 def nettoyer_nom_equipe(nom):
     """Transforme 'Côte d'Ivoire' en 'cotedivoire' pour trouver l'image facilement"""
-    if pd.isna(nom): return ""
+    # 1. Enlever les accents
     nom_sans_accents = ''.join(c for c in unicodedata.normalize('NFD', str(nom)) if unicodedata.category(c) != 'Mn')
+    # 2. Tout en minuscules et enlever les espaces, tirets, apostrophes
     nom_propre = re.sub(r'[^a-z0-9]', '', nom_sans_accents.lower())
     return nom_propre
 
@@ -112,7 +113,7 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS (AVEC LOGOS CENTRÉS SOUS LES NOMS) ---
+# --- OUTIL : FICHES DE MATCHS (AVEC LOGOS D'ÉQUIPES) ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
@@ -135,45 +136,39 @@ def afficher_resultats(df_resultats):
                     comp_m = row.get('Compétition', 'Compétition inconnue')
                     st.caption(f"🗓️ {date_m} | 🏆 {comp_m}")
                     
+                    # Récupération des noms
                     dom = row.get('Domicile', '')
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    # Chemins des logos
+                    # Chemins des logos générés automatiquement
                     logo_dom = f"Logos/Equipes/{nettoyer_nom_equipe(dom)}.png"
                     logo_ext = f"Logos/Equipes/{nettoyer_nom_equipe(ext)}.png"
                     
-                    # Disposition : [NOM + LOGO] | [SCORE] | [NOM + LOGO]
-                    c_dom, c_score, c_ext = st.columns([1, 1, 1])
+                    # Mise en page : Logo | Score | Logo
+                    c_dom, c_score, c_ext = st.columns([1, 2, 1])
                     
                     with c_dom:
-                        # Nom en haut
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:16px; margin-bottom:5px;'>{dom}</p>", unsafe_allow_html=True)
-                        # Logo centré en dessous
                         if os.path.exists(logo_dom):
-                            st.markdown(f'<div style="display: flex; justify-content: center;"><img src="data:image/png;base64,{st.image(logo_dom, width=60)}" style="width:60px;"></div>', unsafe_allow_html=True)
-                            # Note: On utilise le centrage natif de Streamlit si le HTML pose souci :
-                            # st.image(logo_dom, width=60)
+                            st.image(logo_dom, use_column_width=True)
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px;'>{dom}</p>", unsafe_allow_html=True)
                         
                     with c_score:
-                        # Score centré verticalement
-                        st.markdown(f"<h1 style='text-align: center; margin-top: 20px;'>{score}</h1>", unsafe_allow_html=True)
+                        st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
                     with c_ext:
-                        # Nom en haut
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:16px; margin-bottom:5px;'>{ext}</p>", unsafe_allow_html=True)
-                        # Logo centré en dessous
                         if os.path.exists(logo_ext):
-                            st.image(logo_ext, width=60)
+                            st.image(logo_ext, use_column_width=True)
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px;'>{ext}</p>", unsafe_allow_html=True)
                     
-                    # Détails (Stade, Diffuseur, Qualité)
+                    # Détails
                     details = []
                     if 'Stade' in row and pd.notna(row['Stade']): details.append(f"🏟️ {row['Stade']}")
                     if 'Diffuseur' in row and pd.notna(row['Diffuseur']): details.append(f"📺 {row['Diffuseur']}")
                     if 'Qualité' in row and pd.notna(row['Qualité']): details.append(f"⭐ {row['Qualité']}")
                     
                     if details:
-                        st.markdown(f"<div style='text-align: center; color: gray; font-size:13px; border-top: 0.5px solid #555; margin-top:10px; padding-top:5px;'>{' | '.join(details)}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='text-align: center; color: gray; font-size:12px;'>{' | '.join(details)}</p>", unsafe_allow_html=True)
 
 # --- GESTION DE LA NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
