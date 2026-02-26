@@ -13,9 +13,8 @@ st.set_page_config(page_title="Classeur Foot", layout="wide")
 # ==========================================
 def nettoyer_nom_equipe(nom):
     """Transforme 'Côte d'Ivoire' en 'cotedivoire' pour trouver l'image facilement"""
-    # 1. Enlever les accents
+    if pd.isna(nom): return ""
     nom_sans_accents = ''.join(c for c in unicodedata.normalize('NFD', str(nom)) if unicodedata.category(c) != 'Mn')
-    # 2. Tout en minuscules et enlever les espaces, tirets, apostrophes
     nom_propre = re.sub(r'[^a-z0-9]', '', nom_sans_accents.lower())
     return nom_propre
 
@@ -73,9 +72,12 @@ MENU_ARBO = {
             "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
             "C4": ["Conference League"]
         },
+        "Tournois internationaux clubs": {
+            "Coupe Intercontinentale": "Coupe intercontinentale",
+            "Coupe du Monde des clubs de la FIFA": "Coupe du Monde des clubs de la FIFA",
+            "Coupe du Monde des Clubs 2025": "Coupe du Monde des Clubs 2025"
+        },
         "Supercoupe d'Europe": "Supercoupe d'Europe",
-        "Coupe intercontinentale": ["Coupe intercontinentale", "Coupe du Monde des clubs de la FIFA"],
-        "Coupe du Monde des Clubs": ["Coupe du Monde des Clubs 2025"],
         "Championnat de France": ["Division 1", "Ligue 1", "Division 2", "Ligue 2"],
         "Coupe Nationale": ["Coupe de France", "Coupe de la Ligue", "Trophée des Champions"],
         "Championnats étrangers": {
@@ -113,7 +115,7 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS (AVEC LOGOS D'ÉQUIPES) ---
+# --- OUTIL : FICHES DE MATCHS (LOGOS CENTRÉS SOUS LE NOM) ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
@@ -136,39 +138,35 @@ def afficher_resultats(df_resultats):
                     comp_m = row.get('Compétition', 'Compétition inconnue')
                     st.caption(f"🗓️ {date_m} | 🏆 {comp_m}")
                     
-                    # Récupération des noms
                     dom = row.get('Domicile', '')
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    # Chemins des logos générés automatiquement
                     logo_dom = f"Logos/Equipes/{nettoyer_nom_equipe(dom)}.png"
                     logo_ext = f"Logos/Equipes/{nettoyer_nom_equipe(ext)}.png"
                     
-                    # Mise en page : Logo | Score | Logo
-                    c_dom, c_score, c_ext = st.columns([1, 2, 1])
+                    c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
                     with c_dom:
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:15px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         if os.path.exists(logo_dom):
-                            st.image(logo_dom, use_column_width=True)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px;'>{dom}</p>", unsafe_allow_html=True)
+                            st.image(logo_dom, width=60)
                         
                     with c_score:
                         st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
                     with c_ext:
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:15px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
                         if os.path.exists(logo_ext):
-                            st.image(logo_ext, use_column_width=True)
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:14px;'>{ext}</p>", unsafe_allow_html=True)
+                            st.image(logo_ext, width=60)
                     
-                    # Détails
                     details = []
                     if 'Stade' in row and pd.notna(row['Stade']): details.append(f"🏟️ {row['Stade']}")
                     if 'Diffuseur' in row and pd.notna(row['Diffuseur']): details.append(f"📺 {row['Diffuseur']}")
                     if 'Qualité' in row and pd.notna(row['Qualité']): details.append(f"⭐ {row['Qualité']}")
                     
                     if details:
-                        st.markdown(f"<p style='text-align: center; color: gray; font-size:12px;'>{' | '.join(details)}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='text-align: center; color: gray; font-size:12px; border-top: 0.5px solid #444; margin-top:10px; padding-top:5px;'>{' | '.join(details)}</div>", unsafe_allow_html=True)
 
 # --- GESTION DE LA NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
@@ -250,7 +248,7 @@ if st.session_state.page == 'accueil':
             st.rerun()
 
 # ==========================================
-# PAGE CATALOGUE ET AUTRES PAGES
+# PAGE CATALOGUE ET AUTRES
 # ==========================================
 elif st.session_state.page == 'catalogue':
     st.header("📖 Catalogue Complet")
@@ -380,7 +378,7 @@ elif st.session_state.page == 'arborescence':
                                 st.session_state.edition_choisie = ed
                                 st.rerun()
                 else:
-                    st.warning("Aucune édition trouvée pour ce choix.")
+                    st.warning("Aucune édition trouvée.")
             else:
                 c1, c2 = st.columns([4, 1])
                 with c1: st.header(f"📍 {st.session_state.edition_choisie}")
