@@ -212,7 +212,7 @@ if st.session_state.page == 'accueil':
     with st.container(border=True):
         st.subheader("📅 L'Éphéméride du Classeur")
         if nb_matchs_jour > 0:
-            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. Notre base contient **{nb_matchs_jour}** matchs de légende joués à cette date exacte !")
+            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. le catalogue contient **{nb_matchs_jour}** matchs de légende joués à cette date exacte !")
         else:
             st.write(f"Aujourd'hui, c'est le **{date_affichee}**. Que s'est-il passé dans l'histoire du foot à cette date ?")
             
@@ -420,3 +420,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
