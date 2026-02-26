@@ -189,6 +189,26 @@ if st.session_state.page != 'accueil':
 if st.session_state.page == 'accueil':
     st.title("⚽ Archives Football")
     
+    # --- LA NOUVEAUTÉ : BARRE DE RECHERCHE GLOBALE ---
+    recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
+    
+    if recherche_rapide:
+        # On cherche le mot tapé dans toutes les colonnes importantes
+        mask = (
+            df['Domicile'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
+            df['Extérieur'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
+            df['Compétition'].astype(str).str.contains(recherche_rapide, case=False, na=False)
+        )
+        for col in ['Phase', 'Stade', 'Saison', 'Date']:
+            if col in df.columns:
+                mask = mask | df[col].astype(str).str.contains(recherche_rapide, case=False, na=False)
+                
+        df_trouve = df[mask]
+        st.write(f"**Résultats trouvés pour :** {recherche_rapide}")
+        afficher_resultats(df_trouve)
+        st.write("---")
+    # -------------------------------------------------
+
     # --- POINT 1 : L'ACCROCHE ---
     st.markdown(f"**Plongez dans l'histoire.** Retrouvez plus de **{len(df)}** matchs mythiques documentés et détaillés.")
     
@@ -212,7 +232,7 @@ if st.session_state.page == 'accueil':
     with st.container(border=True):
         st.subheader("📅 L'Éphéméride du Classeur")
         if nb_matchs_jour > 0:
-            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. le catalogue contient **{nb_matchs_jour}** matchs de légende joués à cette date exacte !")
+            st.write(f"Aujourd'hui, c'est le **{date_affichee}**. Le catalogue contient **{nb_matchs_jour}** matchs de légende joués à cette date exacte !")
         else:
             st.write(f"Aujourd'hui, c'est le **{date_affichee}**. Que s'est-il passé dans l'histoire du foot à cette date ?")
             
