@@ -126,4 +126,179 @@ if st.session_state.page == 'accueil':
     st.title("⚽ Archives Football")
     
     if st.button("📖 CATALOGUE COMPLET", use_container_width=True):
-        st.session_state
+        st.session_state.page = 'catalogue'
+        st.rerun()
+    
+    st.write("---") 
+    st.subheader("📂 Explorer par Compétition")
+    
+    col_n, col_c, col_d = st.columns(3)
+    with col_n:
+        if st.button("🌍 NATIONS", use_container_width=True):
+            st.session_state.page = 'arborescence'
+            st.session_state.chemin = ['Nations']
+            st.rerun()
+    with col_c:
+        if st.button("🏟️ CLUBS", use_container_width=True):
+            st.session_state.page = 'arborescence'
+            st.session_state.chemin = ['Clubs']
+            st.rerun()
+    with col_d:
+        if st.button("🎲 DIVERS", use_container_width=True):
+            st.session_state.page = 'arborescence'
+            st.session_state.chemin = ['Divers']
+            st.rerun()
+
+    st.write("---")
+    st.subheader("🔍 Outils de Recherche")
+
+    col_eq, col_ff, col_st = st.columns(3)
+    with col_eq:
+        if st.button("🛡️ Par Équipe", use_container_width=True):
+            st.session_state.page = 'recherche_equipe'
+            st.rerun()
+    with col_ff:
+        if st.button("⚔️ Face-à-Face", use_container_width=True):
+            st.session_state.page = 'face_a_face'
+            st.rerun()
+    with col_st:
+        if 'Stade' in df.columns:
+            if st.button("📍 Par Stade", use_container_width=True):
+                st.session_state.page = 'recherche_stade'
+                st.rerun()
+
+# ==========================================
+# PAGE CATALOGUE & RECHERCHES
+# ==========================================
+elif st.session_state.page == 'catalogue':
+    st.header("📖 Catalogue Complet")
+    st.dataframe(df[colonnes_presentes], use_container_width=True, height=800)
+
+elif st.session_state.page == 'recherche_equipe':
+    st.header("🛡️ Recherche par Équipe")
+    toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
+    choix = st.selectbox("Sélectionne une équipe :", toutes_les_equipes)
+    df_filtre = df[(df['Domicile'] == choix) | (df['Extérieur'] == choix)]
+    st.metric("Matchs trouvés", len(df_filtre))
+    st.dataframe(df_filtre[colonnes_presentes], use_container_width=True, height=600)
+
+elif st.session_state.page == 'face_a_face':
+    st.header("⚔️ Face-à-Face")
+    toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
+    colA, colB = st.columns(2)
+    with colA: eq1 = st.selectbox("Équipe A", toutes_les_equipes, index=0)
+    with colB: eq2 = st.selectbox("Équipe B", toutes_les_equipes, index=1 if len(toutes_les_equipes)>1 else 0)
+    df_face = df[((df['Domicile'] == eq1) & (df['Extérieur'] == eq2)) | ((df['Domicile'] == eq2) & (df['Extérieur'] == eq1))]
+    st.metric("Confrontations", len(df_face))
+    st.dataframe(df_face[colonnes_presentes], use_container_width=True, height=600)
+
+elif st.session_state.page == 'recherche_stade':
+    st.header("📍 Recherche par Stade")
+    tous_les_stades = sorted(df['Stade'].dropna().unique())
+    stade_choisi = st.selectbox("Sélectionne un stade :", tous_les_stades)
+    df_stade = df[df['Stade'] == stade_choisi]
+    st.metric("Matchs joués", len(df_stade))
+    st.dataframe(df_stade[colonnes_presentes], use_container_width=True, height=600)
+
+# ==========================================
+# PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
+# ==========================================
+elif st.session_state.page == 'arborescence':
+    
+    noeud_actuel = MENU_ARBO
+    for etape in st.session_state.chemin:
+        if isinstance(noeud_actuel, dict): noeud_actuel = noeud_actuel[etape]
+        elif isinstance(noeud_actuel, list): noeud_actuel = etape
+
+    fil_ariane = " > ".join(st.session_state.chemin)
+    st.caption(f"📂 Chemin : {fil_ariane}")
+    
+    if st.button("⬅️ Retour"):
+        if st.session_state.edition_choisie is not None:
+            st.session_state.edition_choisie = None
+        else:
+            st.session_state.chemin.pop()
+            if len(st.session_state.chemin) == 0:
+                st.session_state.page = 'accueil'
+        st.rerun()
+        
+    st.divider()
+    
+    # --- SOUS-MENUS ---
+    if isinstance(noeud_actuel, dict):
+        cols = st.columns(3)
+        for i, cle in enumerate(noeud_actuel.keys()):
+            with cols[i % 3]:
+                if st.button(cle, use_container_width=True):
+                    st.session_state.chemin.append(cle)
+                    st.rerun()
+
+    # --- LISTE DE COMPÉTITIONS ---
+    elif isinstance(noeud_actuel, list):
+        cols = st.columns(3)
+        for i, element in enumerate(noeud_actuel):
+            with cols[i % 3]:
+                if st.button(element, use_container_width=True):
+                    st.session_state.chemin.append(element)
+                    st.rerun()
+
+    # --- RÉSULTATS FINAUX (AVEC LOGO) ---
+    elif isinstance(noeud_actuel, str):
+        
+        # Filtres Spéciaux (Nations)
+        if noeud_actuel.startswith("FILTER_"):
+            if noeud_actuel == "FILTER_CDM_FINALE":
+                mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+            elif noeud_actuel == "FILTER_CDM_ELIM":
+                mask = df['Compétition'].str.contains("Eliminatoires Coupe du Monde", na=False, case=False)
+            elif noeud_actuel == "FILTER_EURO_FINALE":
+                mask = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+            elif noeud_actuel == "FILTER_EURO_ELIM":
+                mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
+            
+            if st.session_state.edition_choisie is None:
+                editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
+                if editions:
+                    st.subheader("🗓️ Choisissez l'édition :")
+                    cols = st.columns(4)
+                    for i, ed in enumerate(editions):
+                        with cols[i % 4]:
+                            if st.button(str(ed), use_container_width=True):
+                                st.session_state.edition_choisie = ed
+                                st.rerun()
+                else:
+                    st.warning("Aucune édition trouvée pour ce choix.")
+            
+            else:
+                c1, c2 = st.columns([4, 1])
+                with c1:
+                    st.header(f"📍 {st.session_state.edition_choisie}")
+                with c2:
+                    if st.session_state.edition_choisie in LOGOS:
+                        chemin_image = LOGOS[st.session_state.edition_choisie]
+                        if os.path.exists(chemin_image):
+                            st.image(chemin_image, width=100)
+                        else:
+                            st.caption("(Logo introuvable)")
+
+                df_final = df[df['Compétition'] == st.session_state.edition_choisie]
+                st.metric("Matchs trouvés", len(df_final))
+                st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
+        
+        # Cas standard
+        else:
+            c1, c2 = st.columns([4, 1])
+            with c1:
+                st.header(f"🏆 {noeud_actuel}")
+            with c2:
+                if noeud_actuel in LOGOS:
+                    chemin_image = LOGOS[noeud_actuel]
+                    if os.path.exists(chemin_image):
+                        st.image(chemin_image, width=100)
+                    else:
+                        st.caption("(Logo introuvable)")
+
+            mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
+            df_final = df[mask]
+            st.metric("Matchs trouvés", len(df_final))
+            st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
