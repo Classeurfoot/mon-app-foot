@@ -150,30 +150,35 @@ if st.session_state.page == 'accueil':
             st.rerun()
 
     st.write("---")
-    st.subheader("🔍 Outils de Recherche")
+    st.subheader("🔍 Outils & Statistiques")
 
-    col_eq, col_ff, col_st = st.columns(3)
-    with col_eq:
+    # Nouveaux boutons bien alignés
+    col_outils1, col_outils2 = st.columns(2)
+    with col_outils1:
         if st.button("🛡️ Par Équipe", use_container_width=True):
             st.session_state.page = 'recherche_equipe'
             st.rerun()
-    with col_ff:
+        if st.button("📊 Statistiques", use_container_width=True):
+            st.session_state.page = 'statistiques'
+            st.rerun()
+    with col_outils2:
         if st.button("⚔️ Face-à-Face", use_container_width=True):
             st.session_state.page = 'face_a_face'
             st.rerun()
-    with col_st:
-        if 'Stade' in df.columns:
-            if st.button("📍 Par Stade", use_container_width=True):
-                st.session_state.page = 'recherche_stade'
-                st.rerun()
+        if st.button("🕵️ Recherche Avancée", use_container_width=True):
+            st.session_state.page = 'recherche_avancee'
+            st.rerun()
 
 # ==========================================
-# PAGE CATALOGUE & RECHERCHES
+# PAGE CATALOGUE
 # ==========================================
 elif st.session_state.page == 'catalogue':
     st.header("📖 Catalogue Complet")
     st.dataframe(df[colonnes_presentes], use_container_width=True, height=800)
 
+# ==========================================
+# PAGE RECHERCHE PAR ÉQUIPE
+# ==========================================
 elif st.session_state.page == 'recherche_equipe':
     st.header("🛡️ Recherche par Équipe")
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
@@ -182,6 +187,9 @@ elif st.session_state.page == 'recherche_equipe':
     st.metric("Matchs trouvés", len(df_filtre))
     st.dataframe(df_filtre[colonnes_presentes], use_container_width=True, height=600)
 
+# ==========================================
+# PAGE FACE-À-FACE
+# ==========================================
 elif st.session_state.page == 'face_a_face':
     st.header("⚔️ Face-à-Face")
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
@@ -192,13 +200,69 @@ elif st.session_state.page == 'face_a_face':
     st.metric("Confrontations", len(df_face))
     st.dataframe(df_face[colonnes_presentes], use_container_width=True, height=600)
 
-elif st.session_state.page == 'recherche_stade':
-    st.header("📍 Recherche par Stade")
-    tous_les_stades = sorted(df['Stade'].dropna().unique())
-    stade_choisi = st.selectbox("Sélectionne un stade :", tous_les_stades)
-    df_stade = df[df['Stade'] == stade_choisi]
-    st.metric("Matchs joués", len(df_stade))
-    st.dataframe(df_stade[colonnes_presentes], use_container_width=True, height=600)
+# ==========================================
+# PAGE RECHERCHE AVANCÉE (NOUVEAU)
+# ==========================================
+elif st.session_state.page == 'recherche_avancee':
+    st.header("🕵️ Recherche Avancée")
+    st.write("Cumulez les filtres pour trouver des matchs précis.")
+
+    col1, col2, col3 = st.columns(3)
+    
+    toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
+    competitions = sorted(df['Compétition'].dropna().unique())
+    saisons = sorted(df['Saison'].dropna().unique(), reverse=True) if 'Saison' in df.columns else []
+
+    with col1:
+        f_equipes = st.multiselect("Équipes impliquées :", toutes_les_equipes)
+    with col2:
+        f_comps = st.multiselect("Compétitions :", competitions)
+    with col3:
+        if saisons:
+            f_saisons = st.multiselect("Saisons :", saisons)
+        else:
+            f_saisons = []
+
+    # Application des filtres
+    df_filtre = df.copy()
+    if f_equipes:
+        # Cherche si l'équipe est à Domicile OU à l'Extérieur
+        df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
+    if f_comps:
+        df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
+    if f_saisons:
+        df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
+
+    st.metric("Matchs trouvés", len(df_filtre))
+    st.dataframe(df_filtre[colonnes_presentes], use_container_width=True, height=600)
+
+# ==========================================
+# PAGE STATISTIQUES (NOUVEAU)
+# ==========================================
+elif st.session_state.page == 'statistiques':
+    st.header("📊 Tableau de Bord")
+    
+    st.metric("Total des matchs dans la base", len(df))
+    st.write("---")
+
+    col_stat1, col_stat2 = st.columns(2)
+    
+    with col_stat1:
+        st.subheader("🏆 Top 10 Compétitions")
+        top_comp = df['Compétition'].value_counts().head(10)
+        st.bar_chart(top_comp)
+
+    with col_stat2:
+        st.subheader("🛡️ Top 10 Équipes (Apparitions)")
+        toutes_equipes = pd.concat([df['Domicile'], df['Extérieur']]).dropna()
+        top_equipes = toutes_equipes.value_counts().head(10)
+        st.bar_chart(top_equipes)
+
+    if 'Diffuseur' in df.columns:
+        st.write("---")
+        st.subheader("📺 Répartition par Diffuseur (Top 10)")
+        top_diffuseurs = df['Diffuseur'].dropna().value_counts().head(10)
+        st.bar_chart(top_diffuseurs)
 
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
