@@ -30,9 +30,8 @@ def popup_formats():
     st.markdown("""
     * 🗓️ Date et saison du match
     * 🏆 Compétition et phase
-    * 🏟️ Lieu et stade
+    * 🏟️ Stade 
     * 📺 Diffuseur d'origine (TF1, Canal+, etc.)
-    * 🎙️ Langue des commentaires
     """)
     st.divider()
     st.markdown("### 📼 Formats disponibles")
@@ -497,3 +496,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
