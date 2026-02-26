@@ -36,7 +36,7 @@ def trouver_image(nom_recherche, dossier_racine="Logos"):
 # 🧠 ARBORESCENCE DES MENUS
 # ==========================================
 MENU_ARBO = {
-    "🌍 NATIONS": {
+    "Nations": {
         "Coupe du Monde": {
             "Phase finale": "FILTER_CDM_FINALE",
             "Eliminatoires": "FILTER_CDM_ELIM"
@@ -49,7 +49,7 @@ MENU_ARBO = {
         "Copa America": "Copa America",
         "Jeux Olympiques": "Jeux Olympiques"
     },
-    "🏟️ CLUBS": {
+    "Clubs": {
         "Coupe d'Europe": {
             "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
             "C2": ["Coupe des Coupes"],
@@ -64,7 +64,7 @@ MENU_ARBO = {
             "Allemagne": ["Bundesliga"]
         }
     },
-    "🎲 DIVERS": {
+    "Divers": {
         "Amical": ["Amical", "Opel Master Cup"]
     }
 }
@@ -76,8 +76,6 @@ def load_data():
         df = pd.read_csv("matchs.csv", sep=None, engine="python", on_bad_lines='skip')
         df = df.dropna(subset=['Domicile', 'Extérieur'])
         df.columns = df.columns.str.strip()
-        if 'Date' in df.columns:
-            df['Date'] = df['Date'].astype(str)
         return df
     except Exception as e:
         st.error(f"Erreur CSV : {e}")
@@ -85,7 +83,7 @@ def load_data():
 
 df = load_data()
 
-# --- AFFICHAGE DES RÉSULTATS ---
+# --- FONCTION D'AFFICHAGE ---
 def afficher_resultats(df_res):
     if df_res.empty:
         st.warning("Aucun match trouvé.")
@@ -114,7 +112,7 @@ def afficher_resultats(df_res):
                         if path_ext: st.image(path_ext, use_column_width=True)
                         st.markdown(f"<p style='text-align:center;font-size:12px;'><b>{ext}</b></p>", unsafe_allow_html=True)
 
-# --- GESTION DE LA NAVIGATION ---
+# --- NAVIGATION ---
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
 if 'chemin' not in st.session_state: st.session_state.chemin = []
 if 'ed' not in st.session_state: st.session_state.ed = None
@@ -125,7 +123,7 @@ def reset_nav():
     st.session_state.ed = None
 
 if st.session_state.page != 'accueil':
-    if st.sidebar.button("🏠 Retour à l'accueil", use_container_width=True):
+    if st.sidebar.button("🏠 Menu Principal"):
         reset_nav()
         st.rerun()
 
@@ -136,43 +134,62 @@ if st.session_state.page != 'accueil':
 if st.session_state.page == 'accueil':
     st.title("⚽ Archives Football")
     
-    # 1. CATALOGUE COMPLET
+    # Bouton Catalogue
     if st.button("📖 CATALOGUE COMPLET", use_container_width=True):
-        st.session_state.page = 'catalogue'
-        st.rerun()
+        st.session_state.page = 'catalogue'; st.rerun()
 
+    # Section Éphéméride
+    st.write("---")
+    auj = datetime.now()
+    mois_fr = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    c_date1, c_date2 = st.columns(2)
+    with c_date1:
+        if st.button(f"📅 Joués un {auj.day} {mois_fr[auj.month-1]}", use_container_width=True):
+            st.session_state.page = 'ephemeride'; st.rerun()
+    with c_date2:
+        if st.button("🔎 Recherche par date précise", use_container_width=True):
+            st.session_state.page = 'recherche_date'; st.rerun()
+
+    # Section Catégories
     st.write("---")
     st.subheader("📂 Explorer par catégorie")
-    
-    # 2. LES TROIS GRANDS BOUTONS DE L'ARBORESCENCE
     col_n, col_c, col_d = st.columns(3)
     with col_n:
         if st.button("🌍 NATIONS", use_container_width=True):
-            st.session_state.page = 'arbo'
-            st.session_state.chemin = ["🌍 NATIONS"]
-            st.rerun()
+            st.session_state.page = 'arbo'; st.session_state.chemin = ["Nations"]; st.rerun()
     with col_c:
         if st.button("🏟️ CLUBS", use_container_width=True):
-            st.session_state.page = 'arbo'
-            st.session_state.chemin = ["🏟️ CLUBS"]
-            st.rerun()
+            st.session_state.page = 'arbo'; st.session_state.chemin = ["Clubs"]; st.rerun()
     with col_d:
         if st.button("🎲 DIVERS", use_container_width=True):
-            st.session_state.page = 'arbo'
-            st.session_state.chemin = ["🎲 DIVERS"]
-            st.rerun()
+            st.session_state.page = 'arbo'; st.session_state.chemin = ["Divers"]; st.rerun()
 
+    # Section Outils
     st.write("---")
-    st.subheader("🔍 Outils de recherche")
     col_r1, col_r2 = st.columns(2)
     with col_r1:
         if st.button("🛡️ Par Équipe", use_container_width=True):
-            st.session_state.page = 'recherche_equipe'
-            st.rerun()
+            st.session_state.page = 'recherche_equipe'; st.rerun()
     with col_r2:
         if st.button("⚔️ Face-à-Face", use_container_width=True):
-            st.session_state.page = 'face_a_face'
-            st.rerun()
+            st.session_state.page = 'face_a_face'; st.rerun()
+
+# --- LOGIQUE PAGES SECONDAIRES ---
+
+elif st.session_state.page == 'ephemeride':
+    st.header("📅 Ça s'est passé aujourd'hui")
+    auj = datetime.now()
+    motif = r'^0?' + str(auj.day) + r'/0?' + str(auj.month) + r'/'
+    df_ephem = df[df['Date'].astype(str).str.contains(motif, na=False, regex=True)]
+    afficher_resultats(df_ephem)
+
+elif st.session_state.page == 'recherche_date':
+    st.header("🔎 Recherche par date")
+    c1, c2 = st.columns(2)
+    j = c1.selectbox("Jour", [str(i) for i in range(1,32)])
+    m = c2.selectbox("Mois", [str(i) for i in range(1,13)])
+    motif = r'^0?' + j + r'/0?' + m + r'/'
+    afficher_resultats(df[df['Date'].astype(str).str.contains(motif, na=False, regex=True)])
 
 elif st.session_state.page == 'catalogue':
     st.header("📖 Catalogue Complet")
@@ -195,8 +212,7 @@ elif st.session_state.page == 'arbo':
         for i, cle in enumerate(noeud.keys()):
             with cols[i%3]:
                 if st.button(cle, use_container_width=True):
-                    st.session_state.chemin.append(cle)
-                    st.rerun()
+                    st.session_state.chemin.append(cle); st.rerun()
     else:
         if st.session_state.ed is None:
             if isinstance(noeud, str) and "FILTER_" in noeud:
@@ -209,14 +225,9 @@ elif st.session_state.page == 'arbo':
                 target = noeud if isinstance(noeud, list) else [noeud]
                 eds = sorted(df[df['Compétition'].isin(target)]['Compétition'].unique(), reverse=True)
             
-            if eds:
-                st.write("Choisissez une édition :")
-                for e in eds:
-                    if st.button(e, use_container_width=True):
-                        st.session_state.ed = e
-                        st.rerun()
-            else:
-                st.warning("Aucun match trouvé.")
+            for e in eds:
+                if st.button(e, use_container_width=True):
+                    st.session_state.ed = e; st.rerun()
         else:
             c1, c2 = st.columns([4, 1])
             with c1: st.header(st.session_state.ed)
@@ -228,7 +239,7 @@ elif st.session_state.page == 'arbo':
 elif st.session_state.page == 'recherche_equipe':
     st.header("🛡️ Recherche par Équipe")
     toutes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
-    choix = st.selectbox("Équipe :", toutes)
+    choix = st.selectbox("Sélectionne une équipe :", toutes)
     if choix: afficher_resultats(df[(df['Domicile'] == choix) | (df['Extérieur'] == choix)])
 
 elif st.session_state.page == 'face_a_face':
