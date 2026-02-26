@@ -9,6 +9,66 @@ import re
 st.set_page_config(page_title="Classeur Foot", layout="wide")
 
 # ==========================================
+# ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
+# ==========================================
+# Le décorateur @st.dialog crée automatiquement une fenêtre pop-up élégante
+
+@st.dialog("📖 Contenu de la collection")
+def popup_contenu():
+    st.markdown("""
+    **Ce que vous trouverez dans ce catalogue :**
+    * 🌍 Des **matchs de clubs** et de **sélections nationales**.
+    * 🏆 Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
+    * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
+    * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
+    * 🕰️ Des matchs **amicaux, historiques et rares**.
+    """)
+
+@st.dialog("💾 Formats & Organisation")
+def popup_formats():
+    st.markdown("### 🗂️ Données répertoriées")
+    st.markdown("""
+    * 🗓️ Date et saison du match
+    * 🏆 Compétition et phase
+    * 🏟️ Lieu et stade
+    * 📺 Diffuseur d'origine (TF1, Canal+, etc.)
+    * 🎙️ Langue des commentaires
+    """)
+    st.divider()
+    st.markdown("### 📼 Formats disponibles")
+    st.markdown("""
+    * 💻 **Numérique :** formats courants (.mp4, .avi, .mkv) – parfaits pour ordinateur, tablette ou TV.
+    * 💿 **DVD :** fichiers .VOB stockés sur disque dur.
+    * 📼 **VHS :** pour les puristes, quelques exemplaires disponibles au format original.
+    """)
+
+@st.dialog("💶 Tarifs & Offres")
+def popup_tarifs():
+    st.markdown("### 💰 Grille Tarifaire")
+    st.markdown("""
+    * 💿 **1 match au format DVD** = **5 €**
+    * 💻 **1 match au format Numérique** (mp4, mkv...) = **3 €**
+    """)
+    st.divider()
+    st.markdown("### 🎁 Offres & Réductions")
+    st.markdown("""
+    * 🆓 **1 match offert** pour 10 matchs achetés (hors DVD).
+    * 📉 **-10% de réduction** immédiate dès 20 matchs achetés.
+    * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
+    """)
+
+@st.dialog("🤝 Échanges & Contact")
+def popup_contact():
+    st.markdown("""
+    **Comment obtenir un match ?**
+    * 🛒 **Achat direct :** À l'unité ou en créant votre propre pack.
+    * 🔄 **Échange :** Vous possédez vos propres archives ? Je suis toujours ouvert aux échanges de matchs rares !
+    * 🚀 **Livraison :** Les fichiers numériques sont envoyés rapidement et de manière sécurisée via *Swisstransfer*, *WeTransfer* ou *Grosfichiers*.
+    
+    📩 **Une demande spécifique ?** N'hésitez pas à me contacter directement si vous cherchez un match qui n'apparaît pas encore dans le catalogue ou pour toute autre question.
+    """)
+
+# ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
 def nettoyer_nom_equipe(nom):
@@ -184,7 +244,7 @@ if st.session_state.page != 'accueil':
         st.rerun()
 
 # ==========================================
-# PAGE D'ACCUEIL AVEC RECHERCHE ET ONGLETS
+# PAGE D'ACCUEIL AVEC RECHERCHE ET POP-UPS
 # ==========================================
 if st.session_state.page == 'accueil':
     st.title("⚽ Archives Football")
@@ -210,61 +270,22 @@ if st.session_state.page == 'accueil':
         st.write("---")
     # -------------------------------------------------
 
-    # --- 📑 LES ONGLETS D'INFORMATION (Inspirés de ta capture) ---
+    # --- 📑 LES BOUTONS POP-UPS (INFORMATIONS) ---
     st.write("### ℹ️ Informations Pratiques")
-    tab1, tab2, tab3, tab4 = st.tabs(["📖 Contenu", "💾 Formats & Organisation", "💶 Tarifs & Packs", "🤝 Échanges & Contact"])
+    col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
     
-    with tab1:
-        st.info("""
-        **Ce que vous trouverez dans cette collection :**
-        * ✅ Des **matchs de clubs** et de **sélections nationales**.
-        * ✅ Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
-        * ✅ Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
-        * ✅ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, etc.
-        * ✅ Des matchs **amicaux, historiques et rares**.
-        """)
-        
-    with tab2:
-        col_org, col_form = st.columns(2)
-        with col_org:
-            st.success("""
-            **🗂️ Organisation des matchs :**
-            * 🗓️ Date et saison
-            * 🏆 Compétition et phase
-            * ⚽ Équipes et score final
-            * 🏟️ Lieu et stade
-            * 📺 Diffuseur d'origine (TF1, Canal+, etc.)
-            * 🎙️ Langue et qualité du fichier
-            * 📝 Remarques (qualité d'image, match incomplet...)
-            """)
-        with col_form:
-            st.warning("""
-            **📼 Formats disponibles :**
-            * 💻 **Numérique :** formats courants (.mp4, .avi, .mkv) – parfaits pour ordi, tablette ou TV.
-            * 💿 **DVD :** fichiers .VOB stockés sur disque dur pour un gain de place (plus besoin de stocker des boîtiers).
-            * 📼 **VHS d'origine :** pour les collectionneurs et puristes, quelques exemplaires sont disponibles au format original.
-            """)
-            
-    with tab3:
-        st.success("""
-        **💰 Grille Tarifaire :**
-        * 💿 **1 match au format DVD** (indiqué dans le classeur) = **5 €**
-        * 💻 **1 match autre format** (mp4, mkv...) = **3 €**
-        
-        **🎁 Offres & Réductions :**
-        * 🆓 **1 match offert** tous les 10 (hors DVD).
-        * 📉 **Réduc' dès 20 matchs achetés** (-10% sur le prix total).
-        * 📦 **Packs thématiques dispos** (ex : France 98, campagne de clubs en Coupe d'Europe...).
-        """)
-        
-    with tab4:
-        st.info("""
-        **🤝 Comment ça marche ?**
-        * 🛒 Vous pouvez **acheter** un match à l'unité ou en **pack personnalisé**.
-        * 🔄 **Échange possible :** Vous pouvez aussi proposer un échange si vous avez vos propres enregistrements !
-        * 🚀 **Envoi numérique :** Les fichiers sont envoyés via Swisstransfer, WeTransfer ou Grosfichiers.
-        * 📩 **Une question ou recherche précise ?** Contactez-moi directement, je me ferai un plaisir de vous répondre.
-        """)
+    with col_btn1:
+        if st.button("📖 Contenu", use_container_width=True):
+            popup_contenu()
+    with col_btn2:
+        if st.button("💾 Formats", use_container_width=True):
+            popup_formats()
+    with col_btn3:
+        if st.button("💶 Tarifs", use_container_width=True):
+            popup_tarifs()
+    with col_btn4:
+        if st.button("🤝 Échanges", use_container_width=True):
+            popup_contact()
     # -------------------------------------------------
 
     st.write("---")
@@ -293,7 +314,7 @@ if st.session_state.page == 'accueil':
     
     col_n, col_c, col_d = st.columns(3)
     with col_n:
-        if st.button("🌍 NATIONS", use_container_width=True):
+        if st.button("🌍 SÉLECTIONS NATIONALES", use_container_width=True):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
@@ -303,7 +324,7 @@ if st.session_state.page == 'accueil':
             st.session_state.chemin = ['Clubs']
             st.rerun()
     with col_d:
-        if st.button("🎲 DIVERS", use_container_width=True):
+        if st.button("🎲 MATCHS DE GALA & TOURNOIS", use_container_width=True):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Divers']
             st.rerun()
