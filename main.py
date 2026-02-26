@@ -240,17 +240,15 @@ if st.session_state.page != 'accueil':
         st.rerun()
 
 # ==========================================
-# PAGE D'ACCUEIL AMÉLIORÉE (DESIGN & UX)
+# PAGE D'ACCUEIL (NOUVELLE HIÉRARCHIE)
 # ==========================================
 if st.session_state.page == 'accueil':
-    # En-tête centré pour faire plus "Site Web"
     st.markdown("<h1 style='text-align: center;'>⚽ Archives Football</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>{len(df)}</b> matchs mythiques documentés et détaillés.</p>", unsafe_allow_html=True)
     st.write("")
     
-    # --- 🔍 MOTEUR DE RECHERCHE GLOBAL ---
+    # --- 1. RECHERCHE ET INFOS ---
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
-    
     if recherche_rapide:
         mask = (
             df['Domicile'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
@@ -265,83 +263,85 @@ if st.session_state.page == 'accueil':
         st.write(f"**Résultats trouvés pour :** '{recherche_rapide}'")
         afficher_resultats(df_trouve)
         st.write("---")
-    # -------------------------------------------------
 
-    # --- 📑 LES BOUTONS POP-UPS (INFORMATIONS) ---
     col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
     with col_btn1:
-        if st.button("📖 Contenu", use_container_width=True):
-            popup_contenu()
+        if st.button("📖 Contenu", use_container_width=True): popup_contenu()
     with col_btn2:
-        if st.button("💾 Formats", use_container_width=True):
-            popup_formats()
+        if st.button("💾 Formats", use_container_width=True): popup_formats()
     with col_btn3:
-        if st.button("💶 Tarifs", use_container_width=True):
-            popup_tarifs()
+        if st.button("💶 Tarifs", use_container_width=True): popup_tarifs()
     with col_btn4:
-        if st.button("✉️ Contact / Échanges", use_container_width=True):
-            popup_contact()
+        if st.button("✉️ Contact / Échanges", use_container_width=True): popup_contact()
             
     st.write("---")
     
-    # --- BOUTON CATALOGUE MIS EN ÉVIDENCE ET CENTRÉ ---
-    col_vide1, col_catalogue, col_vide2 = st.columns([1, 2, 1])
-    with col_catalogue:
-        # L'attribut type="primary" va lui donner une couleur d'accentuation pour qu'il ressorte
-        if st.button("📖 PARCOURIR LE CATALOGUE COMPLET", type="primary", use_container_width=True):
-            st.session_state.page = 'catalogue'
-            st.rerun()
-    st.write("---")
-    
-    # --- 📅 L'ÉPHÉMÉRIDE MIS EN VALEUR ---
-    aujourdhui = datetime.now()
-    mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-    date_affichee = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
-    
-    nb_matchs_jour = 0
-    if 'Date' in df.columns:
-        motif_date = r'^0?' + str(aujourdhui.day) + r'/0?' + str(aujourdhui.month) + r'/'
-        nb_matchs_jour = len(df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)])
-
-    with st.container(border=True):
-        st.markdown(f"### 📅 Ça s'est joué un {date_affichee}...")
-        
-        if nb_matchs_jour > 0:
-            st.success(f"🔥 Le catalogue contient **{nb_matchs_jour} matchs de légende** joués exactement à cette date dans l'histoire !")
-        else:
-            st.info(f"Que s'est-il passé dans l'histoire du foot à cette date ? Lancez la recherche pour le découvrir !")
-            
-        col_eph1, col_eph2, col_eph3 = st.columns([1, 2, 1])
-        with col_eph2:
-            if st.button(f"⏳ Voir les matchs du {date_affichee}", use_container_width=True):
-                st.session_state.page = 'ephemeride'
-                st.rerun()
-                
-    st.write("---") 
-    
-    # --- LE RESTE DES MENUS ---
-    st.subheader("📂 Explorer par Compétition")
+    # --- 2. LE CŒUR DE L'APP : EXPLORER PAR COMPÉTITION (Mis en valeur) ---
+    st.markdown("### 📂 Explorer le Classeur")
+    st.markdown("<p style='color: gray; margin-bottom: 15px;'>Sélectionnez une catégorie pour naviguer dans l'arborescence des archives.</p>", unsafe_allow_html=True)
     
     col_n, col_c, col_d = st.columns(3)
     with col_n:
-        if st.button("🌍 SÉLECTIONS NATIONALES", use_container_width=True):
+        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Coupes du Monde, Euros, Copa...</div>", unsafe_allow_html=True)
+        if st.button("🌍 SÉLECTIONS NATIONALES", use_container_width=True, type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
     with col_c:
-        if st.button("🏟️ CLUBS", use_container_width=True):
+        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Ligue des Champions, Championnats...</div>", unsafe_allow_html=True)
+        if st.button("🏟️ CLUBS", use_container_width=True, type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Clubs']
             st.rerun()
     with col_d:
-        if st.button("🎲 MATCHS DE GALA & TOURNOIS", use_container_width=True):
+        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Matchs de légende, Amicaux, Jubilés...</div>", unsafe_allow_html=True)
+        if st.button("🎲 MATCHS DE GALA", use_container_width=True, type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Divers']
             st.rerun()
 
     st.write("---")
-    st.subheader("🔍 Outils & Statistiques")
 
+    # --- 3. SECONDAIRE : CATALOGUE & ÉPHÉMÉRIDE CÔTE À CÔTE ---
+    col_cat, col_eph = st.columns(2)
+    
+    with col_cat:
+        st.markdown("### 📖 Tout voir d'un coup")
+        st.markdown("<p style='color: gray;'>Vous préférez flâner ? Affichez la liste complète de tous les matchs disponibles.</p>", unsafe_allow_html=True)
+        if st.button("Afficher le Catalogue Complet", use_container_width=True):
+            st.session_state.page = 'catalogue'
+            st.rerun()
+            
+    with col_eph:
+        st.markdown("### 📅 L'Éphéméride")
+        aujourdhui = datetime.now()
+        mois_francais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+        date_affichee = f"{aujourdhui.day} {mois_francais[aujourdhui.month - 1]}"
+        
+        nb_matchs_jour = 0
+        if 'Date' in df.columns:
+            motif_date = r'^0?' + str(aujourdhui.day) + r'/0?' + str(aujourdhui.month) + r'/'
+            nb_matchs_jour = len(df[df['Date'].astype(str).str.contains(motif_date, na=False, regex=True)])
+
+        if nb_matchs_jour > 0:
+            st.success(f"🔥 **{nb_matchs_jour} matchs** se sont joués un {date_affichee} !")
+        else:
+            st.info(f"Que s'est-il passé un {date_affichee} ?")
+            
+        c_btn_e1, c_btn_e2 = st.columns(2)
+        with c_btn_e1:
+            if st.button("Voir les matchs du jour", use_container_width=True):
+                st.session_state.page = 'ephemeride'
+                st.rerun()
+        with c_btn_e2:
+            if st.button("Chercher autre date", use_container_width=True):
+                st.session_state.page = 'recherche_date'
+                st.rerun()
+
+    st.write("---") 
+
+    # --- 4. OUTILS & STATS ---
+    st.markdown("### 🔍 Outils & Statistiques")
     col_outils1, col_outils2 = st.columns(2)
     with col_outils1:
         if st.button("🛡️ Par Équipe", use_container_width=True):
