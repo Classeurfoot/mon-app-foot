@@ -1,0 +1,16 @@
+[theme]
+# Force le thème sombre ("dark") ou clair ("light")
+base="dark"
+
+# Couleur principale (Boutons, curseurs, étoiles...)
+# Mettons un beau bleu "Football" par exemple
+primaryColor="#1E90FF"
+
+# Couleur du fond de la page
+backgroundColor="#111111"
+
+# Couleur du fond du menu latéral
+secondaryBackgroundColor="#222222"
+
+# Couleur du texte
+textColor="#FFFFFF"
