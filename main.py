@@ -12,6 +12,16 @@ st.set_page_config(page_title="Classeur Foot", layout="wide")
 # La règle d'or : le nom à gauche doit être EXACTEMENT celui de l'arborescence.
 LOGOS = {
     "Coupe du Monde 1998": "Logos/cdm1998.png",
+    "Coupe du Monde 1978": "Logos/cdm1978.png",
+"Coupe du Monde 1982": "Logos/cdm1982.png",
+"Coupe du Monde 1986": "Logos/cdm1986.png",
+"Coupe du Monde 1990": "Logos/cdm1990.png",
+"Coupe du Monde 1994": "Logos/cdm1994.png",
+"Coupe du Monde 2002": "Logos/cdm2002.png",
+"Coupe du Monde 2006": "Logos/cdm2006.png",
+"Coupe du Monde 2010": "Logos/cdm2010.png",
+"Coupe du Monde 2014": "Logos/cdm2014.png",
+"Coupe du Monde 2018": "Logos/cdm2018.png",
     "Coupe du Monde 2022": "Logos/cdm2022.png",
     "Ligue 1": "Logos/ligue1.png",
     "Champions League": "Logos/championsleague.png"
@@ -283,3 +293,4 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             st.metric("Matchs trouvés", len(df_final))
             st.dataframe(df_final[colonnes_presentes], use_container_width=True, height=600)
+
