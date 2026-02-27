@@ -77,6 +77,27 @@ def nettoyer_nom_equipe(nom):
     return nom_propre
 
 # ==========================================
+# 🔍 SCANNER AUTOMATIQUE DE LOGOS
+# ==========================================
+@st.cache_data
+def charger_dictionnaire_logos(dossier_racine="Logos"):
+    dict_logos = {}
+    if os.path.exists(dossier_racine):
+        # On fouille dans tous les sous-dossiers
+        for root, dirs, files in os.walk(dossier_racine):
+            for file in files:
+                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    # On nettoie le nom du fichier (sans l'extension)
+                    nom_equipe = os.path.splitext(file)[0]
+                    cle = nettoyer_nom_equipe(nom_equipe)
+                    chemin_complet = os.path.join(root, file)
+                    dict_logos[cle] = chemin_complet
+    return dict_logos
+
+# On lance le scanner
+DICTIONNAIRE_LOGOS_EQUIPES = charger_dictionnaire_logos("Logos")
+
+# ==========================================
 # 🎨 TA BANQUE DE LOGOS LOCALE (COMPÉTITIONS)
 # ==========================================
 LOGOS = {
@@ -189,7 +210,6 @@ def afficher_resultats(df_resultats):
         st.write("---")
         cols = st.columns(2)
         
-        # Dictionnaires pour la traduction des dates
         jours_fr = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
         mois_fr = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
 
@@ -197,7 +217,7 @@ def afficher_resultats(df_resultats):
             with cols[i % 2]:
                 with st.container(border=True):
                     
-                    # --- 1. FORMATTAGE DE LA DATE EN FRANÇAIS ---
+                    # --- 1. FORMATTAGE DE LA DATE ---
                     date_brute = row.get('Date', '')
                     date_formatee = date_brute
                     if pd.notna(date_brute) and date_brute:
@@ -249,18 +269,22 @@ def afficher_resultats(df_resultats):
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    logo_dom = f"Logos/Equipes/{nettoyer_nom_equipe(dom)}.png"
-                    logo_ext = f"Logos/Equipes/{nettoyer_nom_equipe(ext)}.png"
+                    # On cherche le logo dans notre dictionnaire généré par le scanner
+                    cle_dom = nettoyer_nom_equipe(dom)
+                    cle_ext = nettoyer_nom_equipe(ext)
+                    
+                    logo_dom = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_dom)
+                    logo_ext = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_ext)
                     
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
-                    # --- GESTION DOMICILE CENTRÉE ---
+                    # --- GESTION DOMICILE (Texte + Logo Centré) ---
                     with c_dom:
-                        if os.path.exists(logo_dom):
+                        if logo_dom and os.path.exists(logo_dom):
                             try:
                                 with open(logo_dom, "rb") as image_file:
                                     img_b64 = base64.b64encode(image_file.read()).decode()
-                                # Le nom et l'image sont englobés dans la même div pour un centrage parfait
+                                # Conteneur HTML pour centrer parfaitement
                                 html_dom = f"""
                                 <div style='text-align:center;'>
                                     <p style='font-weight:bold; font-size:17px; margin-bottom:5px;'>{dom}</p>
@@ -271,15 +295,16 @@ def afficher_resultats(df_resultats):
                             except Exception:
                                 st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         else:
+                            # Cas où on n'a pas de logo
                             st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         
                     # --- SCORE ---
                     with c_score:
                         st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
-                    # --- GESTION EXTÉRIEUR CENTRÉE ---
+                    # --- GESTION EXTÉRIEUR (Texte + Logo Centré) ---
                     with c_ext:
-                        if os.path.exists(logo_ext):
+                        if logo_ext and os.path.exists(logo_ext):
                             try:
                                 with open(logo_ext, "rb") as image_file:
                                     img_b64 = base64.b64encode(image_file.read()).decode()
