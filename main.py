@@ -172,7 +172,7 @@ df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# --- OUTIL : FICHES DE MATCHS (MISE À JOUR) ---
+# --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
         st.warning("Aucun match trouvé.")
@@ -206,41 +206,36 @@ def afficher_resultats(df_resultats):
                         except ValueError:
                             date_formatee = date_brute
 
-                    # --- 2. EN-TÊTE (Date | Stade + Journée OU Phase) ---
+                    # --- 2. EN-TÊTE ---
                     stade = row.get('Stade', 'Stade inconnu')
                     if pd.isna(stade) or not str(stade).strip(): 
                         stade = "Stade inconnu"
                         
-                    # ⚠️ NOUVEAUTÉ : Nettoyage de la journée (enlève le .0 si c'est lu comme un float par Pandas)
                     raw_journee = row.get('Journée', '')
                     val_journee = ""
                     if pd.notna(raw_journee) and str(raw_journee).strip():
                         try:
-                            val_journee = str(int(float(raw_journee))) # Convertit "23.0" en "23"
+                            val_journee = str(int(float(raw_journee)))
                         except ValueError:
                             val_journee = str(raw_journee).strip()
                             
                     val_phase = str(row.get('Phase', '')).strip() if 'Phase' in row and pd.notna(row['Phase']) else ""
                     
-                    # Logique de distinction Championnat / Coupes
                     comp_name = str(row.get('Compétition', '')).lower()
                     mots_championnats = ['ligue 1', 'ligue 2', 'division 1', 'division 2', 'serie a', 'liga', 'premier league', 'bundesliga', 'championnat']
                     
-                    # On vérifie si c'est un championnat (et pas la ligue des champions ou ligue des nations)
                     est_championnat = any(mot in comp_name for mot in mots_championnats) and 'champions' not in comp_name and 'nations' not in comp_name and 'europe' not in comp_name
                     
                     ajout_stade = ""
                     if est_championnat:
                         if val_journee:
-                            # S'il y a un chiffre seul ou s'il manque le mot "Journée", on l'ajoute proprement
                             if val_journee.isdigit() or not val_journee.lower().startswith(('j', 'journée')):
                                 ajout_stade = f"Journée {val_journee}"
                             else:
                                 ajout_stade = val_journee
                         elif val_phase:
-                            ajout_stade = val_phase # Fallback au cas où
+                            ajout_stade = val_phase
                     else:
-                        # Pour les coupes : on affiche STRICTEMENT la phase (et on ignore la journée)
                         if val_phase:
                             ajout_stade = val_phase
                             
@@ -258,8 +253,9 @@ def afficher_resultats(df_resultats):
                     
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
+                    # ⚠️ AJUSTEMENT TAILLES : font-size passé à 17px pour les noms d'équipes
                     with c_dom:
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:15px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         if os.path.exists(logo_dom):
                             st.image(logo_dom, width=60)
                         
@@ -267,11 +263,11 @@ def afficher_resultats(df_resultats):
                         st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
                     with c_ext:
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:15px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
                         if os.path.exists(logo_ext):
                             st.image(logo_ext, width=60)
                     
-                    # --- 3. PIED DE FICHE (Diffuseur agrandi | Qualité) ---
+                    # --- 3. PIED DE FICHE ---
                     diffuseur = row.get('Diffuseur', '')
                     qualite = row.get('Qualité', '')
                     
@@ -279,12 +275,15 @@ def afficher_resultats(df_resultats):
                     has_qual = pd.notna(qualite) and str(qualite).strip() != ""
                     
                     if has_diff or has_qual:
-                        html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:5px;'>"
+                        html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:6px; padding-bottom:2px;'>"
                         parts = []
                         if has_diff:
-                            parts.append(f"<span style='font-size: 15px; font-weight: 500;'>📺 {diffuseur}</span>")
+                            # ⚠️ AJUSTEMENT TAILLES : Diffuseur passe à 16px
+                            parts.append(f"<span style='font-size: 16px; font-weight: 500;'>📺 {diffuseur}</span>")
                         if has_qual:
-                            parts.append(f"<span style='font-size: 12px;'>⭐ {qualite}</span>")
+                            # ⚠️ AJUSTEMENT TAILLES : Qualité passe à 14px
+                            parts.append(f"<span style='font-size: 14px;'>⭐ {qualite}</span>")
+                        
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
                         html_footer += "</div>"
                         st.markdown(html_footer, unsafe_allow_html=True)
