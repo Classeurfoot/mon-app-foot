@@ -5,9 +5,10 @@ from datetime import datetime
 import unicodedata
 import re
 import base64
+import plotly.express as px # <--- NOUVEL IMPORT POUR LES GRAPHIQUES
 
 # 1. Configuration de la page
-st.set_page_config(page_title="Classeur Foot", layout="wide")
+st.set_page_config(page_title="Le Grenier du Football", layout="wide") # Mis à jour avec le nouveau nom !
 
 # ==========================================
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
@@ -366,57 +367,16 @@ def go_home():
     st.session_state.chemin = []
     st.session_state.edition_choisie = None
 
-# ==========================================
-# 🧭 BARRE LATÉRALE PERSISTANTE
-# ==========================================
-with st.sidebar:
-    st.title("⚽ Menu Rapide")
-    
-    if st.button("🏠 Accueil", width="stretch"):
+if st.session_state.page != 'accueil':
+    if st.sidebar.button("🏠 Menu Principal", width="stretch"):
         go_home()
-        st.rerun()
-        
-    st.divider()
-    st.markdown("### 📂 Catégories")
-    if st.button("🌍 Sélections Nationales", width="stretch"):
-        st.session_state.page = 'arborescence'
-        st.session_state.chemin = ['Nations']
-        st.session_state.edition_choisie = None
-        st.rerun()
-    if st.button("🏟️ Clubs", width="stretch"):
-        st.session_state.page = 'arborescence'
-        st.session_state.chemin = ['Clubs']
-        st.session_state.edition_choisie = None
-        st.rerun()
-    if st.button("🎲 Matchs de Gala", width="stretch"):
-        st.session_state.page = 'arborescence'
-        st.session_state.chemin = ['Divers']
-        st.session_state.edition_choisie = None
-        st.rerun()
-        
-    st.divider()
-    st.markdown("### 🔍 Outils")
-    if st.button("📖 Catalogue Complet", width="stretch"):
-        st.session_state.page = 'catalogue'
-        st.rerun()
-    if st.button("📊 Statistiques", width="stretch"):
-        st.session_state.page = 'statistiques'
-        st.rerun()
-    if st.button("🛡️ Par Équipe", width="stretch"):
-        st.session_state.page = 'recherche_equipe'
-        st.rerun()
-    if st.button("⚔️ Face-à-Face", width="stretch"):
-        st.session_state.page = 'face_a_face'
-        st.rerun()
-    if st.button("🕵️ Recherche Avancée", width="stretch"):
-        st.session_state.page = 'recherche_avancee'
         st.rerun()
 
 # ==========================================
 # PAGE D'ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
-    st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Foot</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>4000</b> matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
@@ -593,17 +553,93 @@ elif st.session_state.page == 'recherche_avancee':
     if f_saisons: df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
     afficher_resultats(df_filtre)
 
+# ==========================================
+# 📊 PAGE : NOUVEAU TABLEAU DE BORD (STATISTIQUES)
+# ==========================================
 elif st.session_state.page == 'statistiques':
-    st.header("📊 Tableau de Bord")
-    st.metric("Total des matchs dans la base", len(df))
-    st.write("---")
-    col_stat1, col_stat2 = st.columns(2)
-    with col_stat1:
-        st.subheader("🏆 Top 10 Compétitions")
-        st.bar_chart(df['Compétition'].value_counts().head(10))
-    with col_stat2:
-        st.subheader("🛡️ Top 10 Équipes (Apparitions)")
-        st.bar_chart(pd.concat([df['Domicile'], df['Extérieur']]).dropna().value_counts().head(10))
+    st.header("📊 Tableau de Bord du Grenier")
+    st.markdown("<p style='color: gray;'>Une vue d'ensemble de l'historique de votre collection.</p>", unsafe_allow_html=True)
+    
+    # 1. KPIs (Indicateurs clés) en haut
+    col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+    with col_kpi1:
+        st.metric("Total des matchs archivés", len(df))
+    with col_kpi2:
+        nb_equipes = len(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
+        st.metric("Équipes différentes", nb_equipes)
+    with col_kpi3:
+        if 'Compétition' in df.columns:
+            nb_comps = df['Compétition'].nunique()
+            st.metric("Compétitions couvertes", nb_comps)
+
+    st.divider()
+
+    # Préparation des données pour les graphiques (Calcul des décennies)
+    df_stats = df.copy()
+    if 'Date' in df_stats.columns:
+        # Extraire l'année de la colonne Date
+        df_stats['Annee_Extracted'] = pd.to_datetime(df_stats['Date'], format='%d/%m/%Y', errors='coerce').dt.year
+        # Si la date échoue, essayer d'extraire de la colonne Saison (ex: "1998" dans "1998-1999")
+        if 'Saison' in df_stats.columns:
+            df_stats['Annee_Saison'] = df_stats['Saison'].astype(str).str.extract(r'(\d{4})').astype(float)
+            df_stats['Annee_Extracted'] = df_stats['Annee_Extracted'].fillna(df_stats['Annee_Saison'])
+        
+        # Créer la colonne Décennie
+        df_stats['Décennie'] = (df_stats['Annee_Extracted'] // 10 * 10).fillna(0).astype(int)
+        df_stats['Décennie'] = df_stats['Décennie'].apply(lambda x: f"Années {x}" if x > 0 else "Inconnue")
+
+    # 2. Graphiques : Décennies et Qualités
+    col_graph1, col_graph2 = st.columns(2)
+    
+    with col_graph1:
+        st.subheader("⏳ Matchs par décennie")
+        if 'Décennie' in df_stats.columns:
+            df_dec = df_stats[df_stats['Décennie'] != "Inconnue"]['Décennie'].value_counts().reset_index()
+            df_dec.columns = ['Décennie', 'Nombre de matchs']
+            # Graphique Camembert avec Plotly
+            fig_pie = px.pie(df_dec, values='Nombre de matchs', names='Décennie', 
+                             color_discrete_sequence=px.colors.sequential.Teal,
+                             hole=0.4) # Donne un effet "Donut"
+            fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("Données de date insuffisantes pour afficher ce graphique.")
+
+    with col_graph2:
+        st.subheader("💾 Formats & Qualités")
+        if 'Qualité' in df.columns:
+            df_qual = df['Qualité'].fillna('Non renseigné').value_counts().reset_index()
+            df_qual.columns = ['Format', 'Nombre']
+            # Graphique en barres pour les formats
+            fig_bar_qual = px.bar(df_qual, x='Format', y='Nombre', 
+                                  color='Format', text_auto=True,
+                                  color_discrete_sequence=px.colors.qualitative.Pastel)
+            fig_bar_qual.update_layout(showlegend=False, xaxis_title="", yaxis_title="Nb de matchs")
+            st.plotly_chart(fig_bar_qual, use_container_width=True)
+        else:
+            st.info("La colonne 'Qualité' n'est pas présente dans le fichier.")
+
+    st.divider()
+
+    # 3. Top 10 (Compétitions et Équipes)
+    col_top1, col_top2 = st.columns(2)
+    with col_top1:
+        st.subheader("🏆 Top 10 des Compétitions")
+        df_top_comp = df['Compétition'].value_counts().head(10).reset_index()
+        df_top_comp.columns = ['Compétition', 'Matchs']
+        # Barre horizontale (orientation='h')
+        fig_comp = px.bar(df_top_comp, x='Matchs', y='Compétition', orientation='h', text_auto=True)
+        fig_comp.update_layout(yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="") # Trie du plus grand au plus petit
+        st.plotly_chart(fig_comp, use_container_width=True)
+
+    with col_top2:
+        st.subheader("🛡️ Équipes les plus archivées")
+        all_teams = pd.concat([df['Domicile'], df['Extérieur']]).dropna()
+        df_top_teams = all_teams.value_counts().head(10).reset_index()
+        df_top_teams.columns = ['Équipe', 'Apparitions']
+        fig_teams = px.bar(df_top_teams, x='Apparitions', y='Équipe', orientation='h', text_auto=True, color_discrete_sequence=['#ff7f0e'])
+        fig_teams.update_layout(yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="")
+        st.plotly_chart(fig_teams, use_container_width=True)
 
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
@@ -680,4 +716,3 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
