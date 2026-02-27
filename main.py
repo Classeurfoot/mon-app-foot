@@ -227,7 +227,7 @@ def afficher_resultats(df_resultats):
                         except ValueError:
                             date_formatee = date_brute
 
-                    # --- 2. EN-TÊTE ---
+                    # --- 2. EN-TÊTE ET FORMATTAGE SPECIFIQUE ---
                     stade = row.get('Stade', 'Stade inconnu')
                     if pd.isna(stade) or not str(stade).strip(): 
                         stade = "Stade inconnu"
@@ -242,34 +242,53 @@ def afficher_resultats(df_resultats):
                             
                     val_phase = str(row.get('Phase', '')).strip() if 'Phase' in row and pd.notna(row['Phase']) else ""
                     
-                    comp_name = str(row.get('Compétition', '')).lower()
+                    comp_name = str(row.get('Compétition', ''))
+                    comp_name_lower = comp_name.lower()
+                    
+                    # Logique de distinction des compétitions
                     mots_championnats = ['ligue 1', 'ligue 2', 'division 1', 'division 2', 'serie a', 'liga', 'premier league', 'bundesliga', 'championnat']
+                    est_championnat = any(mot in comp_name_lower for mot in mots_championnats) and 'champions' not in comp_name_lower and 'nations' not in comp_name_lower and 'europe' not in comp_name_lower
                     
-                    est_championnat = any(mot in comp_name for mot in mots_championnats) and 'champions' not in comp_name and 'nations' not in comp_name and 'europe' not in comp_name
+                    mots_nations = ['coupe du monde', 'euro', "championnat d'europe", 'copa america', 'ligue des nations', 'confédérations', 'olympiques']
+                    est_nation = any(mot in comp_name_lower for mot in mots_nations) and 'clubs' not in comp_name_lower
                     
-                    ajout_stade = ""
-                    if est_championnat:
-                        if val_journee:
-                            if val_journee.isdigit() or not val_journee.lower().startswith(('j', 'journée')):
-                                ajout_stade = f"Journée {val_journee}"
-                            else:
-                                ajout_stade = val_journee
-                        elif val_phase:
-                            ajout_stade = val_phase
-                    else:
-                        if val_phase:
-                            ajout_stade = val_phase
+                    stade_str = stade
+                    
+                    # Affichage spécifique CLUBS vs NATIONS
+                    if not est_nation: # On considère que ce sont des matchs de CLUBS
+                        if est_championnat:
+                            journee_str = ""
+                            if val_journee:
+                                if val_journee.isdigit() or not val_journee.lower().startswith(('j', 'journée')):
+                                    journee_str = f"Journée {val_journee}"
+                                else:
+                                    journee_str = val_journee
+                            elif val_phase:
+                                journee_str = val_phase
                             
-                    if ajout_stade:
-                        stade += f" - {ajout_stade}"
+                            # Ajout: Compétition - Journée
+                            if comp_name.strip():
+                                stade_str += f" - {comp_name.strip()}"
+                            if journee_str:
+                                stade_str += f" - {journee_str}"
+                                
+                        else: # Coupes de clubs
+                            # Ajout: Compétition - Phase
+                            if comp_name.strip():
+                                stade_str += f" - {comp_name.strip()}"
+                            if val_phase:
+                                stade_str += f" - {val_phase}"
+                    else:
+                        # Matchs de NATIONS : Conservation de l'affichage classique (Stade - Phase)
+                        if val_phase:
+                            stade_str += f" - {val_phase}"
                     
-                    st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade}")
+                    st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade_str}")
                     
                     dom = row.get('Domicile', '')
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    # On cherche le logo dans notre dictionnaire généré par le scanner
                     cle_dom = nettoyer_nom_equipe(dom)
                     cle_ext = nettoyer_nom_equipe(ext)
                     
@@ -278,13 +297,12 @@ def afficher_resultats(df_resultats):
                     
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
-                    # --- GESTION DOMICILE (Texte + Logo Centré) ---
+                    # --- GESTION DOMICILE ---
                     with c_dom:
                         if logo_dom and os.path.exists(logo_dom):
                             try:
                                 with open(logo_dom, "rb") as image_file:
                                     img_b64 = base64.b64encode(image_file.read()).decode()
-                                # Conteneur HTML pour centrer parfaitement
                                 html_dom = f"""
                                 <div style='text-align:center;'>
                                     <p style='font-weight:bold; font-size:17px; margin-bottom:5px;'>{dom}</p>
@@ -295,14 +313,13 @@ def afficher_resultats(df_resultats):
                             except Exception:
                                 st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         else:
-                            # Cas où on n'a pas de logo
                             st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         
                     # --- SCORE ---
                     with c_score:
                         st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
-                    # --- GESTION EXTÉRIEUR (Texte + Logo Centré) ---
+                    # --- GESTION EXTÉRIEUR ---
                     with c_ext:
                         if logo_ext and os.path.exists(logo_ext):
                             try:
@@ -350,7 +367,7 @@ def go_home():
     st.session_state.edition_choisie = None
 
 if st.session_state.page != 'accueil':
-    if st.sidebar.button("🏠 Menu Principal", use_container_width=True):
+    if st.sidebar.button("🏠 Menu Principal", width="stretch"):
         go_home()
         st.rerun()
 
@@ -381,13 +398,13 @@ if st.session_state.page == 'accueil':
 
     col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
     with col_btn1:
-        if st.button("📖 Contenu", use_container_width=True): popup_contenu()
+        if st.button("📖 Contenu", width="stretch"): popup_contenu()
     with col_btn2:
-        if st.button("💾 Formats", use_container_width=True): popup_formats()
+        if st.button("💾 Formats", width="stretch"): popup_formats()
     with col_btn3:
-        if st.button("💶 Tarifs", use_container_width=True): popup_tarifs()
+        if st.button("💶 Tarifs", width="stretch"): popup_tarifs()
     with col_btn4:
-        if st.button("✉️ Contact / Échanges", use_container_width=True): popup_contact()
+        if st.button("✉️ Contact / Échanges", width="stretch"): popup_contact()
             
     st.write("---")
     
@@ -398,19 +415,19 @@ if st.session_state.page == 'accueil':
     col_n, col_c, col_d = st.columns(3)
     with col_n:
         st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Coupes du Monde, Euros, Copa...</div>", unsafe_allow_html=True)
-        if st.button("🌍 SÉLECTIONS NATIONALES", use_container_width=True, type="primary"):
+        if st.button("🌍 SÉLECTIONS NATIONALES", width="stretch", type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
     with col_c:
         st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Ligue des Champions, Championnats...</div>", unsafe_allow_html=True)
-        if st.button("🏟️ CLUBS", use_container_width=True, type="primary"):
+        if st.button("🏟️ CLUBS", width="stretch", type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Clubs']
             st.rerun()
     with col_d:
         st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Matchs de légende, Amicaux, Jubilés...</div>", unsafe_allow_html=True)
-        if st.button("🎲 MATCHS DE GALA", use_container_width=True, type="primary"):
+        if st.button("🎲 MATCHS DE GALA", width="stretch", type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Divers']
             st.rerun()
@@ -423,7 +440,7 @@ if st.session_state.page == 'accueil':
     with col_cat:
         st.markdown("### 📖 Tout voir d'un coup")
         st.markdown("<p style='color: gray;'>Vous préférez flâner ? Affichez la liste complète de tous les matchs disponibles.</p>", unsafe_allow_html=True)
-        if st.button("Afficher le Catalogue Complet", use_container_width=True):
+        if st.button("Afficher le Catalogue Complet", width="stretch"):
             st.session_state.page = 'catalogue'
             st.rerun()
             
@@ -445,11 +462,11 @@ if st.session_state.page == 'accueil':
             
         c_btn_e1, c_btn_e2 = st.columns(2)
         with c_btn_e1:
-            if st.button("Voir les matchs du jour", use_container_width=True):
+            if st.button("Voir les matchs du jour", width="stretch"):
                 st.session_state.page = 'ephemeride'
                 st.rerun()
         with c_btn_e2:
-            if st.button("Chercher autre date", use_container_width=True):
+            if st.button("Chercher autre date", width="stretch"):
                 st.session_state.page = 'recherche_date'
                 st.rerun()
 
@@ -459,17 +476,17 @@ if st.session_state.page == 'accueil':
     st.markdown("### 🔍 Outils & Statistiques")
     col_outils1, col_outils2 = st.columns(2)
     with col_outils1:
-        if st.button("🛡️ Par Équipe", use_container_width=True):
+        if st.button("🛡️ Par Équipe", width="stretch"):
             st.session_state.page = 'recherche_equipe'
             st.rerun()
-        if st.button("📊 Statistiques", use_container_width=True):
+        if st.button("📊 Statistiques", width="stretch"):
             st.session_state.page = 'statistiques'
             st.rerun()
     with col_outils2:
-        if st.button("⚔️ Face-à-Face", use_container_width=True):
+        if st.button("⚔️ Face-à-Face", width="stretch"):
             st.session_state.page = 'face_a_face'
             st.rerun()
-        if st.button("🕵️ Recherche Avancée", use_container_width=True):
+        if st.button("🕵️ Recherche Avancée", width="stretch"):
             st.session_state.page = 'recherche_avancee'
             st.rerun()
 
@@ -574,7 +591,7 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, cle in enumerate(noeud_actuel.keys()):
             with cols[i % 3]:
-                if st.button(cle, use_container_width=True):
+                if st.button(cle, width="stretch"):
                     st.session_state.chemin.append(cle)
                     st.rerun()
 
@@ -582,7 +599,7 @@ elif st.session_state.page == 'arborescence':
         cols = st.columns(3)
         for i, element in enumerate(noeud_actuel):
             with cols[i % 3]:
-                if st.button(element, use_container_width=True):
+                if st.button(element, width="stretch"):
                     st.session_state.chemin.append(element)
                     st.rerun()
 
@@ -600,7 +617,7 @@ elif st.session_state.page == 'arborescence':
                     cols = st.columns(4)
                     for i, ed in enumerate(editions):
                         with cols[i % 4]:
-                            if st.button(str(ed), use_container_width=True):
+                            if st.button(str(ed), width="stretch"):
                                 st.session_state.edition_choisie = ed
                                 st.rerun()
                 else:
