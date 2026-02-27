@@ -7,7 +7,7 @@ import re
 import base64
 
 # 1. Configuration de la page
-st.set_page_config(page_title="Classeur Foot", layout="wide")
+st.set_page_config(page_title="Le Grenier du Football", layout="wide")
 
 # ==========================================
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
@@ -337,20 +337,32 @@ def afficher_resultats(df_resultats):
                         else:
                             st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
                     
-                    # --- 3. PIED DE FICHE ---
+                    # --- 3. PIED DE FICHE AVEC BADGE QUALITÉ ---
                     diffuseur = row.get('Diffuseur', '')
-                    qualite = row.get('Qualité', '')
+                    qualite = str(row.get('Qualité', '')).strip()
                     
                     has_diff = pd.notna(diffuseur) and str(diffuseur).strip() != ""
-                    has_qual = pd.notna(qualite) and str(qualite).strip() != ""
+                    has_qual = pd.notna(qualite) and qualite != "" and qualite.lower() != "nan"
                     
                     if has_diff or has_qual:
-                        html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:6px; padding-bottom:2px;'>"
+                        html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:8px; padding-bottom:4px;'>"
                         parts = []
                         if has_diff:
-                            parts.append(f"<span style='font-size: 16px; font-weight: 500;'>📺 {diffuseur}</span>")
+                            parts.append(f"<span style='font-size: 15px; font-weight: 500; vertical-align: middle;'>📺 {diffuseur}</span>")
                         if has_qual:
-                            parts.append(f"<span style='font-size: 14px;'>💾 {qualite}</span>")
+                            # --- LOGIQUE DES BADGES DE COULEUR ---
+                            q_lower = qualite.lower()
+                            if any(mot in q_lower for mot in ['hd', 'mp4', 'mkv', '1080', '720', 'numérique']):
+                                bg_color = "#2e7d32" # Vert pour la bonne qualité / Numérique
+                            elif any(mot in q_lower for mot in ['dvd', 'vob']):
+                                bg_color = "#e65100" # Orange pour le DVD
+                            elif any(mot in q_lower for mot in ['vhs', 'k7', 'cassette']):
+                                bg_color = "#424242" # Gris foncé pour la VHS
+                            else:
+                                bg_color = "#1976d2" # Bleu par défaut si format non reconnu
+                                
+                            badge_html = f"<span style='background-color: {bg_color}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; vertical-align: middle;'>💾 {qualite}</span>"
+                            parts.append(badge_html)
                         
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
                         html_footer += "</div>"
@@ -416,7 +428,7 @@ with st.sidebar:
 # PAGE D'ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
-    st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Foot</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>4000</b> matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
