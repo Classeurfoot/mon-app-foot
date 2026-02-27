@@ -426,7 +426,7 @@ if st.session_state.page == 'accueil':
             st.session_state.chemin = ['Clubs']
             st.rerun()
     with col_d:
-        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Matchs de légende, Amicaux, Jubilés...</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Matchs amicaux, Jubilés...</div>", unsafe_allow_html=True)
         if st.button("🎲 MATCHS DE GALA", width="stretch", type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Divers']
@@ -639,5 +639,6 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
