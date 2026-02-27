@@ -366,16 +366,57 @@ def go_home():
     st.session_state.chemin = []
     st.session_state.edition_choisie = None
 
-if st.session_state.page != 'accueil':
-    if st.sidebar.button("🏠 Menu Principal", width="stretch"):
+# ==========================================
+# 🧭 BARRE LATÉRALE PERSISTANTE
+# ==========================================
+with st.sidebar:
+    st.title("⚽ Menu Rapide")
+    
+    if st.button("🏠 Accueil", width="stretch"):
         go_home()
+        st.rerun()
+        
+    st.divider()
+    st.markdown("### 📂 Catégories")
+    if st.button("🌍 Sélections Nationales", width="stretch"):
+        st.session_state.page = 'arborescence'
+        st.session_state.chemin = ['Nations']
+        st.session_state.edition_choisie = None
+        st.rerun()
+    if st.button("🏟️ Clubs", width="stretch"):
+        st.session_state.page = 'arborescence'
+        st.session_state.chemin = ['Clubs']
+        st.session_state.edition_choisie = None
+        st.rerun()
+    if st.button("🎲 Matchs de Gala", width="stretch"):
+        st.session_state.page = 'arborescence'
+        st.session_state.chemin = ['Divers']
+        st.session_state.edition_choisie = None
+        st.rerun()
+        
+    st.divider()
+    st.markdown("### 🔍 Outils")
+    if st.button("📖 Catalogue Complet", width="stretch"):
+        st.session_state.page = 'catalogue'
+        st.rerun()
+    if st.button("📊 Statistiques", width="stretch"):
+        st.session_state.page = 'statistiques'
+        st.rerun()
+    if st.button("🛡️ Par Équipe", width="stretch"):
+        st.session_state.page = 'recherche_equipe'
+        st.rerun()
+    if st.button("⚔️ Face-à-Face", width="stretch"):
+        st.session_state.page = 'face_a_face'
+        st.rerun()
+    if st.button("🕵️ Recherche Avancée", width="stretch"):
+        st.session_state.page = 'recherche_avancee'
         st.rerun()
 
 # ==========================================
 # PAGE D'ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
-    st.markdown("<h1 style='text-align: center;'>⚽ Archives Football</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Foot</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>4000</b> matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
@@ -639,5 +680,3 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
-
