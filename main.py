@@ -440,7 +440,7 @@ with st.sidebar:
 # ==========================================
 if st.session_state.page == 'accueil':
     st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>{len(df)}</b> matchs en vidéo.</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de 4000 matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
     # --- 1. RECHERCHE ET INFOS ---
@@ -755,3 +755,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
