@@ -337,32 +337,20 @@ def afficher_resultats(df_resultats):
                         else:
                             st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
                     
-                    # --- 3. PIED DE FICHE AVEC BADGE DE COULEUR ---
+                    # --- 3. PIED DE FICHE ---
                     diffuseur = row.get('Diffuseur', '')
-                    qualite = str(row.get('Qualité', '')).strip()
+                    qualite = row.get('Qualité', '')
                     
                     has_diff = pd.notna(diffuseur) and str(diffuseur).strip() != ""
-                    has_qual = pd.notna(qualite) and qualite != "" and qualite.lower() != "nan"
+                    has_qual = pd.notna(qualite) and str(qualite).strip() != ""
                     
                     if has_diff or has_qual:
-                        html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:8px; padding-bottom:4px;'>"
+                        html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:6px; padding-bottom:2px;'>"
                         parts = []
                         if has_diff:
-                            parts.append(f"<span style='font-size: 15px; font-weight: 500; vertical-align: middle;'>📺 {diffuseur}</span>")
+                            parts.append(f"<span style='font-size: 16px; font-weight: 500;'>📺 {diffuseur}</span>")
                         if has_qual:
-                            # --- LOGIQUE DES BADGES DE COULEUR ---
-                            q_lower = qualite.lower()
-                            if any(mot in q_lower for mot in ['hd', 'mp4', 'mkv', '1080', '720', 'numérique']):
-                                bg_color = "#2e7d32" # Vert pour la bonne qualité / Numérique
-                            elif any(mot in q_lower for mot in ['dvd', 'vob']):
-                                bg_color = "#e65100" # Orange pour le DVD
-                            elif any(mot in q_lower for mot in ['vhs', 'k7', 'cassette']):
-                                bg_color = "#424242" # Gris foncé pour la VHS
-                            else:
-                                bg_color = "#1976d2" # Bleu par défaut si format non reconnu
-                                
-                            badge_html = f"<span style='background-color: {bg_color}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; vertical-align: middle;'>💾 {qualite}</span>"
-                            parts.append(badge_html)
+                            parts.append(f"<span style='font-size: 14px;'>💾 {qualite}</span>")
                         
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
                         html_footer += "</div>"
@@ -404,17 +392,6 @@ with st.sidebar:
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Divers']
         st.session_state.edition_choisie = None
-        st.rerun()
-        
-    st.divider()
-    
-    # --- AJOUT DES DEUX NOUVELLES FONCTIONNALITÉS ---
-    st.markdown("### 🌟 Nouveautés & Objectifs")
-    if st.button("✨ Dernières Pépites", width="stretch"):
-        st.session_state.page = 'dernieres_pepites'
-        st.rerun()
-    if st.button("🎯 Progression Collection", width="stretch"):
-        st.session_state.page = 'progression'
         st.rerun()
         
     st.divider()
@@ -535,78 +512,6 @@ if st.session_state.page == 'accueil':
                 st.rerun()
 
 # ==========================================
-# PAGE NOUVEAUTÉ : DERNIÈRES PÉPITES
-# ==========================================
-elif st.session_state.page == 'dernieres_pepites':
-    st.header("✨ Les Dernières Pépites")
-    st.markdown("<p style='color: gray; font-size:16px;'>Voici les 10 derniers matchs tout fraîchement ajoutés au Grenier.</p>", unsafe_allow_html=True)
-    
-    # On prend les 10 dernières lignes du CSV et on les inverse pour avoir le plus récent en premier
-    df_derniers = df.tail(10).iloc[::-1]
-    afficher_resultats(df_derniers)
-
-# ==========================================
-# PAGE NOUVEAUTÉ : PROGRESSION DE LA COLLECTION
-# ==========================================
-elif st.session_state.page == 'progression':
-    st.header("🎯 Progression de la Collection")
-    st.markdown("<p style='color: gray; font-size:16px;'>Suivez l'avancement de la sauvegarde du patrimoine footballistique.</p>", unsafe_allow_html=True)
-    st.divider()
-
-    st.subheader("🏆 Les Finales de Légende")
-    
-    # --- Logique de calcul ---
-    if 'Phase' in df.columns:
-        # On cherche le mot 'finale' (en excluant les 1/2, 1/4 etc.)
-        mask_finale = df['Phase'].astype(str).str.strip().str.lower().isin(['finale', 'final'])
-        
-        # CDM
-        mask_cdm = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-        cdm_possedees = df[mask_cdm & mask_finale]['Compétition'].nunique()
-        total_cdm = 22 # De 1930 à 2022
-        pct_cdm = min(100, int((cdm_possedees / total_cdm) * 100))
-
-        # Euro
-        mask_euro = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-        euro_possedees = df[mask_euro & mask_finale]['Compétition'].nunique()
-        total_euro = 17 # De 1960 à 2024
-        pct_euro = min(100, int((euro_possedees / total_euro) * 100))
-
-        # Champions League
-        mask_c1 = df['Compétition'].str.contains("Champions League|Coupe d'Europe des clubs champions", na=False, case=False)
-        c1_possedees = df[mask_c1 & mask_finale]['Saison'].nunique() if 'Saison' in df.columns else len(df[mask_c1 & mask_finale])
-        total_c1 = 69 # De 1956 à 2024
-        pct_c1 = min(100, int((c1_possedees / total_c1) * 100))
-
-        col_prog1, col_prog2, col_prog3 = st.columns(3)
-        with col_prog1:
-            st.markdown(f"**Coupe du Monde** ({cdm_possedees}/{total_cdm})")
-            st.progress(pct_cdm / 100.0, text=f"{pct_cdm}% des Finales")
-        with col_prog2:
-            st.markdown(f"**Euro** ({euro_possedees}/{total_euro})")
-            st.progress(pct_euro / 100.0, text=f"{pct_euro}% des Finales")
-        with col_prog3:
-            st.markdown(f"**Ligue des Champions** ({c1_possedees}/{total_c1})")
-            st.progress(pct_c1 / 100.0, text=f"{pct_c1}% des Finales")
-            
-        st.write("---")
-        st.subheader("🌍 Couverture des Éditions")
-        st.markdown("<p style='color: gray; font-size:14px;'>Nombre d'éditions où au moins 1 match est disponible en archive.</p>", unsafe_allow_html=True)
-        
-        eds_cdm = df[mask_cdm]['Compétition'].nunique()
-        eds_euro = df[mask_euro]['Compétition'].nunique()
-        
-        st.markdown(f"**Éditions de Coupe du Monde :** {eds_cdm}/{total_cdm}")
-        st.progress(min(1.0, eds_cdm/total_cdm))
-        
-        st.write("")
-        st.markdown(f"**Éditions d'Euro :** {eds_euro}/{total_euro}")
-        st.progress(min(1.0, eds_euro/total_euro))
-
-    else:
-        st.warning("La colonne 'Phase' n'est pas présente dans votre fichier pour calculer les finales.")
-
-# ==========================================
 # PAGE CATALOGUE ET AUTRES
 # ==========================================
 elif st.session_state.page == 'catalogue':
@@ -655,17 +560,44 @@ elif st.session_state.page == 'face_a_face':
 
 elif st.session_state.page == 'recherche_avancee':
     st.header("🕵️ Recherche Avancée")
-    col1, col2, col3 = st.columns(3)
-    toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
-    competitions = sorted(df['Compétition'].dropna().unique())
-    saisons = sorted(df['Saison'].dropna().unique(), reverse=True) if 'Saison' in df.columns else []
-    with col1: f_equipes = st.multiselect("Équipes impliquées :", toutes_les_equipes)
-    with col2: f_comps = st.multiselect("Compétitions :", competitions)
-    with col3: f_saisons = st.multiselect("Saisons :", saisons) if saisons else []
+    st.markdown("<p style='color: gray; margin-bottom: 20px;'>Combinez plusieurs filtres pour trouver exactement le match que vous cherchez.</p>", unsafe_allow_html=True)
+    
+    # 1. Génération des listes uniques (en vérifiant que les colonnes existent)
+    toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().astype(str).unique())
+    competitions = sorted(df['Compétition'].dropna().astype(str).unique()) if 'Compétition' in df.columns else []
+    phases = sorted(df['Phase'].dropna().astype(str).unique()) if 'Phase' in df.columns else []
+    stades = sorted(df['Stade'].dropna().astype(str).unique()) if 'Stade' in df.columns else []
+    saisons = sorted(df['Saison'].dropna().astype(str).unique(), reverse=True) if 'Saison' in df.columns else []
+    
+    # 2. Organisation de l'interface sur 2 lignes
+    col1, col2 = st.columns(2)
+    with col1:
+        f_equipes = st.multiselect("🛡️ Équipes impliquées :", toutes_les_equipes)
+    with col2:
+        f_comps = st.multiselect("🏆 Compétitions :", competitions)
+        
+    col3, col4, col5 = st.columns(3)
+    with col3:
+        f_phases = st.multiselect("⏱️ Phase (ex: Finale, 1/8) :", phases) if phases else []
+    with col4:
+        f_stades = st.multiselect("🏟️ Stade :", stades) if stades else []
+    with col5:
+        f_saisons = st.multiselect("🗓️ Saisons :", saisons) if saisons else []
+        
+    # 3. Application des filtres sélectionnés
     df_filtre = df.copy()
-    if f_equipes: df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
-    if f_comps: df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
-    if f_saisons: df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
+    if f_equipes: 
+        df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
+    if f_comps: 
+        df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
+    if f_phases: 
+        df_filtre = df_filtre[df_filtre['Phase'].isin(f_phases)]
+    if f_stades: 
+        df_filtre = df_filtre[df_filtre['Stade'].isin(f_stades)]
+    if f_saisons: 
+        df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
+        
+    st.write("---")
     afficher_resultats(df_filtre)
 
 elif st.session_state.page == 'statistiques':
@@ -755,4 +687,3 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
