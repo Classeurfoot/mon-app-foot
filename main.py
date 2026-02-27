@@ -337,7 +337,7 @@ def afficher_resultats(df_resultats):
                         else:
                             st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
                     
-                    # --- 3. PIED DE FICHE AVEC BADGE QUALITÉ ---
+                    # --- 3. PIED DE FICHE AVEC BADGE DE COULEUR ---
                     diffuseur = row.get('Diffuseur', '')
                     qualite = str(row.get('Qualité', '')).strip()
                     
@@ -407,6 +407,17 @@ with st.sidebar:
         st.rerun()
         
     st.divider()
+    
+    # --- AJOUT DES DEUX NOUVELLES FONCTIONNALITÉS ---
+    st.markdown("### 🌟 Nouveautés & Objectifs")
+    if st.button("✨ Dernières Pépites", width="stretch"):
+        st.session_state.page = 'dernieres_pepites'
+        st.rerun()
+    if st.button("🎯 Progression Collection", width="stretch"):
+        st.session_state.page = 'progression'
+        st.rerun()
+        
+    st.divider()
     st.markdown("### 🔍 Outils")
     if st.button("📖 Catalogue Complet", width="stretch"):
         st.session_state.page = 'catalogue'
@@ -429,7 +440,7 @@ with st.sidebar:
 # ==========================================
 if st.session_state.page == 'accueil':
     st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>4000</b> matchs en vidéo.</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de <b>{len(df)}</b> matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
     # --- 1. RECHERCHE ET INFOS ---
@@ -523,25 +534,77 @@ if st.session_state.page == 'accueil':
                 st.session_state.page = 'recherche_date'
                 st.rerun()
 
-    st.write("---") 
+# ==========================================
+# PAGE NOUVEAUTÉ : DERNIÈRES PÉPITES
+# ==========================================
+elif st.session_state.page == 'dernieres_pepites':
+    st.header("✨ Les Dernières Pépites")
+    st.markdown("<p style='color: gray; font-size:16px;'>Voici les 10 derniers matchs tout fraîchement ajoutés au Grenier.</p>", unsafe_allow_html=True)
+    
+    # On prend les 10 dernières lignes du CSV et on les inverse pour avoir le plus récent en premier
+    df_derniers = df.tail(10).iloc[::-1]
+    afficher_resultats(df_derniers)
 
-    # --- 4. OUTILS & STATS ---
-    st.markdown("### 🔍 Outils & Statistiques")
-    col_outils1, col_outils2 = st.columns(2)
-    with col_outils1:
-        if st.button("🛡️ Par Équipe", width="stretch"):
-            st.session_state.page = 'recherche_equipe'
-            st.rerun()
-        if st.button("📊 Statistiques", width="stretch"):
-            st.session_state.page = 'statistiques'
-            st.rerun()
-    with col_outils2:
-        if st.button("⚔️ Face-à-Face", width="stretch"):
-            st.session_state.page = 'face_a_face'
-            st.rerun()
-        if st.button("🕵️ Recherche Avancée", width="stretch"):
-            st.session_state.page = 'recherche_avancee'
-            st.rerun()
+# ==========================================
+# PAGE NOUVEAUTÉ : PROGRESSION DE LA COLLECTION
+# ==========================================
+elif st.session_state.page == 'progression':
+    st.header("🎯 Progression de la Collection")
+    st.markdown("<p style='color: gray; font-size:16px;'>Suivez l'avancement de la sauvegarde du patrimoine footballistique.</p>", unsafe_allow_html=True)
+    st.divider()
+
+    st.subheader("🏆 Les Finales de Légende")
+    
+    # --- Logique de calcul ---
+    if 'Phase' in df.columns:
+        # On cherche le mot 'finale' (en excluant les 1/2, 1/4 etc.)
+        mask_finale = df['Phase'].astype(str).str.strip().str.lower().isin(['finale', 'final'])
+        
+        # CDM
+        mask_cdm = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+        cdm_possedees = df[mask_cdm & mask_finale]['Compétition'].nunique()
+        total_cdm = 22 # De 1930 à 2022
+        pct_cdm = min(100, int((cdm_possedees / total_cdm) * 100))
+
+        # Euro
+        mask_euro = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+        euro_possedees = df[mask_euro & mask_finale]['Compétition'].nunique()
+        total_euro = 17 # De 1960 à 2024
+        pct_euro = min(100, int((euro_possedees / total_euro) * 100))
+
+        # Champions League
+        mask_c1 = df['Compétition'].str.contains("Champions League|Coupe d'Europe des clubs champions", na=False, case=False)
+        c1_possedees = df[mask_c1 & mask_finale]['Saison'].nunique() if 'Saison' in df.columns else len(df[mask_c1 & mask_finale])
+        total_c1 = 69 # De 1956 à 2024
+        pct_c1 = min(100, int((c1_possedees / total_c1) * 100))
+
+        col_prog1, col_prog2, col_prog3 = st.columns(3)
+        with col_prog1:
+            st.markdown(f"**Coupe du Monde** ({cdm_possedees}/{total_cdm})")
+            st.progress(pct_cdm / 100.0, text=f"{pct_cdm}% des Finales")
+        with col_prog2:
+            st.markdown(f"**Euro** ({euro_possedees}/{total_euro})")
+            st.progress(pct_euro / 100.0, text=f"{pct_euro}% des Finales")
+        with col_prog3:
+            st.markdown(f"**Ligue des Champions** ({c1_possedees}/{total_c1})")
+            st.progress(pct_c1 / 100.0, text=f"{pct_c1}% des Finales")
+            
+        st.write("---")
+        st.subheader("🌍 Couverture des Éditions")
+        st.markdown("<p style='color: gray; font-size:14px;'>Nombre d'éditions où au moins 1 match est disponible en archive.</p>", unsafe_allow_html=True)
+        
+        eds_cdm = df[mask_cdm]['Compétition'].nunique()
+        eds_euro = df[mask_euro]['Compétition'].nunique()
+        
+        st.markdown(f"**Éditions de Coupe du Monde :** {eds_cdm}/{total_cdm}")
+        st.progress(min(1.0, eds_cdm/total_cdm))
+        
+        st.write("")
+        st.markdown(f"**Éditions d'Euro :** {eds_euro}/{total_euro}")
+        st.progress(min(1.0, eds_euro/total_euro))
+
+    else:
+        st.warning("La colonne 'Phase' n'est pas présente dans votre fichier pour calculer les finales.")
 
 # ==========================================
 # PAGE CATALOGUE ET AUTRES
