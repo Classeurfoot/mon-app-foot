@@ -395,6 +395,23 @@ with st.sidebar:
         st.rerun()
         
     st.divider()
+    
+    # --- AJOUT DES DEUX NOUVELLES FONCTIONNALITÉS ---
+    st.markdown("### 🌟 Nouveautés & Objectifs")
+    if st.button("✨ Dernières Pépites", width="stretch"):
+        st.session_state.page = 'dernieres_pepites'
+        st.rerun()
+    if st.button("🎯 Progression Collection", width="stretch"):
+        st.session_state.page = 'progression'
+        st.rerun()
+        
+    st.divider()
+    st.markdown("### 🤝 Échanges & Requêtes")
+    if st.button("🔎 Mes Recherches", width="stretch"):
+        st.session_state.page = 'mes_recherches'
+        st.rerun()
+        
+    st.divider()
     st.markdown("### 🔍 Outils")
     if st.button("📖 Catalogue Complet", width="stretch"):
         st.session_state.page = 'catalogue'
@@ -447,6 +464,20 @@ if st.session_state.page == 'accueil':
     with col_btn4:
         if st.button("✉️ Contact / Échanges", width="stretch"): popup_contact()
             
+    st.write("---")
+    
+    # --- NOUVEAU : APPÂT POUR LES ÉCHANGES ---
+    with st.container(border=True):
+        c_txt, c_btn = st.columns([3, 1])
+        with c_txt:
+            st.markdown("<h4 style='margin-top:0px; margin-bottom:5px;'>🚨 Vous possédez vos propres archives ?</h4>", unsafe_allow_html=True)
+            st.markdown("Je suis constamment à la recherche de nouveaux matchs pour compléter le Grenier. Découvrez ma liste de recherches et proposons-nous des échanges !")
+        with c_btn:
+            st.write("") # Petit espacement
+            if st.button("🔎 Voir mes recherches", use_container_width=True, type="primary"):
+                st.session_state.page = 'mes_recherches'
+                st.rerun()
+                
     st.write("---")
     
     # --- 2. LE CŒUR DE L'APP : EXPLORER PAR COMPÉTITION ---
@@ -510,6 +541,130 @@ if st.session_state.page == 'accueil':
             if st.button("Chercher autre date", width="stretch"):
                 st.session_state.page = 'recherche_date'
                 st.rerun()
+
+
+# ==========================================
+# PAGE NOUVEAUTÉ : MES RECHERCHES (WANTED)
+# ==========================================
+elif st.session_state.page == 'mes_recherches':
+    st.header("🔎 Mes Recherches Actuelles")
+    st.markdown("<p style='color: gray; font-size:16px;'>Vous avez ces trésors dans vos disques durs ou vos cartons ? Contactez-moi pour un échange !</p>", unsafe_allow_html=True)
+    st.divider()
+
+    col_milan, col_france = st.columns(2)
+
+    # Colonne Milan AC
+    with col_milan:
+        st.markdown("""
+        <div style='background-color: #2b1111; padding: 25px; border-radius: 15px; border: 2px solid #e32221; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);'>
+            <div style='text-align: center;'>
+                <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>🔴⚫ MILAN AC</h2>
+                <p style='color: #ff9999; font-style: italic; font-size: 16px;'>Période Ciblée : 1988 - 2007</p>
+            </div>
+            <hr style='border-color: #e32221; margin-top: 15px; margin-bottom: 20px;'>
+            <ul style='color: white; line-height: 1.8; font-size: 15px;'>
+                <li><b>Série A 1988-1992 :</b> N'importe quel match de l'ère Sacchi/Capello (idéalement qualité DVD/Numérique).</li>
+                <li><b>Ligue des Champions 1994 :</b> Demi-finale contre Monaco (Recherche les commentaires français de l'époque).</li>
+                <li><b>Ligue des Champions 2003 :</b> Finale 100% italienne contre la Juventus (Version non coupée).</li>
+                <li><b>Matchs de Coupe d'Italie :</b> Années 90 avec la présence de Baresi / Maldini.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Colonne France 98
+    with col_france:
+        st.markdown("""
+        <div style='background-color: #0b2340; padding: 25px; border-radius: 15px; border: 2px solid #1a5fb4; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);'>
+            <div style='text-align: center;'>
+                <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>🇫🇷 FRANCE 98</h2>
+                <p style='color: #99c2ff; font-style: italic; font-size: 16px;'>Préparation & Coupe du Monde</p>
+            </div>
+            <hr style='border-color: #1a5fb4; margin-top: 15px; margin-bottom: 20px;'>
+            <ul style='color: white; line-height: 1.8; font-size: 15px;'>
+                <li><b>Amicaux 1997-1998 :</b> Matchs de préparation (Tournoi de France, Finlande, Suède...) avec commentaires originaux.</li>
+                <li><b>Caméras Isolées / Tactiques :</b> Tout flux vidéo alternatif des matchs de la compétition.</li>
+                <li><b>France - Paraguay :</b> Version non coupée avec le long avant-match et après-match.</li>
+                <li><b>Émissions d'époque :</b> Téléfoot, Jour de Foot ou journaux télévisés complets de l'été 1998.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    st.write("")
+    st.write("")
+    st.info("✉️ **Un de ces matchs dort chez vous ?** N'hésitez pas à utiliser l'onglet de Contact pour m'envoyer un message. J'étudie toutes les propositions d'échanges avec mon catalogue !")
+
+
+# ==========================================
+# PAGE NOUVEAUTÉ : DERNIÈRES PÉPITES
+# ==========================================
+elif st.session_state.page == 'dernieres_pepites':
+    st.header("✨ Les Dernières Pépites")
+    st.markdown("<p style='color: gray; font-size:16px;'>Voici les 10 derniers matchs tout fraîchement ajoutés au Grenier.</p>", unsafe_allow_html=True)
+    
+    # On prend les 10 dernières lignes du CSV et on les inverse pour avoir le plus récent en premier
+    df_derniers = df.tail(10).iloc[::-1]
+    afficher_resultats(df_derniers)
+
+# ==========================================
+# PAGE NOUVEAUTÉ : PROGRESSION DE LA COLLECTION
+# ==========================================
+elif st.session_state.page == 'progression':
+    st.header("🎯 Progression de la Collection")
+    st.markdown("<p style='color: gray; font-size:16px;'>Suivez l'avancement de la sauvegarde du patrimoine footballistique.</p>", unsafe_allow_html=True)
+    st.divider()
+
+    st.subheader("🏆 Les Finales de Légende")
+    
+    # --- Logique de calcul ---
+    if 'Phase' in df.columns:
+        # On cherche le mot 'finale' (en excluant les 1/2, 1/4 etc.)
+        mask_finale = df['Phase'].astype(str).str.strip().str.lower().isin(['finale', 'final'])
+        
+        # CDM
+        mask_cdm = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+        cdm_possedees = df[mask_cdm & mask_finale]['Compétition'].nunique()
+        total_cdm = 22 # De 1930 à 2022
+        pct_cdm = min(100, int((cdm_possedees / total_cdm) * 100))
+
+        # Euro
+        mask_euro = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+        euro_possedees = df[mask_euro & mask_finale]['Compétition'].nunique()
+        total_euro = 17 # De 1960 à 2024
+        pct_euro = min(100, int((euro_possedees / total_euro) * 100))
+
+        # Champions League
+        mask_c1 = df['Compétition'].str.contains("Champions League|Coupe d'Europe des clubs champions", na=False, case=False)
+        c1_possedees = df[mask_c1 & mask_finale]['Saison'].nunique() if 'Saison' in df.columns else len(df[mask_c1 & mask_finale])
+        total_c1 = 69 # De 1956 à 2024
+        pct_c1 = min(100, int((c1_possedees / total_c1) * 100))
+
+        col_prog1, col_prog2, col_prog3 = st.columns(3)
+        with col_prog1:
+            st.markdown(f"**Coupe du Monde** ({cdm_possedees}/{total_cdm})")
+            st.progress(pct_cdm / 100.0, text=f"{pct_cdm}% des Finales")
+        with col_prog2:
+            st.markdown(f"**Euro** ({euro_possedees}/{total_euro})")
+            st.progress(pct_euro / 100.0, text=f"{pct_euro}% des Finales")
+        with col_prog3:
+            st.markdown(f"**Ligue des Champions** ({c1_possedees}/{total_c1})")
+            st.progress(pct_c1 / 100.0, text=f"{pct_c1}% des Finales")
+            
+        st.write("---")
+        st.subheader("🌍 Couverture des Éditions")
+        st.markdown("<p style='color: gray; font-size:14px;'>Nombre d'éditions où au moins 1 match est disponible en archive.</p>", unsafe_allow_html=True)
+        
+        eds_cdm = df[mask_cdm]['Compétition'].nunique()
+        eds_euro = df[mask_euro]['Compétition'].nunique()
+        
+        st.markdown(f"**Éditions de Coupe du Monde :** {eds_cdm}/{total_cdm}")
+        st.progress(min(1.0, eds_cdm/total_cdm))
+        
+        st.write("")
+        st.markdown(f"**Éditions d'Euro :** {eds_euro}/{total_euro}")
+        st.progress(min(1.0, eds_euro/total_euro))
+
+    else:
+        st.warning("La colonne 'Phase' n'est pas présente dans votre fichier pour calculer les finales.")
 
 # ==========================================
 # PAGE CATALOGUE ET AUTRES
