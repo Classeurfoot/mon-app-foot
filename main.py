@@ -282,7 +282,7 @@ def afficher_resultats(df_resultats):
                             parts.append(f"<span style='font-size: 16px; font-weight: 500;'>📺 {diffuseur}</span>")
                         if has_qual:
                             # ⚠️ AJUSTEMENT TAILLES : Qualité passe à 14px
-                            parts.append(f"<span style='font-size: 14px;'>⭐ {qualite}</span>")
+                            parts.append(f"<span style='font-size: 14px;'>💾 {qualite}</span>")
                         
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
                         html_footer += "</div>"
@@ -571,3 +571,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
