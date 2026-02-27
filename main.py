@@ -210,6 +210,17 @@ def afficher_resultats(df_resultats):
                     stade = row.get('Stade', 'Stade inconnu')
                     if pd.isna(stade) or not str(stade).strip(): 
                         stade = "Stade inconnu"
+                        
+                    # ⚠️ NOUVEAUTÉ : Nettoyage de la journée (enlève le .0 si c'est lu comme un float par Pandas)
+                    raw_journee = row.get('Journée', '')
+                    val_journee = ""
+                    if pd.notna(raw_journee) and str(raw_journee).strip():
+                        try:
+                            val_journee = str(int(float(raw_journee))) # Convertit "23.0" en "23"
+                        except ValueError:
+                            val_journee = str(raw_journee).strip()
+                            
+                    val_phase = str(row.get('Phase', '')).strip() if 'Phase' in row and pd.notna(row['Phase']) else ""
                     
                     # Logique de distinction Championnat / Coupes
                     comp_name = str(row.get('Compétition', '')).lower()
@@ -218,25 +229,20 @@ def afficher_resultats(df_resultats):
                     # On vérifie si c'est un championnat (et pas la ligue des champions ou ligue des nations)
                     est_championnat = any(mot in comp_name for mot in mots_championnats) and 'champions' not in comp_name and 'nations' not in comp_name and 'europe' not in comp_name
                     
-                    val_phase = str(row.get('Phase', '')).strip() if 'Phase' in row and pd.notna(row['Phase']) else ""
-                    val_journee = str(row.get('Journée', '')).strip() if 'Journée' in row and pd.notna(row['Journée']) else ""
-                    
                     ajout_stade = ""
                     if est_championnat:
-                        # Priorité absolue à la Journée pour les championnats
                         if val_journee:
-                            if val_journee.isdigit():
+                            # S'il y a un chiffre seul ou s'il manque le mot "Journée", on l'ajoute proprement
+                            if val_journee.isdigit() or not val_journee.lower().startswith(('j', 'journée')):
                                 ajout_stade = f"Journée {val_journee}"
                             else:
                                 ajout_stade = val_journee
-                        elif val_phase: # Fallback si erreur de saisie
-                            ajout_stade = val_phase
+                        elif val_phase:
+                            ajout_stade = val_phase # Fallback au cas où
                     else:
-                        # Priorité absolue à la Phase pour tout le reste (Coupes)
+                        # Pour les coupes : on affiche STRICTEMENT la phase (et on ignore la journée)
                         if val_phase:
                             ajout_stade = val_phase
-                        elif val_journee: # Fallback pour les groupes de C1 par exemple
-                            ajout_stade = val_journee
                             
                     if ajout_stade:
                         stade += f" - {ajout_stade}"
