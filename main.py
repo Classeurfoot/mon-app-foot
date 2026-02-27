@@ -201,29 +201,46 @@ def afficher_resultats(df_resultats):
                     date_formatee = date_brute
                     if pd.notna(date_brute) and date_brute:
                         try:
-                            # Transforme "10/06/1998" en objet date
                             dt = datetime.strptime(date_brute, "%d/%m/%Y")
-                            # Formate en "mercredi 10 juin 1998"
                             date_formatee = f"{jours_fr[dt.weekday()]} {dt.day} {mois_fr[dt.month - 1]} {dt.year}"
                         except ValueError:
-                            date_formatee = date_brute # Fallback au cas où la date est mal écrite
+                            date_formatee = date_brute
 
-                    # --- 2. EN-TÊTE (Date | Stade + Journée/Phase) ---
+                    # --- 2. EN-TÊTE (Date | Stade + Journée OU Phase) ---
                     stade = row.get('Stade', 'Stade inconnu')
                     if pd.isna(stade) or not str(stade).strip(): 
                         stade = "Stade inconnu"
                     
-                    # On récupère la Phase et/ou la Journée pour les accoler au stade
-                    ajouts_stade = []
-                    if 'Phase' in row and pd.notna(row['Phase']) and str(row['Phase']).strip():
-                        ajouts_stade.append(str(row['Phase']))
-                    if 'Journée' in row and pd.notna(row['Journée']) and str(row['Journée']).strip():
-                        ajouts_stade.append(str(row['Journée']))
-                        
-                    if ajouts_stade:
-                        stade += f" - {' / '.join(ajouts_stade)}"
+                    # Logique de distinction Championnat / Coupes
+                    comp_name = str(row.get('Compétition', '')).lower()
+                    mots_championnats = ['ligue 1', 'ligue 2', 'division 1', 'division 2', 'serie a', 'liga', 'premier league', 'bundesliga', 'championnat']
                     
-                    # On affiche avec une majuscule au jour (ex: Mercredi)
+                    # On vérifie si c'est un championnat (et pas la ligue des champions ou ligue des nations)
+                    est_championnat = any(mot in comp_name for mot in mots_championnats) and 'champions' not in comp_name and 'nations' not in comp_name and 'europe' not in comp_name
+                    
+                    val_phase = str(row.get('Phase', '')).strip() if 'Phase' in row and pd.notna(row['Phase']) else ""
+                    val_journee = str(row.get('Journée', '')).strip() if 'Journée' in row and pd.notna(row['Journée']) else ""
+                    
+                    ajout_stade = ""
+                    if est_championnat:
+                        # Priorité absolue à la Journée pour les championnats
+                        if val_journee:
+                            if val_journee.isdigit():
+                                ajout_stade = f"Journée {val_journee}"
+                            else:
+                                ajout_stade = val_journee
+                        elif val_phase: # Fallback si erreur de saisie
+                            ajout_stade = val_phase
+                    else:
+                        # Priorité absolue à la Phase pour tout le reste (Coupes)
+                        if val_phase:
+                            ajout_stade = val_phase
+                        elif val_journee: # Fallback pour les groupes de C1 par exemple
+                            ajout_stade = val_journee
+                            
+                    if ajout_stade:
+                        stade += f" - {ajout_stade}"
+                    
                     st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade}")
                     
                     dom = row.get('Domicile', '')
@@ -256,21 +273,14 @@ def afficher_resultats(df_resultats):
                     has_qual = pd.notna(qualite) and str(qualite).strip() != ""
                     
                     if has_diff or has_qual:
-                        # On prépare la structure HTML
                         html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:5px;'>"
                         parts = []
-                        
                         if has_diff:
-                            # Diffuseur avec une police plus grande (15px)
                             parts.append(f"<span style='font-size: 15px; font-weight: 500;'>📺 {diffuseur}</span>")
                         if has_qual:
-                            # Qualité en police classique (12px)
                             parts.append(f"<span style='font-size: 12px;'>⭐ {qualite}</span>")
-                            
-                        # On assemble avec un séparateur
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
                         html_footer += "</div>"
-                        
                         st.markdown(html_footer, unsafe_allow_html=True)
 
 # --- GESTION DE LA NAVIGATION ---
