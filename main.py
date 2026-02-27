@@ -558,16 +558,15 @@ elif st.session_state.page == 'mes_recherches':
         st.markdown("""
         <div style='background-color: #2b1111; padding: 25px; border-radius: 15px; border: 2px solid #e32221; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);'>
             <div style='text-align: center;'>
-                <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>🔴⚫ MILAN AC</h2>
-                <p style='color: #ff9999; font-style: italic; font-size: 16px;'>Période Ciblée : 1988 - 2007</p>
+                <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>🔴⚫ AC Milan</h2>
             </div>
             <hr style='border-color: #e32221; margin-top: 15px; margin-bottom: 20px;'>
-            <ul style='color: white; line-height: 1.8; font-size: 15px;'>
-                <li><b>Série A 1988-1992 :</b> N'importe quel match de l'ère Sacchi/Capello (idéalement qualité DVD/Numérique).</li>
-                <li><b>Ligue des Champions 1994 :</b> Demi-finale contre Monaco (Recherche les commentaires français de l'époque).</li>
-                <li><b>Ligue des Champions 2003 :</b> Finale 100% italienne contre la Juventus (Version non coupée).</li>
-                <li><b>Matchs de Coupe d'Italie :</b> Années 90 avec la présence de Baresi / Maldini.</li>
-            </ul>
+            <div style='color: white; line-height: 1.8; font-size: 15px;'>
+                <p><b>🔴⚫ Tifoso du Milan</b> (plus de 600 matchs dans ma collection)</p>
+                <p>Je cherche en continu de nouvelles vidéos pour étoffer ma collection : matchs complets toutes compétitions confondues (versions française ou italienne uniquement).</p>
+                <p>🎥 Si vous possédez des enregistrements du Milan, je suis preneur.</p>
+                <p>📩 Contactez-moi en DM pour proposer un échange ou une vente.</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -576,23 +575,21 @@ elif st.session_state.page == 'mes_recherches':
         st.markdown("""
         <div style='background-color: #0b2340; padding: 25px; border-radius: 15px; border: 2px solid #1a5fb4; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);'>
             <div style='text-align: center;'>
-                <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>🇫🇷 FRANCE 98</h2>
-                <p style='color: #99c2ff; font-style: italic; font-size: 16px;'>Préparation & Coupe du Monde</p>
+                <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>Mondial 1998 (France 98)</h2>
             </div>
             <hr style='border-color: #1a5fb4; margin-top: 15px; margin-bottom: 20px;'>
-            <ul style='color: white; line-height: 1.8; font-size: 15px;'>
-                <li><b>Amicaux 1997-1998 :</b> Matchs de préparation (Tournoi de France, Finlande, Suède...) avec commentaires originaux.</li>
-                <li><b>Caméras Isolées / Tactiques :</b> Tout flux vidéo alternatif des matchs de la compétition.</li>
-                <li><b>France - Paraguay :</b> Version non coupée avec le long avant-match et après-match.</li>
-                <li><b>Émissions d'époque :</b> Téléfoot, Jour de Foot ou journaux télévisés complets de l'été 1998.</li>
-            </ul>
+            <div style='color: white; line-height: 1.8; font-size: 15px;'>
+                <p><b>✨ Projet France 98 :</b> construire l’archive idéale.</p>
+                <p>Mon but : je cherche à réunir les 64 matchs du tournoi en meilleure qualité possible, avec toutes les versions TV françaises (TF1, France TV, Canal+, Eurosport...). Il m'en manque encore !!!</p>
+                <p>🎞️ Matchs complets, résumés, magazines : tout m’intéresse.</p>
+                <p>🗂️ Je recherche aussi les avant/après-match et émissions spéciales.</p>
+                <p>📩 Contactez-moi en DM pour proposer un échange ou une vente.</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
         
     st.write("")
     st.write("")
-    st.info("✉️ **Un de ces matchs dort chez vous ?** N'hésitez pas à utiliser l'onglet de Contact pour m'envoyer un message. J'étudie toutes les propositions d'échanges avec mon catalogue !")
-
 
 # ==========================================
 # PAGE NOUVEAUTÉ : DERNIÈRES PÉPITES
