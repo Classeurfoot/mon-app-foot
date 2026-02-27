@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import unicodedata
 import re
+import base64
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Classeur Foot", layout="wide")
@@ -253,19 +254,46 @@ def afficher_resultats(df_resultats):
                     
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
-                    # ⚠️ AJUSTEMENT TAILLES : font-size passé à 18px pour les noms d'équipes
+                    # --- GESTION DOMICILE CENTRÉE ---
                     with c_dom:
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         if os.path.exists(logo_dom):
-                            st.image(logo_dom, width=60)
+                            try:
+                                with open(logo_dom, "rb") as image_file:
+                                    img_b64 = base64.b64encode(image_file.read()).decode()
+                                # Le nom et l'image sont englobés dans la même div pour un centrage parfait
+                                html_dom = f"""
+                                <div style='text-align:center;'>
+                                    <p style='font-weight:bold; font-size:17px; margin-bottom:5px;'>{dom}</p>
+                                    <img src='data:image/png;base64,{img_b64}' style='width:60px;'>
+                                </div>
+                                """
+                                st.markdown(html_dom, unsafe_allow_html=True)
+                            except Exception:
+                                st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         
+                    # --- SCORE ---
                     with c_score:
                         st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
+                    # --- GESTION EXTÉRIEUR CENTRÉE ---
                     with c_ext:
-                        st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
                         if os.path.exists(logo_ext):
-                            st.image(logo_ext, width=60)
+                            try:
+                                with open(logo_ext, "rb") as image_file:
+                                    img_b64 = base64.b64encode(image_file.read()).decode()
+                                html_ext = f"""
+                                <div style='text-align:center;'>
+                                    <p style='font-weight:bold; font-size:17px; margin-bottom:5px;'>{ext}</p>
+                                    <img src='data:image/png;base64,{img_b64}' style='width:60px;'>
+                                </div>
+                                """
+                                st.markdown(html_ext, unsafe_allow_html=True)
+                            except Exception:
+                                st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
                     
                     # --- 3. PIED DE FICHE ---
                     diffuseur = row.get('Diffuseur', '')
@@ -278,10 +306,8 @@ def afficher_resultats(df_resultats):
                         html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:6px; padding-bottom:2px;'>"
                         parts = []
                         if has_diff:
-                            # ⚠️ AJUSTEMENT TAILLES : Diffuseur passe à 16px
                             parts.append(f"<span style='font-size: 16px; font-weight: 500;'>📺 {diffuseur}</span>")
                         if has_qual:
-                            # ⚠️ AJUSTEMENT TAILLES : Qualité passe à 14px
                             parts.append(f"<span style='font-size: 14px;'>💾 {qualite}</span>")
                         
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
@@ -571,5 +597,3 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
-
