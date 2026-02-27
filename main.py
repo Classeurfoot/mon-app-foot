@@ -191,7 +191,7 @@ def load_data():
         return pd.DataFrame()
 
 df = load_data()
-colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Qualité']
+colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
 # --- OUTIL : FICHES DE MATCHS ---
@@ -639,3 +639,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
