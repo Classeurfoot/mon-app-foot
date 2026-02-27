@@ -253,7 +253,7 @@ def afficher_resultats(df_resultats):
                     
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
-                    # ⚠️ AJUSTEMENT TAILLES : font-size passé à 17px pour les noms d'équipes
+                    # ⚠️ AJUSTEMENT TAILLES : font-size passé à 18px pour les noms d'équipes
                     with c_dom:
                         st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
                         if os.path.exists(logo_dom):
@@ -571,4 +571,5 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
