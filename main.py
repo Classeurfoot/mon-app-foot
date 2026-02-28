@@ -69,8 +69,8 @@ def popup_tarifs():
     st.divider()
     st.markdown("### 🎁 Offres & Réductions")
     st.markdown("""
-    * 🆓 **1 match offert** pour 10 matchs achetés.
-    * 📉 **-10% de réduction** immédiate dès 20 matchs achetés.
+    * 🆓 **1 match offert** tous les 10 matchs achetés (une déduction de 3€ s'applique automatiquement dans le panier à partir du 11ème match).
+    * 🔄 **Offre cumulable :** 2 matchs offerts pour 20 achetés, 3 pour 30, etc.
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
 
@@ -883,4 +883,5 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
