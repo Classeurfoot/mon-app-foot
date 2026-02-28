@@ -63,12 +63,13 @@ def popup_tarifs():
     st.markdown("### 💰 Grille Tarifaire")
     st.markdown("""
     * 💿 **1 match au format DVD** = **5 €**
+      *(⚠️ Note : Pour les formats DVD, vous recevez les fichiers informatiques originaux (.VOB), il n'y a pas d'envoi de DVD physique)*
     * 💻 **1 match au format Numérique** (mp4, mkv...) = **3 €**
     """)
     st.divider()
     st.markdown("### 🎁 Offres & Réductions")
     st.markdown("""
-    * 🆓 **1 match offert** pour 10 matchs achetés (hors DVD).
+    * 🆓 **1 match offert** pour 10 matchs achetés.
     * 📉 **-10% de réduction** immédiate dès 20 matchs achetés.
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
@@ -882,3 +883,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
