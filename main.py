@@ -383,6 +383,20 @@ with st.sidebar:
     if st.button("🏠 Accueil", width="stretch"):
         go_home()
         st.rerun()
+        with st.sidebar:
+    st.title("⚽ Menu Rapide")
+    
+    if st.button("🏠 Accueil", width="stretch"):
+        go_home()
+        st.rerun()
+        
+    # --- NOUVEAU BOUTON F.A.Q ---
+    if st.button("❓ F.A.Q & Infos", width="stretch"):
+        st.session_state.page = 'faq'
+        st.rerun()
+        
+    st.divider()
+        
         
     st.divider()
     
@@ -675,6 +689,43 @@ elif st.session_state.page == 'panier':
         if st.button("🗑️ Vider tout le panier", type="secondary"):
             st.session_state.panier = []
             st.rerun()
+            
+# ==========================================
+# PAGE : F.A.Q (FOIRE AUX QUESTIONS)
+# ==========================================
+elif st.session_state.page == 'faq':
+    st.header("❓ Foire Aux Questions & Informations")
+    st.markdown("<p style='color: gray; font-size:16px;'>Vous trouverez ici toutes les réponses concernant le fonctionnement du Grenier, la qualité des vidéos et les modalités d'échange.</p>", unsafe_allow_html=True)
+    st.write("---")
+
+    with st.expander("📺 D'où proviennent toutes ces archives ?"):
+        st.markdown("""
+        Ces matchs sont le fruit de plusieurs années de passion, de numérisations personnelles (anciennes cassettes VHS, enregistrements TV d'époque) et d'échanges avec d'autres collectionneurs à travers le monde. Le Grenier du Football est avant tout un véritable travail de sauvegarde du patrimoine footballistique !
+        """)
+
+    with st.expander("🎞️ Quelle est la qualité vidéo des matchs ? Sont-ils en HD ?"):
+        st.markdown("""
+        L'honnêteté avant tout : la grande majorité des matchs d'avant 2005-2010 conservent le charme et le "grain" typique de leur époque. Il s'agit de diffusions standard (SD), de numérisations VHS ou de premiers DVD. Ce n'est pas de la 4K, c'est de l'Histoire pure dans son jus d'origine ! Les matchs plus récents sont, bien entendu, dans des résolutions supérieures.
+        """)
+
+    with st.expander("💾 Quelle est la différence entre le format Numérique et le format DVD ?"):
+        st.markdown("""
+        * 💻 **Le format Numérique (.mp4, .mkv, .avi) :** Il est optimisé pour être lu très facilement sur un ordinateur, une tablette, un smartphone ou sur une TV moderne via une clé USB.
+        * 💿 **Le format DVD (fichiers .VOB) :** C'est le format d'archivage par excellence. Il est plus lourd et s'adresse principalement aux puristes qui souhaitent conserver la structure exacte du DVD d'origine. *(Rappel : l'envoi se fait uniquement par lien de téléchargement, aucun DVD physique n'est expédié par la poste).*
+        """)
+
+    with st.expander("🤝 Comment fonctionne un échange de matchs ?"):
+        st.markdown("""
+        C'est très simple ! Si vous avez des archives qui pourraient m'intéresser (jetez un œil à la rubrique **Mes Recherches**), envoyez-moi votre liste par e-mail. Nous comparons nos catalogues, nous nous mettons d'accord sur un échange équitable (1 match contre 1 match, par exemple), et nous nous transmettons les fichiers numériques via des plateformes sécurisées comme *WeTransfer*, *SwissTransfer* ou *Grosfichiers*.
+        """)
+
+    with st.expander("💳 Comment se passe le paiement pour une commande directe ? Est-ce sécurisé ?"):
+        st.markdown("""
+        Absolument. Une fois votre sélection faite via le panier, vous m'envoyez le récapitulatif par e-mail. Je vous confirme rapidement la disponibilité de vos fichiers. Le règlement s'effectue ensuite de manière 100% sécurisée via **PayPal**. Dès réception, je génère votre lien de téléchargement privé et rapide.
+        """)
+        
+    st.write("---")
+    st.info("💡 **Vous n'avez pas trouvé votre réponse ?** N'hésitez pas à me contacter directement via **legrenierdufootball@hotmail.com** !")
 
 # ==========================================
 # PAGE : MES RECHERCHES (WANTED)
@@ -955,6 +1006,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
