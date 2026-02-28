@@ -76,15 +76,27 @@ def popup_tarifs():
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
 
-@st.dialog("🤝 Échanges & Contact")
-def popup_contact():
+@st.dialog("✉️ Contact & Commandes")
+def popup_contact_commandes():
     st.markdown("""
-    **Comment obtenir un match ?**
-    * 🛒 **Achat direct :** Faites votre sélection en l'ajoutant à votre panier, puis envoyez-moi le récapitulatif.
-    * 🔄 **Échange :** Vous possédez vos propres archives ? Je suis toujours ouvert aux échanges de matchs rares !
-    * 🚀 **Livraison :** Les fichiers numériques sont envoyés rapidement et de manière sécurisée via *Swisstransfer*, *WeTransfer* ou *Grosfichiers*.
+    **Comment valider votre commande ?**
+    * 🛒 **Le Panier :** Une fois votre sélection terminée, envoyez simplement le récapitulatif de votre panier à cette adresse : **legrenierdufootball@hotmail.com**
+    * 💳 **Le Paiement :** À réception de votre e-mail, je vous répondrai avec les instructions pour procéder au paiement sécurisé via **PayPal**.
+    * 🚀 **La Livraison :** Dès validation du paiement, vos matchs sont envoyés rapidement et en toute sécurité via des plateformes de téléchargement comme *Swisstransfer*, *WeTransfer* ou *Grosfichiers*.
     
-    📩 **Me contacter :** N'hésitez pas à m'envoyer un message en privé pour finaliser votre commande !
+    ---
+    **Une question spécifique ?** Vous cherchez un match qui n'est pas (encore) dans le catalogue ? Vous avez une question technique sur les formats ? N'hésitez pas à m'écrire à la même adresse mail, je vous répondrai avec plaisir !
+    """)
+
+@st.dialog("🤝 Proposer un Échange")
+def popup_echanges():
+    st.markdown("""
+    **Faisons grandir Le Grenier ensemble !** Je suis continuellement à la recherche de nouvelles archives pour sauvegarder le patrimoine footballistique. Si vous possédez vos propres enregistrements sur disques durs, DVD ou VHS, je suis très ouvert aux échanges !
+    
+    **Comment procéder ?**
+    * 🔎 Consultez la section **"Mes Recherches"** dans le menu pour découvrir mes projets prioritaires actuels (ex: AC Milan, France 98...).
+    * 📋 Envoyez-moi votre liste de matchs ou vos propositions par e-mail à : **legrenierdufootball@hotmail.com**
+    * 🔄 Nous pourrons alors convenir d'un échange équitable de fichiers numériques (via *Swisstransfer*, *WeTransfer*, etc.).
     """)
 
 # ==========================================
@@ -456,15 +468,18 @@ if st.session_state.page == 'accueil':
         afficher_resultats(df_trouve)
         st.write("---")
 
-    col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
+    # Rangée des 5 boutons d'informations
+    col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
     with col_btn1:
-        if st.button("📖 Contenu", width="stretch"): popup_contenu()
+        if st.button("📖 Contenu", use_container_width=True): popup_contenu()
     with col_btn2:
-        if st.button("💾 Formats", width="stretch"): popup_formats()
+        if st.button("💾 Formats", use_container_width=True): popup_formats()
     with col_btn3:
-        if st.button("💶 Tarifs", width="stretch"): popup_tarifs()
+        if st.button("💶 Tarifs", use_container_width=True): popup_tarifs()
     with col_btn4:
-        if st.button("✉️ Contact / Échanges", width="stretch"): popup_contact()
+        if st.button("✉️ Commandes", use_container_width=True): popup_contact_commandes()
+    with col_btn5:
+        if st.button("🤝 Échanges", use_container_width=True): popup_echanges()
             
     st.write("---")
     
@@ -940,5 +955,6 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
