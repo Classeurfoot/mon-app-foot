@@ -448,8 +448,20 @@ with st.sidebar:
 # PAGE D'ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
-    st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de 4000 matchs en vidéo.</p>", unsafe_allow_html=True)
+    
+    # --- LA NOUVELLE BANNIÈRE ---
+    # Ici j'ai mis une image d'exemple libre de droits (un stade éclairé de nuit). 
+    # Tu pourras remplacer ce lien par le chemin de ta propre image (ex: "Images/ma_banniere_retro.jpg")
+    url_banniere = "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2070&auto=format&fit=crop"
+    
+    try:
+        st.image(url_banniere, use_container_width=True)
+    except:
+        pass # Sécurité : si l'image ne charge pas, l'application continue de fonctionner
+        
+    # On remonte un peu le titre avec un margin-top négatif pour que ça "colle" bien à l'image
+    st.markdown("<h1 style='text-align: center; margin-top: -15px;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de 4000 matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
@@ -955,6 +967,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
