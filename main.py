@@ -383,12 +383,7 @@ with st.sidebar:
     if st.button("🏠 Accueil", width="stretch"):
         go_home()
         st.rerun()
-        with st.sidebar:
-    st.title("⚽ Menu Rapide")
-    
-    if st.button("🏠 Accueil", width="stretch"):
-        go_home()
-        st.rerun()
+        
         
     # --- NOUVEAU BOUTON F.A.Q ---
     if st.button("❓ F.A.Q & Infos", width="stretch"):
@@ -1006,6 +1001,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
