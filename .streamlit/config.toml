@@ -1,20 +1,4 @@
 [theme]
-# Couleur principale (Boutons actifs, curseurs, cases à cocher) : Rouge Milan
-primaryColor = "#e32221"
-
-# Couleur de fond principale de la page : Noir profond
-backgroundColor = "#0e1117"
-
-# Couleur de fond secondaire (Barre latérale, encadrés) : Gris anthracite très foncé
-secondaryBackgroundColor = "#1a1c23"
-
-# Couleur du texte : Blanc cassé (pour ne pas fatiguer les yeux)
-textColor = "#f0f2f6"
-
-# Police d'écriture moderne et propre
-font = "sans serif"
-
-[theme]
 # Force le thème sombre ("dark") ou clair ("light")
 base="dark"
 
