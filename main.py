@@ -10,6 +10,22 @@ import base64
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
 
 # ==========================================
+# ⚙️ GESTION DE LA NAVIGATION (SESSION STATE)
+# ==========================================
+if 'page' not in st.session_state: st.session_state.page = 'accueil'
+if 'chemin' not in st.session_state: st.session_state.chemin = []
+if 'edition_choisie' not in st.session_state: st.session_state.edition_choisie = None
+if 'recherche_equipe_cible' not in st.session_state: st.session_state.recherche_equipe_cible = None
+if 'recherche_comp_cible' not in st.session_state: st.session_state.recherche_comp_cible = None
+
+def go_home():
+    st.session_state.page = 'accueil'
+    st.session_state.chemin = []
+    st.session_state.edition_choisie = None
+    st.session_state.recherche_equipe_cible = None
+    st.session_state.recherche_comp_cible = None
+
+# ==========================================
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
 @st.dialog("📖 Contenu de la collection")
@@ -83,18 +99,14 @@ def nettoyer_nom_equipe(nom):
 def charger_dictionnaire_logos(dossier_racine="Logos"):
     dict_logos = {}
     if os.path.exists(dossier_racine):
-        # On fouille dans tous les sous-dossiers
         for root, dirs, files in os.walk(dossier_racine):
             for file in files:
                 if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    # On nettoie le nom du fichier (sans l'extension)
                     nom_equipe = os.path.splitext(file)[0]
                     cle = nettoyer_nom_equipe(nom_equipe)
-                    chemin_complet = os.path.join(root, file)
-                    dict_logos[cle] = chemin_complet
+                    dict_logos[cle] = os.path.join(root, file)
     return dict_logos
 
-# On lance le scanner
 DICTIONNAIRE_LOGOS_EQUIPES = charger_dictionnaire_logos("Logos")
 
 # ==========================================
@@ -165,10 +177,6 @@ MENU_ARBO = {
             "Angleterre": ["Premier League", "FA Cup"],
             "Allemagne": ["Bundesliga"]
         }
-    },
-    "Divers": {
-        "Amical": ["Amical", "Opel Master Cup"],
-        "Tournoi international": ["Tournoi Hassan II", "Kirin Cup"]
     }
 }
 
@@ -225,146 +233,85 @@ def afficher_resultats(df_resultats):
                             dt = datetime.strptime(date_brute, "%d/%m/%Y")
                             date_formatee = f"{jours_fr[dt.weekday()]} {dt.day} {mois_fr[dt.month - 1]} {dt.year}"
                         except ValueError:
-                            date_formatee = date_brute
+                            pass
 
-                    # --- 2. EN-TÊTE ET FORMATTAGE SPECIFIQUE ---
                     stade = row.get('Stade', 'Stade inconnu')
-                    if pd.isna(stade) or not str(stade).strip(): 
-                        stade = "Stade inconnu"
-                        
-                    raw_journee = row.get('Journée', '')
-                    val_journee = ""
-                    if pd.notna(raw_journee) and str(raw_journee).strip():
-                        try:
-                            val_journee = str(int(float(raw_journee)))
-                        except ValueError:
-                            val_journee = str(raw_journee).strip()
-                            
-                    val_phase = str(row.get('Phase', '')).strip() if 'Phase' in row and pd.notna(row['Phase']) else ""
+                    if pd.isna(stade) or not str(stade).strip(): stade = "Stade inconnu"
+                    val_phase = str(row.get('Phase', '')).strip() if pd.notna(row.get('Phase')) else ""
+                    comp_name = str(row.get('Compétition', '')).strip()
                     
-                    comp_name = str(row.get('Compétition', ''))
-                    comp_name_lower = comp_name.lower()
-                    
-                    # Logique de distinction des compétitions
-                    mots_championnats = ['ligue 1', 'ligue 2', 'division 1', 'division 2', 'serie a', 'liga', 'premier league', 'bundesliga', 'championnat']
-                    est_championnat = any(mot in comp_name_lower for mot in mots_championnats) and 'champions' not in comp_name_lower and 'nations' not in comp_name_lower and 'europe' not in comp_name_lower
-                    
-                    mots_nations = ['coupe du monde', 'euro', "championnat d'europe", 'copa america', 'ligue des nations', 'confédérations', 'olympiques']
-                    est_nation = any(mot in comp_name_lower for mot in mots_nations) and 'clubs' not in comp_name_lower
-                    
+                    # On affiche Date | Stade - Phase
                     stade_str = stade
-                    
-                    # Affichage spécifique CLUBS vs NATIONS
-                    if not est_nation: # On considère que ce sont des matchs de CLUBS
-                        if est_championnat:
-                            journee_str = ""
-                            if val_journee:
-                                if val_journee.isdigit() or not val_journee.lower().startswith(('j', 'journée')):
-                                    journee_str = f"Journée {val_journee}"
-                                else:
-                                    journee_str = val_journee
-                            elif val_phase:
-                                journee_str = val_phase
-                            
-                            # Ajout: Compétition - Journée
-                            if comp_name.strip():
-                                stade_str += f" - {comp_name.strip()}"
-                            if journee_str:
-                                stade_str += f" - {journee_str}"
-                                
-                        else: # Coupes de clubs
-                            # Ajout: Compétition - Phase
-                            if comp_name.strip():
-                                stade_str += f" - {comp_name.strip()}"
-                            if val_phase:
-                                stade_str += f" - {val_phase}"
-                    else:
-                        # Matchs de NATIONS : Conservation de l'affichage classique (Stade - Phase)
-                        if val_phase:
-                            stade_str += f" - {val_phase}"
+                    if val_phase: stade_str += f" - {val_phase}"
                     
                     st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade_str}")
+                    
+                    # BOUTON COMPÉTITION (Cliquable)
+                    if comp_name:
+                        if st.button(f"🏆 {comp_name}", key=f"btn_comp_{index}_{i}", use_container_width=True):
+                            st.session_state.recherche_comp_cible = comp_name
+                            st.session_state.page = 'recherche_avancee'
+                            st.rerun()
                     
                     dom = row.get('Domicile', '')
                     ext = row.get('Extérieur', '')
                     score = row.get('Score', '-')
                     
-                    cle_dom = nettoyer_nom_equipe(dom)
-                    cle_ext = nettoyer_nom_equipe(ext)
-                    
-                    logo_dom = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_dom)
-                    logo_ext = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_ext)
+                    logo_dom = DICTIONNAIRE_LOGOS_EQUIPES.get(nettoyer_nom_equipe(dom))
+                    logo_ext = DICTIONNAIRE_LOGOS_EQUIPES.get(nettoyer_nom_equipe(ext))
                     
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
-                    # --- GESTION DOMICILE ---
+                    # --- GESTION DOMICILE (Bouton cliquable) ---
                     with c_dom:
                         if logo_dom and os.path.exists(logo_dom):
                             try:
                                 with open(logo_dom, "rb") as image_file:
                                     img_b64 = base64.b64encode(image_file.read()).decode()
-                                html_dom = f"""
-                                <div style='text-align:center;'>
-                                    <p style='font-weight:bold; font-size:17px; margin-bottom:5px;'>{dom}</p>
-                                    <img src='data:image/png;base64,{img_b64}' style='width:60px;'>
-                                </div>
-                                """
+                                html_dom = f"<div style='text-align:center;'><img src='data:image/png;base64,{img_b64}' style='width:60px; margin-bottom:5px;'></div>"
                                 st.markdown(html_dom, unsafe_allow_html=True)
-                            except Exception:
-                                st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{dom}</p>", unsafe_allow_html=True)
+                            except Exception: pass
+                        
+                        # Le nom devient un bouton de recherche
+                        if st.button(dom, key=f"btn_dom_{index}_{i}", use_container_width=True):
+                            st.session_state.recherche_equipe_cible = dom
+                            st.session_state.page = 'recherche_equipe'
+                            st.rerun()
                         
                     # --- SCORE ---
                     with c_score:
                         st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
-                    # --- GESTION EXTÉRIEUR ---
+                    # --- GESTION EXTÉRIEUR (Bouton cliquable) ---
                     with c_ext:
                         if logo_ext and os.path.exists(logo_ext):
                             try:
                                 with open(logo_ext, "rb") as image_file:
                                     img_b64 = base64.b64encode(image_file.read()).decode()
-                                html_ext = f"""
-                                <div style='text-align:center;'>
-                                    <p style='font-weight:bold; font-size:17px; margin-bottom:5px;'>{ext}</p>
-                                    <img src='data:image/png;base64,{img_b64}' style='width:60px;'>
-                                </div>
-                                """
+                                html_ext = f"<div style='text-align:center;'><img src='data:image/png;base64,{img_b64}' style='width:60px; margin-bottom:5px;'></div>"
                                 st.markdown(html_ext, unsafe_allow_html=True)
-                            except Exception:
-                                st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"<p style='text-align:center; font-weight:bold; font-size:17px; margin-bottom:2px;'>{ext}</p>", unsafe_allow_html=True)
+                            except Exception: pass
+                            
+                        # Le nom devient un bouton de recherche
+                        if st.button(ext, key=f"btn_ext_{index}_{i}", use_container_width=True):
+                            st.session_state.recherche_equipe_cible = ext
+                            st.session_state.page = 'recherche_equipe'
+                            st.rerun()
                     
                     # --- 3. PIED DE FICHE ---
                     diffuseur = row.get('Diffuseur', '')
                     qualite = row.get('Qualité', '')
-                    
                     has_diff = pd.notna(diffuseur) and str(diffuseur).strip() != ""
                     has_qual = pd.notna(qualite) and str(qualite).strip() != ""
                     
                     if has_diff or has_qual:
                         html_footer = "<div style='text-align: center; color: gray; border-top: 0.5px solid #444; margin-top:10px; padding-top:6px; padding-bottom:2px;'>"
                         parts = []
-                        if has_diff:
-                            parts.append(f"<span style='font-size: 16px; font-weight: 500;'>📺 {diffuseur}</span>")
-                        if has_qual:
-                            parts.append(f"<span style='font-size: 14px;'>💾 {qualite}</span>")
-                        
+                        if has_diff: parts.append(f"<span style='font-size: 16px; font-weight: 500;'>📺 {diffuseur}</span>")
+                        if has_qual: parts.append(f"<span style='font-size: 14px;'>💾 {qualite}</span>")
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
                         html_footer += "</div>"
                         st.markdown(html_footer, unsafe_allow_html=True)
-
-# --- GESTION DE LA NAVIGATION ---
-if 'page' not in st.session_state: st.session_state.page = 'accueil'
-if 'chemin' not in st.session_state: st.session_state.chemin = []
-if 'edition_choisie' not in st.session_state: st.session_state.edition_choisie = None
-
-def go_home():
-    st.session_state.page = 'accueil'
-    st.session_state.chemin = []
-    st.session_state.edition_choisie = None
 
 # ==========================================
 # 🧭 BARRE LATÉRALE PERSISTANTE
@@ -381,22 +328,18 @@ with st.sidebar:
     if st.button("🌍 Sélections Nationales", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Nations']
-        st.session_state.edition_choisie = None
         st.rerun()
     if st.button("🏟️ Clubs", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Clubs']
-        st.session_state.edition_choisie = None
         st.rerun()
     if st.button("🎲 Matchs de Gala", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Divers']
-        st.session_state.edition_choisie = None
         st.rerun()
         
     st.divider()
     
-    # --- AJOUT DES DEUX NOUVELLES FONCTIONNALITÉS ---
     st.markdown("### 🌟 Nouveautés & Objectifs")
     if st.button("✨ Dernières Pépites", width="stretch"):
         st.session_state.page = 'dernieres_pepites'
@@ -434,10 +377,8 @@ with st.sidebar:
 # ==========================================
 if st.session_state.page == 'accueil':
     st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de 4000 matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
-    # --- 1. RECHERCHE ET INFOS ---
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
     if recherche_rapide:
         mask = (
@@ -466,39 +407,34 @@ if st.session_state.page == 'accueil':
             
     st.write("---")
     
-    # --- NOUVEAU : APPÂT POUR LES ÉCHANGES ---
     with st.container(border=True):
         c_txt, c_btn = st.columns([3, 1])
         with c_txt:
             st.markdown("<h4 style='margin-top:0px; margin-bottom:5px;'>🚨 Vous possédez vos propres archives ?</h4>", unsafe_allow_html=True)
             st.markdown("Je suis constamment à la recherche de nouveaux matchs pour compléter le Grenier. Découvrez ma liste de recherches et proposons-nous des échanges !")
         with c_btn:
-            st.write("") # Petit espacement
+            st.write("") 
             if st.button("🔎 Voir mes recherches", use_container_width=True, type="primary"):
                 st.session_state.page = 'mes_recherches'
                 st.rerun()
                 
     st.write("---")
     
-    # --- 2. LE CŒUR DE L'APP : EXPLORER PAR COMPÉTITION ---
     st.markdown("### 📂 Explorer le Classeur")
     st.markdown("<p style='color: gray; margin-bottom: 15px;'>Sélectionnez une catégorie pour naviguer dans l'arborescence des archives.</p>", unsafe_allow_html=True)
     
     col_n, col_c, col_d = st.columns(3)
     with col_n:
-        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Coupes du Monde, Euros, Copa...</div>", unsafe_allow_html=True)
         if st.button("🌍 SÉLECTIONS NATIONALES", width="stretch", type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
     with col_c:
-        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Ligue des Champions, Championnats...</div>", unsafe_allow_html=True)
         if st.button("🏟️ CLUBS", width="stretch", type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Clubs']
             st.rerun()
     with col_d:
-        st.markdown("<div style='text-align: center; color: #aaaaaa; font-size: 14px; margin-bottom: 5px;'>Matchs amicaux, Jubilés...</div>", unsafe_allow_html=True)
         if st.button("🎲 MATCHS DE GALA", width="stretch", type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Divers']
@@ -506,9 +442,7 @@ if st.session_state.page == 'accueil':
 
     st.write("---")
 
-    # --- 3. SECONDAIRE : CATALOGUE & ÉPHÉMÉRIDE CÔTE À CÔTE ---
     col_cat, col_eph = st.columns(2)
-    
     with col_cat:
         st.markdown("### 📖 Tout voir d'un coup")
         st.markdown("<p style='color: gray;'>Vous préférez flâner ? Affichez la liste complète de tous les matchs disponibles.</p>", unsafe_allow_html=True)
@@ -529,19 +463,14 @@ if st.session_state.page == 'accueil':
 
         if nb_matchs_jour > 0:
             st.success(f"🔥 **{nb_matchs_jour} matchs** se sont joués un {date_affichee} !")
-        else:
-            st.info(f"Que s'est-il passé un {date_affichee} ?")
-            
-        c_btn_e1, c_btn_e2 = st.columns(2)
-        with c_btn_e1:
             if st.button("Voir les matchs du jour", width="stretch"):
                 st.session_state.page = 'ephemeride'
                 st.rerun()
-        with c_btn_e2:
+        else:
+            st.info(f"Que s'est-il passé un {date_affichee} ?")
             if st.button("Chercher autre date", width="stretch"):
                 st.session_state.page = 'recherche_date'
                 st.rerun()
-
 
 # ==========================================
 # PAGE NOUVEAUTÉ : MES RECHERCHES (WANTED)
@@ -553,7 +482,6 @@ elif st.session_state.page == 'mes_recherches':
 
     col_milan, col_france = st.columns(2)
 
-    # Colonne Milan AC
     with col_milan:
         st.markdown("""
         <div style='background-color: #2b1111; padding: 25px; border-radius: 15px; border: 2px solid #e32221; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);'>
@@ -570,7 +498,6 @@ elif st.session_state.page == 'mes_recherches':
         </div>
         """, unsafe_allow_html=True)
 
-    # Colonne France 98
     with col_france:
         st.markdown("""
         <div style='background-color: #0b2340; padding: 25px; border-radius: 15px; border: 2px solid #1a5fb4; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);'>
@@ -588,17 +515,12 @@ elif st.session_state.page == 'mes_recherches':
         </div>
         """, unsafe_allow_html=True)
         
-    st.write("")
-    st.write("")
-
 # ==========================================
 # PAGE NOUVEAUTÉ : DERNIÈRES PÉPITES
 # ==========================================
 elif st.session_state.page == 'dernieres_pepites':
     st.header("✨ Les Dernières Pépites")
     st.markdown("<p style='color: gray; font-size:16px;'>Voici les 10 derniers matchs tout fraîchement ajoutés au Grenier.</p>", unsafe_allow_html=True)
-    
-    # On prend les 10 dernières lignes du CSV et on les inverse pour avoir le plus récent en premier
     df_derniers = df.tail(10).iloc[::-1]
     afficher_resultats(df_derniers)
 
@@ -607,32 +529,23 @@ elif st.session_state.page == 'dernieres_pepites':
 # ==========================================
 elif st.session_state.page == 'progression':
     st.header("🎯 Progression de la Collection")
-    st.markdown("<p style='color: gray; font-size:16px;'>Suivez l'avancement de la sauvegarde du patrimoine footballistique.</p>", unsafe_allow_html=True)
     st.divider()
 
-    st.subheader("🏆 Les Finales de Légende")
-    
-    # --- Logique de calcul ---
     if 'Phase' in df.columns:
-        # On cherche le mot 'finale' (en excluant les 1/2, 1/4 etc.)
         mask_finale = df['Phase'].astype(str).str.strip().str.lower().isin(['finale', 'final'])
-        
-        # CDM
         mask_cdm = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
         cdm_possedees = df[mask_cdm & mask_finale]['Compétition'].nunique()
-        total_cdm = 22 # De 1930 à 2022
+        total_cdm = 22
         pct_cdm = min(100, int((cdm_possedees / total_cdm) * 100))
 
-        # Euro
         mask_euro = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
         euro_possedees = df[mask_euro & mask_finale]['Compétition'].nunique()
-        total_euro = 17 # De 1960 à 2024
+        total_euro = 17
         pct_euro = min(100, int((euro_possedees / total_euro) * 100))
 
-        # Champions League
         mask_c1 = df['Compétition'].str.contains("Champions League|Coupe d'Europe des clubs champions", na=False, case=False)
         c1_possedees = df[mask_c1 & mask_finale]['Saison'].nunique() if 'Saison' in df.columns else len(df[mask_c1 & mask_finale])
-        total_c1 = 69 # De 1956 à 2024
+        total_c1 = 69
         pct_c1 = min(100, int((c1_possedees / total_c1) * 100))
 
         col_prog1, col_prog2, col_prog3 = st.columns(3)
@@ -647,19 +560,14 @@ elif st.session_state.page == 'progression':
             st.progress(pct_c1 / 100.0, text=f"{pct_c1}% des Finales")
             
         st.write("---")
-        st.subheader("🌍 Couverture des Éditions")
-        st.markdown("<p style='color: gray; font-size:14px;'>Nombre d'éditions où au moins 1 match est disponible en archive.</p>", unsafe_allow_html=True)
-        
         eds_cdm = df[mask_cdm]['Compétition'].nunique()
         eds_euro = df[mask_euro]['Compétition'].nunique()
         
         st.markdown(f"**Éditions de Coupe du Monde :** {eds_cdm}/{total_cdm}")
         st.progress(min(1.0, eds_cdm/total_cdm))
-        
         st.write("")
         st.markdown(f"**Éditions d'Euro :** {eds_euro}/{total_euro}")
         st.progress(min(1.0, eds_euro/total_euro))
-
     else:
         st.warning("La colonne 'Phase' n'est pas présente dans votre fichier pour calculer les finales.")
 
@@ -697,7 +605,17 @@ elif st.session_state.page == 'recherche_date':
 elif st.session_state.page == 'recherche_equipe':
     st.header("🛡️ Recherche par Équipe")
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
-    choix = st.selectbox("Sélectionne une équipe :", toutes_les_equipes)
+    
+    # 🎯 On présélectionne l'équipe si on a cliqué sur un bouton
+    idx_defaut = 0
+    cible = st.session_state.get('recherche_equipe_cible')
+    if cible and cible in toutes_les_equipes:
+        idx_defaut = toutes_les_equipes.index(cible)
+        
+    choix = st.selectbox("Sélectionne une équipe :", toutes_les_equipes, index=idx_defaut)
+    # On met à jour la mémoire pour que la liste déroulante reste libre
+    st.session_state.recherche_equipe_cible = choix 
+    
     df_filtre = df[(df['Domicile'] == choix) | (df['Extérieur'] == choix)]
     afficher_resultats(df_filtre)
 
@@ -712,21 +630,24 @@ elif st.session_state.page == 'face_a_face':
 
 elif st.session_state.page == 'recherche_avancee':
     st.header("🕵️ Recherche Avancée")
-    st.markdown("<p style='color: gray; margin-bottom: 20px;'>Combinez plusieurs filtres pour trouver exactement le match que vous cherchez.</p>", unsafe_allow_html=True)
     
-    # 1. Génération des listes uniques (en vérifiant que les colonnes existent)
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().astype(str).unique())
     competitions = sorted(df['Compétition'].dropna().astype(str).unique()) if 'Compétition' in df.columns else []
     phases = sorted(df['Phase'].dropna().astype(str).unique()) if 'Phase' in df.columns else []
     stades = sorted(df['Stade'].dropna().astype(str).unique()) if 'Stade' in df.columns else []
     saisons = sorted(df['Saison'].dropna().astype(str).unique(), reverse=True) if 'Saison' in df.columns else []
     
-    # 2. Organisation de l'interface sur 2 lignes
+    # 🎯 On pré-remplit la compétition si on a cliqué dessus
+    def_comp = []
+    cible_comp = st.session_state.get('recherche_comp_cible')
+    if cible_comp and cible_comp in competitions:
+        def_comp = [cible_comp]
+    
     col1, col2 = st.columns(2)
     with col1:
         f_equipes = st.multiselect("🛡️ Équipes impliquées :", toutes_les_equipes)
     with col2:
-        f_comps = st.multiselect("🏆 Compétitions :", competitions)
+        f_comps = st.multiselect("🏆 Compétitions :", competitions, default=def_comp)
         
     col3, col4, col5 = st.columns(3)
     with col3:
@@ -736,18 +657,12 @@ elif st.session_state.page == 'recherche_avancee':
     with col5:
         f_saisons = st.multiselect("🗓️ Saisons :", saisons) if saisons else []
         
-    # 3. Application des filtres sélectionnés
     df_filtre = df.copy()
-    if f_equipes: 
-        df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
-    if f_comps: 
-        df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
-    if f_phases: 
-        df_filtre = df_filtre[df_filtre['Phase'].isin(f_phases)]
-    if f_stades: 
-        df_filtre = df_filtre[df_filtre['Stade'].isin(f_stades)]
-    if f_saisons: 
-        df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
+    if f_equipes: df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
+    if f_comps: df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
+    if f_phases: df_filtre = df_filtre[df_filtre['Phase'].isin(f_phases)]
+    if f_stades: df_filtre = df_filtre[df_filtre['Stade'].isin(f_stades)]
+    if f_saisons: df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
         
     st.write("---")
     afficher_resultats(df_filtre)
