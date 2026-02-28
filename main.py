@@ -388,6 +388,7 @@ with st.sidebar:
     if st.button("❓ F.A.Q & Infos", width="stretch"):
         st.session_state.page = 'faq'
         st.rerun()
+        
             st.divider()
                      
     nb_articles = len(st.session_state.panier)
@@ -996,6 +997,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
