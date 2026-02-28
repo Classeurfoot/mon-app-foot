@@ -10,14 +10,13 @@ import base64
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
 
 # ==========================================
-# ⚙️ GESTION DE LA NAVIGATION & PANIER (SESSION STATE)
+# ⚙️ GESTION DE LA NAVIGATION & PANIER
 # ==========================================
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
 if 'chemin' not in st.session_state: st.session_state.chemin = []
 if 'edition_choisie' not in st.session_state: st.session_state.edition_choisie = None
 if 'recherche_equipe_cible' not in st.session_state: st.session_state.recherche_equipe_cible = None
 if 'recherche_comp_cible' not in st.session_state: st.session_state.recherche_comp_cible = None
-# --- NOUVEAU : LE PANIER ---
 if 'panier' not in st.session_state: st.session_state.panier = []
 
 def go_home():
@@ -244,7 +243,6 @@ def afficher_resultats(df_resultats):
                     
                     st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade_str}")
                     
-                    # BOUTON COMPÉTITION
                     if comp_name:
                         if st.button(f"🏆 {comp_name}", key=f"btn_comp_{index}_{i}", use_container_width=True):
                             st.session_state.recherche_comp_cible = comp_name
@@ -303,22 +301,27 @@ def afficher_resultats(df_resultats):
                         html_footer += "</div>"
                         st.markdown(html_footer, unsafe_allow_html=True)
                         
-                    # --- NOUVEAU : BOUTON AJOUTER AU PANIER ---
-                    st.write("") # Petit espacement
+                    st.write("") 
                     
-                    # Identifiant unique du match pour le panier
+                    # Logique du Panier
                     match_id = f"{date_brute}_{dom}_{ext}"
-                    # Vérifier si ce match est déjà dans le panier
                     in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
                     
                     if in_cart:
-                        if st.button("✅ Retirer du panier", key=f"cart_{index}_{i}", use_container_width=True):
+                        if st.button("✅ Ajouté (Retirer)", key=f"cart_{index}_{i}", use_container_width=True):
                             st.session_state.panier = [m for m in st.session_state.panier if f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" != match_id]
                             st.rerun()
                     else:
                         if st.button("🛒 Ajouter au panier", key=f"cart_{index}_{i}", type="primary", use_container_width=True):
-                            # On convertit la ligne en dictionnaire en gérant les valeurs nulles
                             match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items()}
+                            
+                            # On initialise le format choisi par défaut en lisant la colonne Qualité
+                            q = str(match_dict.get('Qualité', '')).lower()
+                            if 'dvd' in q or 'vob' in q:
+                                match_dict['format_choisi'] = 'DVD'
+                            else:
+                                match_dict['format_choisi'] = 'Numérique'
+                                
                             st.session_state.panier.append(match_dict)
                             st.rerun()
 
@@ -332,8 +335,9 @@ with st.sidebar:
         go_home()
         st.rerun()
         
-    # --- NOUVEAU : PANIER DANS LA BARRE LATÉRALE ---
     st.divider()
+    
+    # Bouton d'accès au panier
     nb_articles = len(st.session_state.panier)
     if nb_articles > 0:
         if st.button(f"🛒 Mon Panier ({nb_articles})", width="stretch", type="primary"):
@@ -493,10 +497,10 @@ if st.session_state.page == 'accueil':
                 st.rerun()
 
 # ==========================================
-# PAGE NOUVEAUTÉ : LE PANIER
+# PAGE : LE PANIER MAGIQUE (PRIX & CHOIX)
 # ==========================================
 elif st.session_state.page == 'panier':
-    st.header("🛒 Mon Panier de Matchs")
+    st.header("🛒 Mon Panier")
     
     if len(st.session_state.panier) == 0:
         st.info("Votre panier est vide pour le moment. Naviguez dans le catalogue pour ajouter des matchs !")
@@ -507,39 +511,95 @@ elif st.session_state.page == 'panier':
         st.markdown(f"**Vous avez sélectionné {len(st.session_state.panier)} match(s).**")
         st.write("---")
         
-        # 1. Affichage de la liste des matchs
+        total_prix = 0
+        items_a_supprimer = []
+        
+        # Affichage de chaque match du panier
         for i, match in enumerate(st.session_state.panier):
-            col_info, col_btn = st.columns([5, 1])
+            col_info, col_fmt, col_btn = st.columns([5, 2, 1])
+            
+            date_m = match.get('Date', '?')
+            comp_m = match.get('Compétition', '?')
+            dom_m = match.get('Domicile', '')
+            ext_m = match.get('Extérieur', '')
+            qual_m = str(match.get('Qualité', '')).lower()
+            
             with col_info:
-                date_m = match.get('Date', '?')
-                comp_m = match.get('Compétition', '?')
-                dom_m = match.get('Domicile', '')
-                ext_m = match.get('Extérieur', '')
-                qual_m = match.get('Qualité', '')
-                
-                st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m} | ⚔️ **{dom_m} - {ext_m}** *(💾 {qual_m})*")
+                st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m}<br>⚔️ **{dom_m} - {ext_m}**", unsafe_allow_html=True)
+            
+            with col_fmt:
+                # Si le match d'origine contient DVD/VOB, on laisse le choix
+                if 'dvd' in qual_m or 'vob' in qual_m:
+                    idx_actuel = 0 if match.get('format_choisi') == 'DVD' else 1
+                    choix_fmt = st.selectbox(
+                        "Format :", 
+                        ["💿 DVD (5€)", "💻 Numérique (3€)"], 
+                        key=f"fmt_sel_{i}",
+                        index=idx_actuel
+                    )
+                    match['format_choisi'] = 'DVD' if 'DVD' in choix_fmt else 'Numérique'
+                else:
+                    # Sinon c'est du numérique pur, pas le choix
+                    st.markdown("<div style='margin-top: 30px; color: gray; font-size: 15px;'>💻 Numérique (3€)</div>", unsafe_allow_html=True)
+                    match['format_choisi'] = 'Numérique'
+                    
             with col_btn:
-                # Bouton pour retirer du panier
-                if st.button("❌ Retirer", key=f"remove_cart_page_{i}"):
-                    st.session_state.panier.pop(i)
-                    st.rerun()
+                st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+                if st.button("❌ Retirer", key=f"del_cart_{i}"):
+                    items_a_supprimer.append(i)
+            
             st.divider()
             
-        # 2. Section "Passer commande"
-        st.subheader("📩 Comment récupérer ces matchs ?")
-        st.markdown("Pour valider votre demande (achat ou échange), **copiez simplement le texte ci-dessous** et envoyez-le moi en message privé.")
+            # Calcul du sous-total
+            if match['format_choisi'] == 'DVD':
+                total_prix += 5
+            else:
+                total_prix += 3
+                
+        # Gestion des suppressions (à faire hors de la boucle pour ne pas casser l'index)
+        if items_a_supprimer:
+            for idx in sorted(items_a_supprimer, reverse=True):
+                st.session_state.panier.pop(idx)
+            st.rerun()
+            
+        # ==================================
+        # CALCUL DE LA RÉDUCTION (Idée 3)
+        # ==================================
+        nb_articles = len(st.session_state.panier)
+        # 1 match offert pour 10 achetés = 1 cadeau tous les 11 matchs
+        nb_gratuits = nb_articles // 11
+        reduction = nb_gratuits * 3  # On déduit la valeur du numérique (3€) par gratuité
         
-        # Génération automatique du texte récapitulatif
-        texte_recap = "Bonjour, je suis intéressé(e) par ces matchs vus dans Le Grenier :\n\n"
+        total_final = total_prix - reduction
+        
+        # Bloc d'affichage Financier
+        st.subheader("💳 Récapitulatif")
+        st.markdown(f"**Sous-total :** {total_prix} €")
+        
+        if reduction > 0:
+            st.success(f"🎁 **Offre Spéciale :** Vous avez droit à {nb_gratuits} match(s) offert(s) ! (-{reduction} €)")
+            
+        st.markdown(f"### **Total à payer : {total_final} €**")
+        st.write("---")
+        
+        # Section de copie pour la commande
+        st.subheader("📩 Comment passer commande ?")
+        st.markdown("Vérifiez vos formats ci-dessus. Puis **copiez le texte ci-dessous** et envoyez-le moi par message privé pour finaliser !")
+        
+        texte_recap = "Bonjour, je souhaite commander ces matchs vus dans Le Grenier :\n\n"
         for match in st.session_state.panier:
-            texte_recap += f"- {match.get('Date', '?')} | {match.get('Compétition', '?')} | {match.get('Domicile', '')} vs {match.get('Extérieur', '')}\n"
+            fmt_r = match.get('format_choisi', 'Numérique')
+            texte_recap += f"- [{fmt_r}] {match.get('Date', '?')} | {match.get('Domicile', '')} vs {match.get('Extérieur', '')} ({match.get('Compétition', '?')})\n"
         
-        texte_recap += "\nMerci de me donner les détails pour la suite !"
+        texte_recap += f"\nTotal d'articles : {nb_articles}"
+        if reduction > 0:
+            texte_recap += f"\nRéduction appliquée : -{reduction}€ (Offre 10 achetés = 1 offert)"
+        texte_recap += f"\nMontant Total : {total_final}€"
+        texte_recap += "\n\nMerci de me donner les détails pour le paiement !"
         
-        # Bloc de code facile à copier
         st.code(texte_recap, language="text")
         
-        if st.button("🗑️ Vider tout le panier"):
+        if st.button("🗑️ Vider tout le panier", type="secondary"):
             st.session_state.panier = []
             st.rerun()
 
