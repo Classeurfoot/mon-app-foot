@@ -5,6 +5,7 @@ from datetime import datetime
 import unicodedata
 import re
 import base64
+import urllib.parse
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
@@ -618,9 +619,11 @@ elif st.session_state.page == 'panier':
         st.markdown(f"### **Total à payer : {total_final} €**")
         st.write("---")
         
-        st.subheader("📩 Comment passer commande ?")
-        st.markdown("Vérifiez vos formats ci-dessus. Puis **copiez le texte ci-dessous** et envoyez-le moi par message privé pour finaliser !")
+        st.write("---")
+        st.subheader("📩 Valider ma commande")
+        st.markdown("Choisissez votre méthode préférée pour m'envoyer votre sélection :")
         
+        # Génération du texte récapitulatif
         texte_recap = "Bonjour, je souhaite commander ces matchs vus dans Le Grenier :\n\n"
         for match in st.session_state.panier:
             fmt_r = match.get('format_choisi', 'Numérique')
@@ -631,9 +634,28 @@ elif st.session_state.page == 'panier':
             texte_recap += f"\nRéduction appliquée : -{reduction}€ (Règle du moins cher offert)"
         texte_recap += f"\nMontant Total : {total_final}€"
         texte_recap += "\n\nMerci de me donner les détails pour le paiement !"
+
+        # --- LES DEUX COLONNES D'ENVOI ---
+        col_mail, col_copy = st.columns(2)
         
-        st.code(texte_recap, language="text")
-        
+        with col_mail:
+            with st.container(border=True):
+                st.markdown("<h4 style='text-align: center;'>📧 Option 1 : Par E-mail</h4>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; color: gray; font-size: 14px;'>Votre application d'e-mail va s'ouvrir automatiquement avec le récapitulatif.</p>", unsafe_allow_html=True)
+                
+                # Encodage du mail pour le bouton
+                sujet_mail = "Nouvelle commande - Le Grenier du Football"
+                lien_mailto = f"mailto:legrenierdufootball@hotmail.com?subject={urllib.parse.quote(sujet_mail)}&body={urllib.parse.quote(texte_recap)}"
+                
+                st.link_button("🚀 Envoyer ma commande par E-mail", lien_mailto, use_container_width=True)
+
+        with col_copy:
+            with st.container(border=True):
+                st.markdown("<h4 style='text-align: center;'>💬 Option 2 : Par Message Privé</h4>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; color: gray; font-size: 14px;'>Copiez le texte ci-dessous et envoyez-le moi sur les réseaux sociaux.</p>", unsafe_allow_html=True)
+                st.code(texte_recap, language="text")
+                
+        st.write("")
         if st.button("🗑️ Vider tout le panier", type="secondary"):
             st.session_state.panier = []
             st.rerun()
@@ -917,3 +939,4 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
