@@ -58,6 +58,7 @@ def popup_formats():
     * 📼 **VHS :** pour les puristes, quelques exemplaires disponibles au format original.
     """)
 
+# --- MISE À JOUR : POPUP DES TARIFS ---
 @st.dialog("💶 Tarifs & Offres")
 def popup_tarifs():
     st.markdown("### 💰 Grille Tarifaire")
@@ -69,7 +70,7 @@ def popup_tarifs():
     st.divider()
     st.markdown("### 🎁 Offres & Réductions")
     st.markdown("""
-    * 🆓 **1 match offert** tous les 10 matchs achetés (une déduction de 3€ s'applique automatiquement dans le panier à partir du 11ème match).
+    * 🆓 **1 match offert** tous les 10 matchs achetés (le match le moins cher de votre sélection est automatiquement déduit à partir du 11ème match).
     * 🔄 **Offre cumulable :** 2 matchs offerts pour 20 achetés, 3 pour 30, etc.
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
@@ -213,7 +214,44 @@ def afficher_resultats(df_resultats):
     mode = st.radio("Mode d'affichage :", ["📊 Tableau classique", "🃏 Fiches détaillées"], horizontal=True)
     
     if mode == "📊 Tableau classique":
-        st.dataframe(df_resultats[colonnes_presentes], use_container_width=True, height=600)
+        st.markdown("<p style='color: gray; font-size:14px;'>☑️ Cochez les matchs dans la première colonne, puis cliquez sur le bouton en dessous pour les ajouter au panier.</p>", unsafe_allow_html=True)
+        
+        # Création d'une copie du dataframe pour l'affichage interactif
+        df_display = df_resultats[colonnes_presentes].copy()
+        df_display.insert(0, "Sélection", False)
+        
+        # Affichage du tableau éditable
+        edited_df = st.data_editor(
+            df_display,
+            column_config={
+                "Sélection": st.column_config.CheckboxColumn("🛒 Ajouter", default=False)
+            },
+            disabled=colonnes_presentes, # Empêche de modifier les vraies données
+            hide_index=True,
+            use_container_width=True,
+            height=400
+        )
+        
+        # Récupérer les lignes cochées
+        selected_rows = edited_df[edited_df["Sélection"] == True]
+        
+        if len(selected_rows) > 0:
+            if st.button(f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier", type="primary", use_container_width=True):
+                nb_ajouts = 0
+                for _, row in selected_rows.iterrows():
+                    match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
+                    match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
+                    in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
+                    
+                    if not in_cart:
+                        q = str(match_dict.get('Qualité', '')).lower()
+                        match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
+                        st.session_state.panier.append(match_dict)
+                        nb_ajouts += 1
+                
+                # Relance l'application pour mettre à jour le compteur du panier
+                st.rerun()
+
     else:
         st.write("---")
         cols = st.columns(2)
@@ -304,7 +342,6 @@ def afficher_resultats(df_resultats):
                         
                     st.write("") 
                     
-                    # Logique du Panier
                     match_id = f"{date_brute}_{dom}_{ext}"
                     in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
                     
@@ -315,8 +352,6 @@ def afficher_resultats(df_resultats):
                     else:
                         if st.button("🛒 Ajouter au panier", key=f"cart_{index}_{i}", type="primary", use_container_width=True):
                             match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items()}
-                            
-                            # On initialise le format choisi par défaut en lisant la colonne Qualité
                             q = str(match_dict.get('Qualité', '')).lower()
                             if 'dvd' in q or 'vob' in q:
                                 match_dict['format_choisi'] = 'DVD'
@@ -338,7 +373,6 @@ with st.sidebar:
         
     st.divider()
     
-    # Bouton d'accès au panier
     nb_articles = len(st.session_state.panier)
     if nb_articles > 0:
         if st.button(f"🛒 Mon Panier ({nb_articles})", width="stretch", type="primary"):
@@ -513,9 +547,9 @@ elif st.session_state.page == 'panier':
         st.write("---")
         
         total_prix = 0
+        liste_prix = []
         items_a_supprimer = []
         
-        # Affichage de chaque match du panier
         for i, match in enumerate(st.session_state.panier):
             col_info, col_fmt, col_btn = st.columns([5, 2, 1])
             
@@ -529,7 +563,6 @@ elif st.session_state.page == 'panier':
                 st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m}<br>⚔️ **{dom_m} - {ext_m}**", unsafe_allow_html=True)
             
             with col_fmt:
-                # Si le match d'origine contient DVD/VOB, on laisse le choix
                 if 'dvd' in qual_m or 'vob' in qual_m:
                     idx_actuel = 0 if match.get('format_choisi') == 'DVD' else 1
                     choix_fmt = st.selectbox(
@@ -540,7 +573,6 @@ elif st.session_state.page == 'panier':
                     )
                     match['format_choisi'] = 'DVD' if 'DVD' in choix_fmt else 'Numérique'
                 else:
-                    # Sinon c'est du numérique pur, pas le choix
                     st.markdown("<div style='margin-top: 30px; color: gray; font-size: 15px;'>💻 Numérique (3€)</div>", unsafe_allow_html=True)
                     match['format_choisi'] = 'Numérique'
                     
@@ -551,39 +583,41 @@ elif st.session_state.page == 'panier':
             
             st.divider()
             
-            # Calcul du sous-total
-            if match['format_choisi'] == 'DVD':
-                total_prix += 5
-            else:
-                total_prix += 3
+            # Récupération des prix pour le calcul global
+            prix_match = 5 if match['format_choisi'] == 'DVD' else 3
+            total_prix += prix_match
+            liste_prix.append(prix_match)
                 
-        # Gestion des suppressions (à faire hors de la boucle pour ne pas casser l'index)
+        # Exécution de la suppression si demandée
         if items_a_supprimer:
             for idx in sorted(items_a_supprimer, reverse=True):
                 st.session_state.panier.pop(idx)
             st.rerun()
             
         # ==================================
-        # CALCUL DE LA RÉDUCTION (Idée 3)
+        # CALCUL DE LA RÉDUCTION (Idée B)
         # ==================================
         nb_articles = len(st.session_state.panier)
-        # 1 match offert pour 10 achetés = 1 cadeau tous les 11 matchs
         nb_gratuits = nb_articles // 11
-        reduction = nb_gratuits * 3  # On déduit la valeur du numérique (3€) par gratuité
+        reduction = 0
         
+        if nb_gratuits > 0:
+            # On trie la liste des prix du moins cher au plus cher
+            liste_prix.sort()
+            # La réduction = la somme des 'x' matchs les moins chers
+            reduction = sum(liste_prix[:nb_gratuits])
+            
         total_final = total_prix - reduction
         
-        # Bloc d'affichage Financier
         st.subheader("💳 Récapitulatif")
         st.markdown(f"**Sous-total :** {total_prix} €")
         
         if reduction > 0:
-            st.success(f"🎁 **Offre Spéciale :** Vous avez droit à {nb_gratuits} match(s) offert(s) ! (-{reduction} €)")
+            st.success(f"🎁 **Offre Spéciale :** La valeur de vos {nb_gratuits} match(s) offert(s) a été déduite ! (-{reduction} €)")
             
         st.markdown(f"### **Total à payer : {total_final} €**")
         st.write("---")
         
-        # Section de copie pour la commande
         st.subheader("📩 Comment passer commande ?")
         st.markdown("Vérifiez vos formats ci-dessus. Puis **copiez le texte ci-dessous** et envoyez-le moi par message privé pour finaliser !")
         
@@ -594,7 +628,7 @@ elif st.session_state.page == 'panier':
         
         texte_recap += f"\nTotal d'articles : {nb_articles}"
         if reduction > 0:
-            texte_recap += f"\nRéduction appliquée : -{reduction}€ (Offre 10 achetés = 1 offert)"
+            texte_recap += f"\nRéduction appliquée : -{reduction}€ (Règle du moins cher offert)"
         texte_recap += f"\nMontant Total : {total_final}€"
         texte_recap += "\n\nMerci de me donner les détails pour le paiement !"
         
@@ -883,5 +917,3 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
-
