@@ -473,6 +473,43 @@ if st.session_state.page == 'accueil':
         afficher_resultats(df_trouve)
         st.write("---")
 
+    # --- ASTUCE CSS POUR COLORER LES BOUTONS SPECIFIQUES ---
+    st.markdown("""
+    <style>
+    /* 🟢 BOUTON COMMANDES (4ème colonne) */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(4) button {
+        background-color: #2e7d32 !important;
+        border-color: #2e7d32 !important;
+        transition: all 0.3s ease;
+    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(4) button p {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(4) button:hover {
+        background-color: #1b5e20 !important;
+        border-color: #1b5e20 !important;
+        transform: scale(1.02);
+    }
+
+    /* 🔵 BOUTON ÉCHANGES (5ème colonne) */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(5) button {
+        background-color: #1565c0 !important;
+        border-color: #1565c0 !important;
+        transition: all 0.3s ease;
+    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(5) button p {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(5) button:hover {
+        background-color: #0d47a1 !important;
+        border-color: #0d47a1 !important;
+        transform: scale(1.02);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # Rangée des 5 boutons d'informations
     col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
     with col_btn1:
@@ -482,6 +519,7 @@ if st.session_state.page == 'accueil':
     with col_btn3:
         if st.button("💶 Tarifs", use_container_width=True): popup_tarifs()
     with col_btn4:
+        # Pas besoin de mettre type="primary", le CSS s'en occupe !
         if st.button("✉️ Commandes", use_container_width=True): popup_contact_commandes()
     with col_btn5:
         if st.button("🤝 Échanges", use_container_width=True): popup_echanges()
@@ -998,6 +1036,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
