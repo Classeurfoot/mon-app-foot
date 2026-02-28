@@ -473,6 +473,35 @@ if st.session_state.page == 'accueil':
         afficher_resultats(df_trouve)
         st.write("---")
 
+    # --- ASTUCE CSS POUR COLORER LES BOUTONS SPECIFIQUES ---
+    st.markdown("""
+    <style>
+    /* Bouton Commandes (4ème colonne) -> Vert forêt élégant */
+    div[data-testid="column"]:nth-child(4) button {
+        background-color: #2e7d32 !important;
+        color: white !important;
+        border-color: #2e7d32 !important;
+    }
+    /* Effet au survol pour Commandes */
+    div[data-testid="column"]:nth-child(4) button:hover {
+        background-color: #1b5e20 !important;
+        border-color: #1b5e20 !important;
+    }
+    
+    /* Bouton Échanges (5ème colonne) -> Bleu roi élégant */
+    div[data-testid="column"]:nth-child(5) button {
+        background-color: #1565c0 !important;
+        color: white !important;
+        border-color: #1565c0 !important;
+    }
+    /* Effet au survol pour Échanges */
+    div[data-testid="column"]:nth-child(5) button:hover {
+        background-color: #0d47a1 !important;
+        border-color: #0d47a1 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # Rangée des 5 boutons d'informations
     col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
     with col_btn1:
@@ -998,4 +1027,5 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
