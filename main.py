@@ -10,13 +10,15 @@ import base64
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
 
 # ==========================================
-# ⚙️ GESTION DE LA NAVIGATION (SESSION STATE)
+# ⚙️ GESTION DE LA NAVIGATION & PANIER (SESSION STATE)
 # ==========================================
 if 'page' not in st.session_state: st.session_state.page = 'accueil'
 if 'chemin' not in st.session_state: st.session_state.chemin = []
 if 'edition_choisie' not in st.session_state: st.session_state.edition_choisie = None
 if 'recherche_equipe_cible' not in st.session_state: st.session_state.recherche_equipe_cible = None
 if 'recherche_comp_cible' not in st.session_state: st.session_state.recherche_comp_cible = None
+# --- NOUVEAU : LE PANIER ---
+if 'panier' not in st.session_state: st.session_state.panier = []
 
 def go_home():
     st.session_state.page = 'accueil'
@@ -76,11 +78,11 @@ def popup_tarifs():
 def popup_contact():
     st.markdown("""
     **Comment obtenir un match ?**
-    * 🛒 **Achat direct :** À l'unité ou en créant votre propre pack.
+    * 🛒 **Achat direct :** Faites votre sélection en l'ajoutant à votre panier, puis envoyez-moi le récapitulatif.
     * 🔄 **Échange :** Vous possédez vos propres archives ? Je suis toujours ouvert aux échanges de matchs rares !
     * 🚀 **Livraison :** Les fichiers numériques sont envoyés rapidement et de manière sécurisée via *Swisstransfer*, *WeTransfer* ou *Grosfichiers*.
     
-    📩 **Me contacter :** N'hésitez pas à m'envoyer un message via mon bouton de contact pour toute demande ou recherche spécifique !
+    📩 **Me contacter :** N'hésitez pas à m'envoyer un message en privé pour finaliser votre commande !
     """)
 
 # ==========================================
@@ -109,9 +111,6 @@ def charger_dictionnaire_logos(dossier_racine="Logos"):
 
 DICTIONNAIRE_LOGOS_EQUIPES = charger_dictionnaire_logos("Logos")
 
-# ==========================================
-# 🎨 TA BANQUE DE LOGOS LOCALE (COMPÉTITIONS)
-# ==========================================
 LOGOS = {
     "Coupe du Monde 1998": "Logos/cdm1998.png",
     "Coupe du Monde 1978": "Logos/cdm1978.png",
@@ -138,9 +137,6 @@ LOGOS = {
     "Champions League": "Logos/championsleague.png"
 }
 
-# ==========================================
-# 🧠 LE CERVEAU DE L'ARBORESCENCE EXACTE
-# ==========================================
 MENU_ARBO = {
     "Nations": {
         "Coupe du Monde": {
@@ -177,6 +173,10 @@ MENU_ARBO = {
             "Angleterre": ["Premier League", "FA Cup"],
             "Allemagne": ["Bundesliga"]
         }
+    },
+    "Divers": {
+        "Amical": ["Amical", "Opel Master Cup"],
+        "Tournoi international": ["Tournoi Hassan II", "Kirin Cup"]
     }
 }
 
@@ -225,7 +225,6 @@ def afficher_resultats(df_resultats):
             with cols[i % 2]:
                 with st.container(border=True):
                     
-                    # --- 1. FORMATTAGE DE LA DATE ---
                     date_brute = row.get('Date', '')
                     date_formatee = date_brute
                     if pd.notna(date_brute) and date_brute:
@@ -240,13 +239,12 @@ def afficher_resultats(df_resultats):
                     val_phase = str(row.get('Phase', '')).strip() if pd.notna(row.get('Phase')) else ""
                     comp_name = str(row.get('Compétition', '')).strip()
                     
-                    # On affiche Date | Stade - Phase
                     stade_str = stade
                     if val_phase: stade_str += f" - {val_phase}"
                     
                     st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade_str}")
                     
-                    # BOUTON COMPÉTITION (Cliquable)
+                    # BOUTON COMPÉTITION
                     if comp_name:
                         if st.button(f"🏆 {comp_name}", key=f"btn_comp_{index}_{i}", use_container_width=True):
                             st.session_state.recherche_comp_cible = comp_name
@@ -262,7 +260,6 @@ def afficher_resultats(df_resultats):
                     
                     c_dom, c_score, c_ext = st.columns([1, 1, 1])
                     
-                    # --- GESTION DOMICILE (Bouton cliquable) ---
                     with c_dom:
                         if logo_dom and os.path.exists(logo_dom):
                             try:
@@ -271,18 +268,14 @@ def afficher_resultats(df_resultats):
                                 html_dom = f"<div style='text-align:center;'><img src='data:image/png;base64,{img_b64}' style='width:60px; margin-bottom:5px;'></div>"
                                 st.markdown(html_dom, unsafe_allow_html=True)
                             except Exception: pass
-                        
-                        # Le nom devient un bouton de recherche
                         if st.button(dom, key=f"btn_dom_{index}_{i}", use_container_width=True):
                             st.session_state.recherche_equipe_cible = dom
                             st.session_state.page = 'recherche_equipe'
                             st.rerun()
                         
-                    # --- SCORE ---
                     with c_score:
                         st.markdown(f"<h2 style='text-align: center; margin-top: 15px;'>{score}</h2>", unsafe_allow_html=True)
                         
-                    # --- GESTION EXTÉRIEUR (Bouton cliquable) ---
                     with c_ext:
                         if logo_ext and os.path.exists(logo_ext):
                             try:
@@ -291,14 +284,11 @@ def afficher_resultats(df_resultats):
                                 html_ext = f"<div style='text-align:center;'><img src='data:image/png;base64,{img_b64}' style='width:60px; margin-bottom:5px;'></div>"
                                 st.markdown(html_ext, unsafe_allow_html=True)
                             except Exception: pass
-                            
-                        # Le nom devient un bouton de recherche
                         if st.button(ext, key=f"btn_ext_{index}_{i}", use_container_width=True):
                             st.session_state.recherche_equipe_cible = ext
                             st.session_state.page = 'recherche_equipe'
                             st.rerun()
                     
-                    # --- 3. PIED DE FICHE ---
                     diffuseur = row.get('Diffuseur', '')
                     qualite = row.get('Qualité', '')
                     has_diff = pd.notna(diffuseur) and str(diffuseur).strip() != ""
@@ -312,6 +302,25 @@ def afficher_resultats(df_resultats):
                         html_footer += " &nbsp;&nbsp;|&nbsp;&nbsp; ".join(parts)
                         html_footer += "</div>"
                         st.markdown(html_footer, unsafe_allow_html=True)
+                        
+                    # --- NOUVEAU : BOUTON AJOUTER AU PANIER ---
+                    st.write("") # Petit espacement
+                    
+                    # Identifiant unique du match pour le panier
+                    match_id = f"{date_brute}_{dom}_{ext}"
+                    # Vérifier si ce match est déjà dans le panier
+                    in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
+                    
+                    if in_cart:
+                        if st.button("✅ Retirer du panier", key=f"cart_{index}_{i}", use_container_width=True):
+                            st.session_state.panier = [m for m in st.session_state.panier if f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" != match_id]
+                            st.rerun()
+                    else:
+                        if st.button("🛒 Ajouter au panier", key=f"cart_{index}_{i}", type="primary", use_container_width=True):
+                            # On convertit la ligne en dictionnaire en gérant les valeurs nulles
+                            match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items()}
+                            st.session_state.panier.append(match_dict)
+                            st.rerun()
 
 # ==========================================
 # 🧭 BARRE LATÉRALE PERSISTANTE
@@ -323,6 +332,18 @@ with st.sidebar:
         go_home()
         st.rerun()
         
+    # --- NOUVEAU : PANIER DANS LA BARRE LATÉRALE ---
+    st.divider()
+    nb_articles = len(st.session_state.panier)
+    if nb_articles > 0:
+        if st.button(f"🛒 Mon Panier ({nb_articles})", width="stretch", type="primary"):
+            st.session_state.page = 'panier'
+            st.rerun()
+    else:
+        if st.button("🛒 Mon Panier (0)", width="stretch"):
+            st.session_state.page = 'panier'
+            st.rerun()
+            
     st.divider()
     st.markdown("### 📂 Catégories")
     if st.button("🌍 Sélections Nationales", width="stretch"):
@@ -339,7 +360,6 @@ with st.sidebar:
         st.rerun()
         
     st.divider()
-    
     st.markdown("### 🌟 Nouveautés & Objectifs")
     if st.button("✨ Dernières Pépites", width="stretch"):
         st.session_state.page = 'dernieres_pepites'
@@ -473,7 +493,58 @@ if st.session_state.page == 'accueil':
                 st.rerun()
 
 # ==========================================
-# PAGE NOUVEAUTÉ : MES RECHERCHES (WANTED)
+# PAGE NOUVEAUTÉ : LE PANIER
+# ==========================================
+elif st.session_state.page == 'panier':
+    st.header("🛒 Mon Panier de Matchs")
+    
+    if len(st.session_state.panier) == 0:
+        st.info("Votre panier est vide pour le moment. Naviguez dans le catalogue pour ajouter des matchs !")
+        if st.button("Retourner à l'accueil"):
+            go_home()
+            st.rerun()
+    else:
+        st.markdown(f"**Vous avez sélectionné {len(st.session_state.panier)} match(s).**")
+        st.write("---")
+        
+        # 1. Affichage de la liste des matchs
+        for i, match in enumerate(st.session_state.panier):
+            col_info, col_btn = st.columns([5, 1])
+            with col_info:
+                date_m = match.get('Date', '?')
+                comp_m = match.get('Compétition', '?')
+                dom_m = match.get('Domicile', '')
+                ext_m = match.get('Extérieur', '')
+                qual_m = match.get('Qualité', '')
+                
+                st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m} | ⚔️ **{dom_m} - {ext_m}** *(💾 {qual_m})*")
+            with col_btn:
+                # Bouton pour retirer du panier
+                if st.button("❌ Retirer", key=f"remove_cart_page_{i}"):
+                    st.session_state.panier.pop(i)
+                    st.rerun()
+            st.divider()
+            
+        # 2. Section "Passer commande"
+        st.subheader("📩 Comment récupérer ces matchs ?")
+        st.markdown("Pour valider votre demande (achat ou échange), **copiez simplement le texte ci-dessous** et envoyez-le moi en message privé.")
+        
+        # Génération automatique du texte récapitulatif
+        texte_recap = "Bonjour, je suis intéressé(e) par ces matchs vus dans Le Grenier :\n\n"
+        for match in st.session_state.panier:
+            texte_recap += f"- {match.get('Date', '?')} | {match.get('Compétition', '?')} | {match.get('Domicile', '')} vs {match.get('Extérieur', '')}\n"
+        
+        texte_recap += "\nMerci de me donner les détails pour la suite !"
+        
+        # Bloc de code facile à copier
+        st.code(texte_recap, language="text")
+        
+        if st.button("🗑️ Vider tout le panier"):
+            st.session_state.panier = []
+            st.rerun()
+
+# ==========================================
+# PAGE : MES RECHERCHES (WANTED)
 # ==========================================
 elif st.session_state.page == 'mes_recherches':
     st.header("🔎 Mes Recherches Actuelles")
@@ -514,9 +585,9 @@ elif st.session_state.page == 'mes_recherches':
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
+
 # ==========================================
-# PAGE NOUVEAUTÉ : DERNIÈRES PÉPITES
+# PAGE : DERNIÈRES PÉPITES
 # ==========================================
 elif st.session_state.page == 'dernieres_pepites':
     st.header("✨ Les Dernières Pépites")
@@ -525,7 +596,7 @@ elif st.session_state.page == 'dernieres_pepites':
     afficher_resultats(df_derniers)
 
 # ==========================================
-# PAGE NOUVEAUTÉ : PROGRESSION DE LA COLLECTION
+# PAGE : PROGRESSION DE LA COLLECTION
 # ==========================================
 elif st.session_state.page == 'progression':
     st.header("🎯 Progression de la Collection")
@@ -606,14 +677,12 @@ elif st.session_state.page == 'recherche_equipe':
     st.header("🛡️ Recherche par Équipe")
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().unique())
     
-    # 🎯 On présélectionne l'équipe si on a cliqué sur un bouton
     idx_defaut = 0
     cible = st.session_state.get('recherche_equipe_cible')
     if cible and cible in toutes_les_equipes:
         idx_defaut = toutes_les_equipes.index(cible)
         
     choix = st.selectbox("Sélectionne une équipe :", toutes_les_equipes, index=idx_defaut)
-    # On met à jour la mémoire pour que la liste déroulante reste libre
     st.session_state.recherche_equipe_cible = choix 
     
     df_filtre = df[(df['Domicile'] == choix) | (df['Extérieur'] == choix)]
@@ -637,7 +706,6 @@ elif st.session_state.page == 'recherche_avancee':
     stades = sorted(df['Stade'].dropna().astype(str).unique()) if 'Stade' in df.columns else []
     saisons = sorted(df['Saison'].dropna().astype(str).unique(), reverse=True) if 'Saison' in df.columns else []
     
-    # 🎯 On pré-remplit la compétition si on a cliqué dessus
     def_comp = []
     cible_comp = st.session_state.get('recherche_comp_cible')
     if cible_comp and cible_comp in competitions:
