@@ -383,16 +383,14 @@ with st.sidebar:
     if st.button("🏠 Accueil", width="stretch"):
         go_home()
         st.rerun()
-        
-        
+                
     # --- NOUVEAU BOUTON F.A.Q ---
     if st.button("❓ F.A.Q & Infos", width="stretch"):
         st.session_state.page = 'faq'
         st.rerun()
         
     st.divider()
-        
-             
+                     
     nb_articles = len(st.session_state.panier)
     if nb_articles > 0:
         if st.button(f"🛒 Mon Panier ({nb_articles})", width="stretch", type="primary"):
@@ -999,6 +997,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
