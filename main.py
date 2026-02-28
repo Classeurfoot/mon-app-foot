@@ -997,7 +997,46 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+            
 
+# ==========================================
+# ⬆️ BOUTON FLOTTANT "REMONTER EN HAUT"
+# ==========================================
+st.markdown(
+    """
+    <style>
+    .btn-flottant {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background-color: #2b2b2b;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    .btn-flottant:hover {
+        background-color: #444;
+        transform: scale(1.1);
+        border-color: #888;
+    }
+    </style>
+    
+    <button class="btn-flottant" onclick="window.parent.scrollTo({top: 0, behavior: 'smooth'});" title="Remonter en haut">
+        ⬆️
+    </button>
+    """,
+    unsafe_allow_html=True
+)
 
 
 
