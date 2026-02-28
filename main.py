@@ -473,7 +473,7 @@ if st.session_state.page == 'accueil':
         afficher_resultats(df_trouve)
         st.write("---")
 
-    # --- ASTUCE CSS POUR COLORER LES BOUTONS SPECIFIQUES ---
+# --- ASTUCE CSS POUR COLORER LES BOUTONS SPECIFIQUES ---
     st.markdown("""
     <style>
     /* Bouton Commandes (4ème colonne) -> Vert forêt élégant */
@@ -1027,5 +1027,6 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
