@@ -80,12 +80,12 @@ def popup_tarifs():
 def popup_contact_commandes():
     st.markdown("""
     **Comment valider votre commande ?**
-    * 🛒 **Le Panier :** Une fois votre sélection terminée, envoyez simplement le récapitulatif de votre panier à cette adresse : **legrenierdufootball@hotmail.com**
-    * 💳 **Le Paiement :** À réception de votre e-mail, je vous répondrai avec les instructions pour procéder au paiement sécurisé via **PayPal**.
-    * 🚀 **La Livraison :** Dès validation du paiement, vos matchs sont envoyés rapidement et en toute sécurité via des plateformes de téléchargement comme *Swisstransfer*, *WeTransfer* ou *Grosfichiers*.
+    * 🛒 **Le Panier :** Une fois votre sélection terminée, envoyez simplement le récapitulatif de votre panier par e-mail à **legrenierdufootball@hotmail.com** ou en Message Privé sur Instagram **[@legrenierdufootball](https://www.instagram.com/legrenierdufootball/)**.
+    * 💳 **Le Paiement :** À réception de votre message, je vous répondrai avec les instructions pour procéder au paiement sécurisé via **PayPal**.
+    * 🚀 **La Livraison :** Dès validation du paiement, vos matchs sont envoyés rapidement et en toute sécurité via des plateformes de téléchargement.
     
     ---
-    **Une question spécifique ?** Vous cherchez un match qui n'est pas (encore) dans le catalogue ? Vous avez une question technique sur les formats ? N'hésitez pas à m'écrire à la même adresse mail, je vous répondrai avec plaisir !
+    **Une question spécifique ?** Vous cherchez un match qui n'est pas (encore) dans le catalogue ? N'hésitez pas à m'écrire par e-mail ou via Instagram, je vous répondrai avec plaisir !
     """)
 
 @st.dialog("🤝 Proposer un Échange")
@@ -94,11 +94,10 @@ def popup_echanges():
     **Faisons grandir Le Grenier ensemble !** Je suis continuellement à la recherche de nouvelles archives pour sauvegarder le patrimoine footballistique. Si vous possédez vos propres enregistrements sur disques durs, DVD ou VHS, je suis très ouvert aux échanges !
     
     **Comment procéder ?**
-    * 🔎 Consultez la section **"Mes Recherches"** dans le menu pour découvrir mes projets prioritaires actuels (ex: AC Milan, France 98...).
-    * 📋 Envoyez-moi votre liste de matchs ou vos propositions par e-mail à : **legrenierdufootball@hotmail.com**
-    * 🔄 Nous pourrons alors convenir d'un échange équitable de fichiers numériques (via *Swisstransfer*, *WeTransfer*, etc.).
+    * 🔎 Consultez la section **"Mes Recherches"** dans le menu pour découvrir mes projets prioritaires actuels.
+    * 📋 Envoyez-moi votre liste de matchs ou vos propositions par e-mail à **legrenierdufootball@hotmail.com** ou sur Instagram **[@legrenierdufootball](https://www.instagram.com/legrenierdufootball/)**.
+    * 🔄 Nous pourrons alors convenir d'un échange équitable de fichiers numériques.
     """)
-
 # ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
@@ -1039,6 +1038,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
