@@ -388,6 +388,9 @@ with st.sidebar:
     if st.button("❓ F.A.Q & Infos", width="stretch"):
         st.session_state.page = 'faq'
         st.rerun()
+
+    # --- NOUVEAU BOUTON INSTAGRAM ---
+    st.link_button("📸 Mon Instagram", "https://www.instagram.com/legrenierdufootball/", use_container_width=True)
         
     st.divider()
                      
@@ -1036,6 +1039,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
