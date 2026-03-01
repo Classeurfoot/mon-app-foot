@@ -10,6 +10,17 @@ import urllib.parse
 # 1. Configuration de la page
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
 
+# --- LECTURE DU LOGO LGF ---
+def get_base64_image(image_path):
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except Exception:
+        return ""
+
+logo_b64 = get_base64_image("logo.png")
+# ---------------------------
+
 # ==========================================
 # ⚙️ GESTION DE LA NAVIGATION & PANIER
 # ==========================================
@@ -377,7 +388,11 @@ def afficher_resultats(df_resultats):
 # 🧭 BARRE LATÉRALE PERSISTANTE
 # ==========================================
 with st.sidebar:
-    st.title("⚽ Menu Rapide")
+    # Si le logo est bien trouvé, on l'affiche, sinon on garde l'emoji de secours
+    if logo_b64:
+        st.markdown(f"<h2 style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' style='width: 45px; vertical-align: middle; margin-right: 10px; border-radius: 50%;'>Menu Rapide</h2>", unsafe_allow_html=True)
+    else:
+        st.title("⚽ Menu Rapide")
     
     if st.button("🏠 Accueil", width="stretch"):
         go_home()
@@ -455,7 +470,13 @@ with st.sidebar:
 # PAGE D'ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
-    st.markdown("<h1 style='text-align: center;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
+    
+    if logo_b64:
+        st.markdown(f"<h1 style='text-align: center; margin-top: -15px;'><img src='data:image/png;base64,{logo_b64}' style='width: 70px; vertical-align: middle; margin-right: 15px; border-radius: 50%;'>Le Grenier du Football</h1>", unsafe_allow_html=True)
+    else:
+        st.markdown("<h1 style='text-align: center; margin-top: -15px;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
+        
+    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de 4000 matchs en vidéo.</p>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de 4000 matchs en vidéo.</p>", unsafe_allow_html=True)
     st.write("")
     
@@ -1038,6 +1059,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
