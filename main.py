@@ -389,10 +389,7 @@ def afficher_resultats(df_resultats):
 # 🧭 BARRE LATÉRALE PERSISTANTE
 # ==========================================
 with st.sidebar:
-    # Si le logo est bien trouvé, on l'affiche, sinon on garde l'emoji de secours
-    if logo_b64:
-        st.markdown(f"<h2 style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' style='width: 45px; vertical-align: middle; margin-right: 10px; border-radius: 50%;'>Menu Rapide</h2>", unsafe_allow_html=True)
-    else:
+   
         st.title("⚽ Menu Rapide")
     
     if st.button("🏠 Accueil", width="stretch"):
@@ -1060,6 +1057,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
