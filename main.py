@@ -751,7 +751,7 @@ elif st.session_state.page == 'panier':
 # ==========================================
 elif st.session_state.page == 'faq':
     st.header("❓ Foire Aux Questions & Informations")
-    st.markdown("<p style='color: gray; font-size:16px;'>Vous trouverez ici toutes les réponses concernant le fonctionnement du Grenier, la qualité des vidéos et les modalités d'échange.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: gray; font-size:16px;'>Vous trouverez ici toutes les réponses concernant le fonctionnement du Grenier, la qualité des vidéos et les modalités de commande.</p>", unsafe_allow_html=True)
     st.write("---")
 
     with st.expander("📺 D'où proviennent toutes ces archives ?"):
@@ -766,33 +766,37 @@ elif st.session_state.page == 'faq':
         💡 **À savoir (DVD vs Numérique) :** Lorsqu'un match vous est proposé à la fois en format DVD et en format Numérique, **le format DVD offrira toujours la meilleure qualité d'image brute**, même pour les archives les plus anciennes. Le format numérique (mp4, mkv...) implique une compression vidéo pour réduire le poids du fichier, ce qui n'est pas le cas du format DVD (.VOB) qui conserve le flux vidéo intact.
         """)
 
-    with st.expander("📺 Un match a plusieurs diffuseurs. Comment savoir quelle version est la meilleure ?"):
+    with st.expander("🎙️ Un match a plusieurs diffuseurs ou langues. Comment faire le bon choix ?"):
         st.markdown("""
-        Il arrive fréquemment qu'un match mythique soit disponible dans le catalogue avec plusieurs choix de diffuseurs (ex: une version TF1 et une version Canal+). 
+        Il est fréquent qu'un match mythique soit disponible avec plusieurs choix de diffuseurs (TF1, Canal+, RAI...) et de langues de commentaires. 
         
-        ⚠️ **Attention : ces versions ne sont pas toujours de la même qualité !** L'une peut provenir d'un DVD irréprochable, tandis que l'autre peut être une numérisation VHS avec une image plus modeste, conservée uniquement pour la nostalgie des commentaires d'époque.
+        ⚠️ **Attention : ces versions ne sont pas toujours de la même qualité !** L'une peut provenir d'un DVD irréprochable avec des commentaires étrangers, tandis que l'autre peut être une numérisation VHS avec une image plus modeste, conservée uniquement pour la nostalgie des commentaires français d'époque.
         
-        ✉️ **Mon conseil :** Pour éviter toute méprise lors d'une commande, n'hésitez pas à m'envoyer un message (par e-mail ou sur Instagram) *avant* de valider votre panier. Je vous indiquerai avec une totale transparence la qualité et le format exacts de chaque diffuseur pour le match qui vous intéresse !
-        """)
-
-    with st.expander("💾 Quelle est la différence entre le format Numérique et le format DVD ?"):
-        st.markdown("""
-        * 💻 **Le format Numérique (.mp4, .mkv, .avi) :** Il est optimisé pour être lu très facilement sur un ordinateur, une tablette, un smartphone ou sur une TV moderne via une clé USB.
-        * 💿 **Le format DVD (fichiers .VOB) :** C'est le format d'archivage par excellence. Il est plus lourd et s'adresse principalement aux puristes qui souhaitent conserver la structure exacte du DVD d'origine. *(Rappel : l'envoi se fait uniquement par lien de téléchargement, aucun DVD physique n'est expédié par la poste).*
+        ✉️ **Mon conseil :** Pour éviter toute méprise, n'hésitez pas à me contacter par message avant de valider votre commande. Je pourrai vous renseigner précisément sur le trio **Diffuseur - Qualité - Langue** pour chaque version !
         """)
 
     with st.expander("🤝 Comment fonctionne un échange de matchs ?"):
         st.markdown("""
-        C'est très simple ! Si vous avez des archives qui pourraient m'intéresser (jetez un œil à la rubrique **Mes Recherches**), envoyez-moi votre liste par e-mail. Nous comparons nos catalogues, nous nous mettons d'accord sur un échange équitable (1 match contre 1 match, par exemple), et nous nous transmettons les fichiers numériques via des plateformes sécurisées comme *WeTransfer*, *SwissTransfer* ou *Grosfichiers*.
+        C'est très simple ! Si vous avez des archives qui pourraient m'intéresser (jetez un œil à la rubrique **Mes Recherches**), envoyez-moi votre liste. Nous comparons nos catalogues, nous nous mettons d'accord sur un échange équitable (1 match contre 1 match, par exemple), et nous nous transmettons les fichiers numériques via des plateformes sécurisées.
         """)
 
     with st.expander("💳 Comment se passe le paiement pour une commande directe ? Est-ce sécurisé ?"):
         st.markdown("""
-        Absolument. Une fois votre sélection faite via le panier, vous m'envoyez le récapitulatif par e-mail. Je vous confirme rapidement la disponibilité de vos fichiers. Le règlement s'effectue ensuite de manière 100% sécurisée via **PayPal**. Dès réception, je génère votre lien de téléchargement privé et rapide.
+        Absolument. Une fois votre sélection faite via le panier, vous m'envoyez le récapitulatif. Je vous confirme rapidement la disponibilité de vos fichiers. Le règlement s'effectue ensuite de manière 100% sécurisée via **PayPal**. 
+        """)
+
+    with st.expander("⏳ Dans quel délai vais-je recevoir mes matchs après le paiement ?"):
+        st.markdown("""
+        Le Grenier du Football est géré par un passionné, il n'y a pas de robot d'envoi automatisé ! Une fois votre paiement validé, je prépare vos fichiers manuellement et vous envoie votre lien de téléchargement privé dans un délai très rapide, généralement **entre 24h et 48h maximum**.
+        """)
+
+    with st.expander("🔗 Combien de temps mes liens de téléchargement sont-ils valables ?"):
+        st.markdown("""
+        Les transferts se font via des plateformes sécurisées (*SwissTransfer, WeTransfer, GrosFichiers...*). Ces plateformes suppriment automatiquement les fichiers au bout d'un certain temps (généralement **entre 7 et 30 jours**). Il est donc indispensable de télécharger vos matchs rapidement à réception du lien et de les sauvegarder précieusement sur votre propre disque dur !
         """)
         
     st.write("---")
-    st.info("💡 **Vous n'avez pas trouvé votre réponse ?** N'hésitez pas à me contacter directement via **legrenierdufootball@hotmail.com** !")
+    st.info("💡 **Vous n'avez pas trouvé votre réponse ?** N'hésitez pas à me contacter directement par e-mail ou sur Instagram !")
 
 # ==========================================
 # PAGE : MES RECHERCHES (WANTED)
@@ -1081,6 +1085,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
