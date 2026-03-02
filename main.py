@@ -177,19 +177,19 @@ MENU_ARBO = {
         "Coupe des Confédérations": "Coupe des Confédérations",
         "Jeux Olympiques": "Jeux Olympiques"
     },
-    "Clubs": {
-        "Coupe d'Europe": {
-            "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
-            "C2": ["Coupe des Coupes"],
-            "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
-            "C4": ["Conference League"]
-        },
+    "Coupes d'Europe": {
+        "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
+        "C2": ["Coupe des Coupes"],
+        "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
+        "C4": ["Conference League"],
+        "Supercoupe d'Europe": "Supercoupe d'Europe"
+    },
+    "Championnats & Coupes": {
         "Tournois internationaux clubs": {
             "Coupe Intercontinentale": "Coupe intercontinentale",
             "Coupe du Monde des clubs de la FIFA": "Coupe du Monde des clubs de la FIFA",
             "Coupe du Monde des Clubs 2025": "Coupe du Monde des Clubs 2025"
         },
-        "Supercoupe d'Europe": "Supercoupe d'Europe",
         "Championnat de France": ["Division 1", "Ligue 1", "Division 2", "Ligue 2"],
         "Coupe Nationale": ["Coupe de France", "Coupe de la Ligue", "Trophée des Champions"],
         "Championnats étrangers": {
@@ -199,7 +199,7 @@ MENU_ARBO = {
             "Allemagne": ["Bundesliga"]
         }
     },
-    "Divers": {
+    "Amicaux Internationaux": {
         "Amical": ["Amical", "Opel Master Cup"],
         "Tournoi international": ["Tournoi Hassan II", "Kirin Cup"]
     }
@@ -442,17 +442,21 @@ with st.sidebar:
             
     st.divider()
     st.markdown("### 📂 Catégories")
-    if st.button("🌍 Sélections Nationales", width="stretch"):
+    if st.button("🌍 Nations (Mondial, Euro...)", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Nations']
         st.rerun()
-    if st.button("🏟️ Clubs", width="stretch"):
+    if st.button("🏆 Coupes d'Europe (LDC...)", width="stretch"):
         st.session_state.page = 'arborescence'
-        st.session_state.chemin = ['Clubs']
+        st.session_state.chemin = ["Coupes d'Europe"]
         st.rerun()
-    if st.button("🎲 Matchs de Gala", width="stretch"):
+    if st.button("🏟️ Championnats & Coupes", width="stretch"):
         st.session_state.page = 'arborescence'
-        st.session_state.chemin = ['Divers']
+        st.session_state.chemin = ['Championnats & Coupes']
+        st.rerun()
+    if st.button("🤝 Amicaux Internationaux", width="stretch"):
+        st.session_state.page = 'arborescence'
+        st.session_state.chemin = ['Amicaux Internationaux']
         st.rerun()
         
     st.divider()
@@ -587,21 +591,25 @@ if st.session_state.page == 'accueil':
     st.markdown("### 📂 Explorer le Classeur")
     st.markdown("<p style='color: gray; margin-bottom: 15px;'>Sélectionnez une catégorie pour naviguer dans l'arborescence des archives.</p>", unsafe_allow_html=True)
     
-    col_n, col_c, col_d = st.columns(3)
-    with col_n:
-        if st.button("🌍 SÉLECTIONS NATIONALES", width="stretch", type="primary"):
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+        if st.button("🌍 NATIONS (Mondial, Euro...)", use_container_width=True, type="primary"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
-    with col_c:
-        if st.button("🏟️ CLUBS", width="stretch", type="primary"):
+        if st.button("🏟️ CHAMPIONNATS & COUPES", use_container_width=True, type="primary"):
             st.session_state.page = 'arborescence'
-            st.session_state.chemin = ['Clubs']
+            st.session_state.chemin = ['Championnats & Coupes']
             st.rerun()
-    with col_d:
-        if st.button("🎲 MATCHS DE GALA", width="stretch", type="primary"):
+            
+    with col_c2:
+        if st.button("🏆 COUPES D'EUROPE (LDC...)", use_container_width=True, type="primary"):
             st.session_state.page = 'arborescence'
-            st.session_state.chemin = ['Divers']
+            st.session_state.chemin = ["Coupes d'Europe"]
+            st.rerun()
+        if st.button("🤝 AMICAUX INTERNATIONAUX", use_container_width=True, type="primary"):
+            st.session_state.page = 'arborescence'
+            st.session_state.chemin = ['Amicaux Internationaux']
             st.rerun()
 
     st.write("---")
@@ -1081,6 +1089,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
