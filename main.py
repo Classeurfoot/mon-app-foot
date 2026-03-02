@@ -389,7 +389,9 @@ def afficher_resultats(df_resultats):
 # 🧭 BARRE LATÉRALE PERSISTANTE
 # ==========================================
 with st.sidebar:
-    st.title("⚽ Menu Rapide")  # <-- On remet le titre simple ici
+    # On utilise une balise HTML (h2) pour centrer le texte et l'emoji
+    st.markdown("<h2 style='text-align: center;'>📺 Menu Rapide</h2>", unsafe_allow_html=True)
+    st.write("") # Ajoute un petit espace invisible pour bien aérer avant le bouton Accueil
     
     if st.button("🏠 Accueil", width="stretch"):
         go_home()
@@ -400,8 +402,31 @@ with st.sidebar:
         st.session_state.page = 'faq'
         st.rerun()
 
-    # --- BOUTON INSTAGRAM ---
-    st.link_button("📸 Mon Instagram", "https://www.instagram.com/legrenierdufootball/", use_container_width=True)
+    # --- NOUVEAU BOUTON INSTAGRAM (AVEC LE VRAI LOGO) ---
+    st.markdown("""
+        <a href="https://www.instagram.com/legrenierdufootball/" target="_blank" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: transparent;
+            border: 1px solid #555;
+            border-radius: 8px;
+            color: #fafafa;
+            padding: 10px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            transition: 0.2s;
+        " onmouseover="this.style.borderColor='#E1306C'; this.style.color='#E1306C';" onmouseout="this.style.borderColor='#555'; this.style.color='#fafafa';">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+            Rejoignez le Grenier
+        </a>
+    """, unsafe_allow_html=True)
         
     st.divider()
                      
@@ -1056,6 +1081,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
