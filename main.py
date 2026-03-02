@@ -867,9 +867,11 @@ elif st.session_state.page == 'pepites':
         # On trie du plus grand ID au plus petit, et on prend les 30 premiers
         df_pepites = df.sort_values(by='ID', ascending=False).head(30)
     else:
-        # Solution de secours au cas où l'ID n'est pas trouvé
-        st.warning("⚠️ La colonne 'ID' est introuvable dans le fichier CSV. Tri par défaut.")
-        df_pepites = df.tail(30).iloc[::-1] 
+        st.warning("⚠️ La colonne 'ID' est introuvable dans le fichier CSV.")
+        # --- LIGNE MAGIQUE POUR DÉBOGUER ---
+        st.info(f"🔍 Voici les noms exacts des colonnes que le site détecte : {df.columns.tolist()}")
+        # ----------------------------------
+        df_pepites = df.tail(30).iloc[::-1]
         
     afficher_resultats(df_pepites)
 
@@ -1108,6 +1110,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
