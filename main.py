@@ -155,7 +155,7 @@ MENU_ARBO = {
         "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
         "C2": ["Coupe des Coupes"],
         "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
-        "C4": ["Conference League"],
+        "C4": ["Conference League", "Europa Conference"],
         "Supercoupe d'Europe": "Supercoupe d'Europe"
     },
     "Championnats & Coupes": {
@@ -849,7 +849,7 @@ elif st.session_state.page == 'progression':
         total_cdm = 22
         pct_cdm = min(100, int((cdm_possedees / total_cdm) * 100))
 
-        mask_euro = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
+        mask_euro = df['Compétition'].str.contains(r"\bEuro\b|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires|Europa|Coupe d'Europe", na=False, case=False, regex=True)
         euro_possedees = df[mask_euro & mask_finale]['Compétition'].nunique()
         total_euro = 17
         pct_euro = min(100, int((euro_possedees / total_euro) * 100))
@@ -1030,8 +1030,8 @@ elif st.session_state.page == 'arborescence':
         if noeud_actuel.startswith("FILTER_"):
             if noeud_actuel == "FILTER_CDM_FINALE": mask = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
             elif noeud_actuel == "FILTER_CDM_ELIM": mask = df['Compétition'].str.contains("Eliminatoires Coupe du Monde", na=False, case=False)
-            elif noeud_actuel == "FILTER_EURO_FINALE": mask = df['Compétition'].str.contains("Euro|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-            elif noeud_actuel == "FILTER_EURO_ELIM": mask = df['Compétition'].str.contains("Eliminatoires Euro|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
+            elif noeud_actuel == "FILTER_EURO_FINALE": mask = df['Compétition'].str.contains(r"\bEuro\b|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires|Europa|Coupe d'Europe", na=False, case=False, regex=True)
+            elif noeud_actuel == "FILTER_EURO_ELIM": mask = df['Compétition'].str.contains(r"Eliminatoires \bEuro\b|Eliminatoires Championnat d'Europe", na=False, case=False, regex=True)
             
             if st.session_state.edition_choisie is None:
                 editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
@@ -1070,6 +1070,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
