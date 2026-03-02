@@ -11,6 +11,7 @@ import urllib.parse
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
 
 # --- LECTURE DU LOGO LGF ---
+@st.cache_data   # <-- LA LIGNE MAGIQUE À AJOUTER ICI
 def get_base64_image(image_path):
     try:
         with open(image_path, "rb") as img_file:
@@ -1059,6 +1060,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
