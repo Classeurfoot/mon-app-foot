@@ -389,18 +389,18 @@ def afficher_resultats(df_resultats):
 # 🧭 BARRE LATÉRALE PERSISTANTE
 # ==========================================
 with st.sidebar:
-     st.title("⚽ Menu Rapide")
+    st.title("⚽ Menu Rapide")  # <-- On remet le titre simple ici
     
     if st.button("🏠 Accueil", width="stretch"):
         go_home()
         st.rerun()
                 
-    # --- NOUVEAU BOUTON F.A.Q ---
+    # --- BOUTON F.A.Q ---
     if st.button("❓ F.A.Q & Infos", width="stretch"):
         st.session_state.page = 'faq'
         st.rerun()
 
-    # --- NOUVEAU BOUTON INSTAGRAM ---
+    # --- BOUTON INSTAGRAM ---
     st.link_button("📸 Mon Instagram", "https://www.instagram.com/legrenierdufootball/", use_container_width=True)
         
     st.divider()
@@ -1056,6 +1056,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
