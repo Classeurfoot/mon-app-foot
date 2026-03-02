@@ -762,6 +762,17 @@ elif st.session_state.page == 'faq':
     with st.expander("🎞️ Quelle est la qualité vidéo des matchs ? Sont-ils en HD ?"):
         st.markdown("""
         L'honnêteté avant tout : la grande majorité des matchs d'avant 2005-2010 conservent le charme et le "grain" typique de leur époque. Il s'agit de diffusions standard (SD), de numérisations VHS ou de premiers DVD. Ce n'est pas de la 4K, c'est de l'Histoire pure dans son jus d'origine ! Les matchs plus récents sont, bien entendu, dans des résolutions supérieures.
+        
+        💡 **À savoir (DVD vs Numérique) :** Lorsqu'un match vous est proposé à la fois en format DVD et en format Numérique, **le format DVD offrira toujours la meilleure qualité d'image brute**, même pour les archives les plus anciennes. Le format numérique (mp4, mkv...) implique une compression vidéo pour réduire le poids du fichier, ce qui n'est pas le cas du format DVD (.VOB) qui conserve le flux vidéo intact.
+        """)
+
+    with st.expander("📺 Un match a plusieurs diffuseurs. Comment savoir quelle version est la meilleure ?"):
+        st.markdown("""
+        Il arrive fréquemment qu'un match mythique soit disponible dans le catalogue avec plusieurs choix de diffuseurs (ex: une version TF1 et une version Canal+). 
+        
+        ⚠️ **Attention : ces versions ne sont pas toujours de la même qualité !** L'une peut provenir d'un DVD irréprochable, tandis que l'autre peut être une numérisation VHS avec une image plus modeste, conservée uniquement pour la nostalgie des commentaires d'époque.
+        
+        ✉️ **Mon conseil :** Pour éviter toute méprise lors d'une commande, n'hésitez pas à m'envoyer un message (par e-mail ou sur Instagram) *avant* de valider votre panier. Je vous indiquerai avec une totale transparence la qualité et le format exacts de chaque diffuseur pour le match qui vous intéresse !
         """)
 
     with st.expander("💾 Quelle est la différence entre le format Numérique et le format DVD ?"):
@@ -1070,6 +1081,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
