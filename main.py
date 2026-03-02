@@ -194,7 +194,7 @@ MENU_ARBO = {
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv("matchs.csv", sep=None, engine="python", on_bad_lines='skip')
+        df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig")
         df = df.dropna(subset=['Domicile', 'Extérieur'])
         df.columns = df.columns.str.strip()
         
@@ -1110,6 +1110,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
