@@ -46,7 +46,12 @@ def go_home():
 def popup_guide_contenu():
     st.markdown("""
     **Bienvenue dans l'antre du Grenier du Football !** Ici reposent plus de 4000 matchs historiques, numérisés à partir de vieilles VHS, de diffusions TV d'époque et de DVD, dans le but de préserver le patrimoine de notre sport.
-
+    **Ce que vous trouverez dans ce catalogue :**
+    * 🌍 Des **matchs de clubs** et de **sélections nationales**.
+    * 🏆 Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
+    * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
+    * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
+    * 🕰️ Des matchs **amicaux, historiques et rares**.
     ---
     ### 🛠️ Mode d'emploi : Comment fouiller les archives ?
     
@@ -1091,6 +1096,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
