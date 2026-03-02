@@ -155,7 +155,7 @@ MENU_ARBO = {
         "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
         "C2": ["Coupe des Coupes"],
         "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
-        "C4": ["Conference League", "Europa Conference"],
+        "C4": ["Europa Conference"],
         "Supercoupe d'Europe": "Supercoupe d'Europe"
     },
     "Championnats & Coupes": {
@@ -1070,6 +1070,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
