@@ -42,15 +42,20 @@ def go_home():
 # ==========================================
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
-@st.dialog("📖 Contenu de la collection")
-def popup_contenu():
+@st.dialog("🧭 Guide & Contenu")
+def popup_guide_contenu():
     st.markdown("""
-    **Ce que vous trouverez dans ce catalogue :**
-    * 🌍 Des **matchs de clubs** et de **sélections nationales**.
-    * 🏆 Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
-    * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
-    * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
-    * 🕰️ Des matchs **amicaux, historiques et rares**.
+    **Bienvenue dans l'antre du Grenier du Football !** Ici reposent plus de 4000 matchs historiques, numérisés à partir de vieilles VHS, de diffusions TV d'époque et de DVD, dans le but de préserver le patrimoine de notre sport.
+
+    ---
+    ### 🛠️ Mode d'emploi : Comment fouiller les archives ?
+    
+    Pour explorer ce catalogue massif, deux affichages s'offrent à vous (sélectionnables juste au-dessus des listes de matchs) :
+    
+    * 📊 **Le Tableau classique :** Idéal pour une recherche rapide. C'est une vue condensée qui vous permet de trier facilement les colonnes (par année, compétition, etc.).
+    * 📇 **Les Fiches détaillées :** La vue parfaite pour les puristes ! Plongez dans les détails de chaque match de manière beaucoup plus visuelle et aérée.
+    
+    💡 **L'astuce secrète :** Dans la vue "Fiches détaillées", **les petites étiquettes des clubs et des compétitions sont interactives !** Cliquez simplement sur "Milan AC" ou "Coupe du Monde" sur une fiche, et le site filtrera instantanément tout l'historique de cette équipe ou de ce tournoi. Bonne fouille !
     """)
 
 @st.dialog("💾 Formats & Organisation")
@@ -536,7 +541,8 @@ if st.session_state.page == 'accueil':
     # Rangée des 5 boutons d'informations
     col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
     with col_btn1:
-        if st.button("📖 Contenu", use_container_width=True): popup_contenu()
+        if st.button("🧭 Guide & Contenu", use_container_width=True):
+            popup_guide_contenu()
     with col_btn2:
         if st.button("💾 Formats", use_container_width=True): popup_formats()
     with col_btn3:
@@ -1085,6 +1091,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
