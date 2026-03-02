@@ -446,8 +446,8 @@ with st.sidebar:
         
     st.divider()
     st.markdown("### 🌟 Nouveautés & Objectifs")
-    if st.button("✨ Dernières Pépites", width="stretch"):
-        st.session_state.page = 'dernieres_pepites'
+    if st.button("✨ Archives Dépoussiérées", width="stretch"):
+        st.session_state.page = 'pepites'
         st.rerun()
     if st.button("🎯 Progression Collection", width="stretch"):
         st.session_state.page = 'progression'
@@ -853,14 +853,25 @@ elif st.session_state.page == 'mes_recherches':
         </div>
         """, unsafe_allow_html=True)
 
+## ==========================================
+# PAGE : ARCHIVES DÉPOUSSIÉRÉES (Anciennement Dernières Pépites)
 # ==========================================
-# PAGE : DERNIÈRES PÉPITES
-# ==========================================
-elif st.session_state.page == 'dernieres_pepites':
-    st.header("✨ Les Dernières Pépites")
-    st.markdown("<p style='color: gray; font-size:16px;'>Voici les 10 derniers matchs tout fraîchement ajoutés au Grenier.</p>", unsafe_allow_html=True)
-    df_derniers = df.tail(10).iloc[::-1]
-    afficher_resultats(df_derniers)
+elif st.session_state.page == 'pepites':
+    st.header("✨ Les Archives Dépoussiérées")
+    st.markdown("<p style='color: gray; font-size:16px;'>Voici les 30 derniers matchs fraîchement exhumés des cartons et ajoutés au catalogue !</p>", unsafe_allow_html=True)
+    st.write("---")
+    
+    # --- LE NOUVEAU TRI PAR ID ---
+    # On vérifie d'abord que la colonne ID existe bien pour éviter les erreurs
+    if 'ID' in df.columns:
+        # On trie du plus grand ID au plus petit, et on prend les 30 premiers
+        df_pepites = df.sort_values(by='ID', ascending=False).head(30)
+    else:
+        # Solution de secours au cas où l'ID n'est pas trouvé
+        st.warning("⚠️ La colonne 'ID' est introuvable dans le fichier CSV. Tri par défaut.")
+        df_pepites = df.tail(30).iloc[::-1] 
+        
+    afficher_resultats(df_pepites)
 
 # ==========================================
 # PAGE : PROGRESSION DE LA COLLECTION
@@ -1097,6 +1108,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
