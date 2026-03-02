@@ -389,8 +389,7 @@ def afficher_resultats(df_resultats):
 # 🧭 BARRE LATÉRALE PERSISTANTE
 # ==========================================
 with st.sidebar:
-   
-        st.title("⚽ Menu Rapide")
+     st.title("⚽ Menu Rapide")
     
     if st.button("🏠 Accueil", width="stretch"):
         go_home()
@@ -1057,6 +1056,7 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
             
+
 
 
 
