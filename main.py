@@ -136,32 +136,6 @@ def charger_dictionnaire_logos(dossier_racine="Logos"):
 
 DICTIONNAIRE_LOGOS_EQUIPES = charger_dictionnaire_logos("Logos")
 
-LOGOS = {
-    "Coupe du Monde 1998": "Logos/cdm1998.png",
-    "Coupe du Monde 1978": "Logos/cdm1978.png",
-    "Coupe du Monde 1982": "Logos/cdm1982.png",
-    "Coupe du Monde 1986": "Logos/cdm1986.png",
-    "Coupe du Monde 1990": "Logos/cdm1990.png",
-    "Coupe du Monde 1994": "Logos/cdm1994.png",
-    "Coupe du Monde 2002": "Logos/cdm2002.png",
-    "Coupe du Monde 2006": "Logos/cdm2006.png",
-    "Coupe du Monde 2010": "Logos/cdm2010.png",
-    "Coupe du Monde 2014": "Logos/cdm2014.png",
-    "Coupe du Monde 2018": "Logos/cdm2018.png",
-    "Coupe du Monde 2022": "Logos/cdm2022.png",
-    "Euro 1992": "Logos/euro92.png",
-    "Euro 1996": "Logos/euro96.png",
-    "Euro 2000": "Logos/euro2000.png",
-    "Euro 2004": "Logos/euro2004.png",
-    "Euro 2008": "Logos/euro2008.png",
-    "Euro 2012": "Logos/euro2012.png",
-    "Euro 2016": "Logos/euro2016.png",
-    "Euro 2020": "Logos/euro2020.png",
-    "Euro 2024": "Logos/euro20024.png",
-    "Ligue 1": "Logos/ligue1.png",
-    "Champions League": "Logos/championsleague.png"
-}
-
 MENU_ARBO = {
     "Nations": {
         "Coupe du Monde": {
@@ -1075,21 +1049,27 @@ elif st.session_state.page == 'arborescence':
                 c1, c2 = st.columns([4, 1])
                 with c1: st.header(f"📍 {st.session_state.edition_choisie}")
                 with c2:
-                    if st.session_state.edition_choisie in LOGOS:
-                        if os.path.exists(LOGOS[st.session_state.edition_choisie]): st.image(LOGOS[st.session_state.edition_choisie], width=100)
+                    # --- NOUVEAU : RECHERCHE DYNAMIQUE DU LOGO DE LA COMPÉTITION ---
+                    cle_logo = nettoyer_nom_equipe(st.session_state.edition_choisie)
+                    chemin_logo = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_logo)
+                    if chemin_logo and os.path.exists(chemin_logo):
+                        st.image(chemin_logo, width=100)
+                        
                 df_final = df[df['Compétition'] == st.session_state.edition_choisie]
                 afficher_resultats(df_final)
         else:
             c1, c2 = st.columns([4, 1])
             with c1: st.header(f"🏆 {noeud_actuel}")
             with c2:
-                if noeud_actuel in LOGOS:
-                    if os.path.exists(LOGOS[noeud_actuel]): st.image(LOGOS[noeud_actuel], width=100)
+                # --- NOUVEAU : RECHERCHE DYNAMIQUE DU LOGO DE LA COMPÉTITION ---
+                cle_logo = nettoyer_nom_equipe(noeud_actuel)
+                chemin_logo = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_logo)
+                if chemin_logo and os.path.exists(chemin_logo):
+                    st.image(chemin_logo, width=100)
+                    
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-            
-
 
 
 
