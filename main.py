@@ -1259,7 +1259,7 @@ st.write("---") # Ligne de séparation esthétique
 foot_a, foot_b, foot_c = st.columns(3)
 
 with foot_a:
-    st.markdown("<br><p style='color: gray;'>© 2026 - Le Grenier du Football<br><i>Mémoire et préservation du patrimoine.</i></p>", unsafe_allow_html=True)
+    st.markdown("<br><p style='color: gray;'>© 2026 - Le Grenier du Football<br><i>Archives du foot, pour les passionnés.</i></p>", unsafe_allow_html=True)
 
 with foot_b:
     st.markdown("**Navigation rapide**")
@@ -1279,6 +1279,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
