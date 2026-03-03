@@ -6,6 +6,7 @@ import unicodedata
 import re
 import base64
 import urllib.parse
+import plotly.express as px
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
@@ -1089,17 +1090,80 @@ elif st.session_state.page == 'recherche_avancee':
     st.write("---")
     afficher_resultats(df_filtre)
 
-elif st.session_state.page == 'statistiques':
-    st.header("📊 Tableau de Bord")
-    st.metric("Total des matchs dans la base", len(df))
+elif st.session_state.page == 'stats':
+    st.header("📊 Le Bilan de l'Inventaire")
+    st.markdown("<p style='color: gray; font-size:16px;'>L'étendue du Grenier résumée en chiffres et en graphiques.</p>", unsafe_allow_html=True)
     st.write("---")
-    col_stat1, col_stat2 = st.columns(2)
-    with col_stat1:
-        st.subheader("🏆 Top 10 Compétitions")
-        st.bar_chart(df['Compétition'].value_counts().head(10))
-    with col_stat2:
-        st.subheader("🛡️ Top 10 Équipes (Apparitions)")
-        st.bar_chart(pd.concat([df['Domicile'], df['Extérieur']]).dropna().value_counts().head(10))
+
+    # --- 1. LES COMPTEURS FLASH (KPIs) ---
+    col1, col2, col3, col4 = st.columns(4)
+    
+    total_matchs = len(df)
+    saison_min = df['Saison'].dropna().min()
+    saison_max = df['Saison'].dropna().max()
+    nb_competitions = df['Compétition'].nunique()
+    
+    # On compte les matchs en haute qualité (MKV, HD, MP4...)
+    nb_mkv = df['Qualité'].str.contains('MKV|HD|MP4', na=False, case=False).sum()
+
+    col1.metric("📦 Total Reliques", f"{total_matchs} matchs")
+    col2.metric("⏳ Étendue Temporelle", f"{saison_min[:4]} ➔ {saison_max[-4:]}")
+    col3.metric("🌍 Diversité", f"{nb_competitions} tournois")
+    col4.metric("📽️ Restauration (MKV/MP4)", f"{nb_mkv} fichiers")
+
+    st.write("---")
+
+    # --- 2. LES GRAPHIQUES ---
+    
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.markdown("### 📈 L'Évolution des Archives")
+        # On compte le nombre de matchs par saison et on trie chronologiquement
+        df_saisons = df['Saison'].value_counts().reset_index()
+        df_saisons.columns = ['Saison', 'Nombre']
+        df_saisons = df_saisons.sort_values('Saison')
+        
+        fig_saisons = px.line(df_saisons, x='Saison', y='Nombre', markers=True, 
+                              color_discrete_sequence=['#8b5a2b']) # Couleur marron "Grenier"
+        fig_saisons.update_layout(xaxis_title="", yaxis_title="Nombre de matchs")
+        st.plotly_chart(fig_saisons, use_container_width=True)
+
+    with c2:
+        st.markdown("### 🏆 Le Top 15 des Équipes")
+        # On regroupe Domicile et Extérieur pour voir les équipes les plus présentes
+        equipes = pd.concat([df['Domicile'], df['Extérieur']])
+        # On exclut nos faux matchs "Multiplex / Divers" et les "-"
+        equipes = equipes[~equipes.isin(["Multiplex / Divers", "-"])]
+        df_equipes = equipes.value_counts().head(15).reset_index()
+        df_equipes.columns = ['Équipe', 'Apparitions']
+        
+        fig_equipes = px.bar(df_equipes, x='Apparitions', y='Équipe', orientation='h',
+                             color='Apparitions', color_continuous_scale='copper')
+        fig_equipes.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
+        st.plotly_chart(fig_equipes, use_container_width=True)
+
+    c3, c4 = st.columns(2)
+
+    with c3:
+        st.markdown("### 📺 L'Audimat (Top Diffuseurs)")
+        df_diff = df['Diffuseur'].dropna().value_counts().head(10).reset_index()
+        df_diff.columns = ['Diffuseur', 'Matchs']
+        
+        fig_diff = px.pie(df_diff, values='Matchs', names='Diffuseur', hole=0.4,
+                          color_discrete_sequence=px.colors.sequential.RdBu)
+        fig_diff.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_diff, use_container_width=True)
+
+    with c4:
+        st.markdown("### 📼 État des Bandes (Qualité)")
+        df_qual = df['Qualité'].dropna().value_counts().reset_index()
+        df_qual.columns = ['Format', 'Quantité']
+        
+        fig_qual = px.bar(df_qual, x='Format', y='Quantité', text='Quantité',
+                          color='Quantité', color_continuous_scale='gray')
+        fig_qual.update_layout(xaxis_title="", yaxis_title="")
+        st.plotly_chart(fig_qual, use_container_width=True)
 
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
@@ -1214,6 +1278,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
