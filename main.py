@@ -52,7 +52,7 @@ def popup_guide_contenu():
     * 🏆 Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
     * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
     * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
-        * 🕰️ Des matchs **amicaux, historiques et rares**.
+    * 🕰️ Des matchs **amicaux, historiques et rares**.
     ---
     ### 🛠️ Mode d'emploi : Comment fouiller les archives ?
     
@@ -1184,6 +1184,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
