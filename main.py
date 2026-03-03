@@ -445,7 +445,7 @@ with st.sidebar:
         st.rerun()
         
     st.divider()
-   st.markdown("### 🌟 Nouveautés")
+    st.markdown("### 🌟 Nouveautés")
     # --- ON RENOMME DANS LE THÈME DU GRENIER ---
     if st.button("✨ Archives Dépoussiérées", width="stretch"):
         st.session_state.page = 'pepites'
@@ -1128,6 +1128,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
