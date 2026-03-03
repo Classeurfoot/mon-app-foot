@@ -196,7 +196,7 @@ MENU_ARBO = {
 def load_data():
     try:
         # 1. Lecture avec encodage robuste pour Notion
-        df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig")
+        df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig")
         df.columns = df.columns.str.strip()
 
         # 2. Sauvetage des Multiplex (remplissage des vides)
@@ -1279,6 +1279,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
