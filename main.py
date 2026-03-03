@@ -958,7 +958,7 @@ elif st.session_state.page == 'catalogue':
     # On trie par Saison (décroissant), puis Compétition, puis Date
     df_tri = df.sort_values(
         by=['Saison', 'Compétition', 'Date'], 
-        ascending=[False, True, True]
+        ascending=[True, True, True]
     )
     
     # On affiche les résultats triés
@@ -1145,6 +1145,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
