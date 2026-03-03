@@ -199,6 +199,10 @@ def load_data():
         df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig")
         df.columns = df.columns.str.strip()
 
+        # --- NOUVEAU : CHASSE AUX FANTÔMES ---
+        # On supprime toutes les lignes où la Saison ET la Compétition sont vides
+        df = df.dropna(subset=['Saison', 'Compétition'], how='all')
+
         # 2. Sauvetage des Multiplex (remplissage des vides)
         df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
         df['Extérieur'] = df['Extérieur'].fillna("-")
@@ -1279,6 +1283,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
