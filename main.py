@@ -1213,7 +1213,8 @@ with foot_b:
 with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
-    st.markdown("📸 [Instagram : legrenier du football](https://instagram.com)") # Remplace par ton vrai lien Insta
+    st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
