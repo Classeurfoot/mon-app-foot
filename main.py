@@ -194,32 +194,60 @@ MENU_ARBO = {
 @st.cache_data
 def load_data():
     try:
+        # 1. Lecture avec encodage robuste pour Notion
         df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig")
+        df.columns = df.columns.str.strip()
 
-# --- NOUVEAU : SAUVETAGE DES MULTIPLEX ---
-# On remplace les cases vides (NaN) par du texte pour que l'application ne les supprime pas
+        # 2. Sauvetage des Multiplex (remplissage des vides)
         df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
         df['Extérieur'] = df['Extérieur'].fillna("-")
         df['Score'] = df['Score'].fillna("-")
         df['Stade'] = df['Stade'].fillna("Plusieurs stades")
-# --- LIGNE DE DÉBOGAGE À AJOUTER ---
-        df = df.dropna(subset=['Domicile', 'Extérieur'])
-        df.columns = df.columns.str.strip()
-        
+        df['Date'] = df['Date'].fillna("")
+
+        # --- IMPORTANT : J'ai supprimé le dropna qui supprimait tes lignes ! ---
+
+        # 3. Gestion des dates (Conversion format Excel et format FR)
         if 'Date' in df.columns:
+            # Correction pour les dates qui arrivent parfois en format "chiffre" d'Excel
             dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
             masque_excel = dates_numeriques.notna()
             dates_converties = pd.to_datetime(dates_numeriques[masque_excel], unit='D', origin='1899-12-30')
             df.loc[masque_excel, 'Date'] = dates_converties.dt.strftime('%d/%m/%Y')
+            
+            # Création d'une colonne cachée pour le tri chronologique réel
+            df['Date_Tri_Cachee'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
+
+        # 4. --- TRI GLOBAL AUTOMATIQUE ---
+        # On trie par Saison (récente en haut) puis par Date (chronologique dans la saison)
+        tri_cols = []
+        tri_order = []
+        
+        if 'Saison' in df.columns:
+            tri_cols.append('Saison')
+            tri_order.append(False) # Plus récent en premier
+        
+        if 'Date_Tri_Cachee' in df.columns:
+            tri_cols.append('Date_Tri_Cachee')
+            tri_order.append(True)  # Chronologique (août -> mai)
+            
+        if tri_cols:
+            df = df.sort_values(by=tri_cols, ascending=tri_order)
+
+        # On supprime la colonne de tri technique pour ne pas polluer l'affichage
+        if 'Date_Tri_Cachee' in df.columns:
+            df = df.drop(columns=['Date_Tri_Cachee'])
+
         return df
+
     except Exception as e:
         st.error(f"Erreur de lecture : {e}")
         return pd.DataFrame()
 
+# Application du chargement
 df = load_data()
 colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
-
 # --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
@@ -1156,6 +1184,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
