@@ -225,7 +225,7 @@ def load_data():
         
         if 'Saison' in df.columns:
             tri_cols.append('Saison')
-            tri_order.append(False) # Plus récent en premier
+            tri_order.append(True) # Plus ancien en premier
         
         if 'Date_Tri_Cachee' in df.columns:
             tri_cols.append('Date_Tri_Cachee')
@@ -1184,6 +1184,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
