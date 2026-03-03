@@ -445,9 +445,10 @@ with st.sidebar:
         st.rerun()
         
     st.divider()
-    st.markdown("### 🌟 Nouveautés & Objectifs")
-    if st.button("✨ Dernières Pépites", width="stretch"):
-        st.session_state.page = 'dernieres_pepites'
+   st.markdown("### 🌟 Nouveautés")
+    # --- ON RENOMME DANS LE THÈME DU GRENIER ---
+    if st.button("✨ Archives Dépoussiérées", width="stretch"):
+        st.session_state.page = 'pepites'
         st.rerun()
     if st.button("🎯 Progression Collection", width="stretch"):
         st.session_state.page = 'progression'
@@ -1127,6 +1128,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
