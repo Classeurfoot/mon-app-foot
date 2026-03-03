@@ -949,19 +949,30 @@ elif st.session_state.page == 'progression':
         st.warning("La colonne 'Phase' n'est pas présente dans votre fichier pour calculer les finales.")
 
 # ==========================================
-# PAGE CATALOGUE ET AUTRES
+# PAGE : CATALOGUE COMPLET
 # ==========================================
 elif st.session_state.page == 'catalogue':
     st.header("📚 Le Catalogue Complet")
     
+    # --- PRÉPARATION DU TRI ---
+    df_tri = df.copy()
+    
+    # On convertit temporairement la colonne Date en format date Python pour un tri réel
+    # dayfirst=True est crucial car tes dates sont au format FR (JJ/MM/AAAA)
+    df_tri['Date_Sort'] = pd.to_datetime(df_tri['Date'], dayfirst=True, errors='coerce')
+    
     # --- LE TRI MULTI-CRITÈRES ---
-    # On trie par Saison (décroissant), puis Compétition, puis Date
-    df_tri = df.sort_values(
-        by=['Saison', 'Compétition', 'Date'], 
+    # 1. Saison (du plus récent au plus ancien)
+    # 2. Compétition (ordre alphabétique)
+    # 3. Date_Sort (chronologique au sein de la compétition)
+    df_tri = df_tri.sort_values(
+        by=['Saison', 'Compétition', 'Date_Sort'], 
         ascending=[True, True, True]
     )
     
-    # On affiche les résultats triés
+    # On supprime la colonne temporaire avant l'affichage
+    df_tri = df_tri.drop(columns=['Date_Sort'])
+    
     afficher_resultats(df_tri)
 
 elif st.session_state.page == 'ephemeride':
@@ -1145,6 +1156,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
