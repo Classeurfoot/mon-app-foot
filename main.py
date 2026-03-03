@@ -196,6 +196,12 @@ def load_data():
     try:
         df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig")
 
+# --- NOUVEAU : SAUVETAGE DES MULTIPLEX ---
+# On remplace les cases vides (NaN) par du texte pour que l'application ne les supprime pas
+df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
+df['Extérieur'] = df['Extérieur'].fillna("-")
+df['Score'] = df['Score'].fillna("-")
+df['Stade'] = df['Stade'].fillna("Plusieurs stades")
 # --- LIGNE DE DÉBOGAGE À AJOUTER ---
         df = df.dropna(subset=['Domicile', 'Extérieur'])
         df.columns = df.columns.str.strip()
@@ -1130,6 +1136,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
