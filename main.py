@@ -952,8 +952,17 @@ elif st.session_state.page == 'progression':
 # PAGE CATALOGUE ET AUTRES
 # ==========================================
 elif st.session_state.page == 'catalogue':
-    st.header("📖 Catalogue Complet")
-    afficher_resultats(df)
+    st.header("📚 Le Catalogue Complet")
+    
+    # --- LE TRI MULTI-CRITÈRES ---
+    # On trie par Saison (décroissant), puis Compétition, puis Date
+    df_tri = df.sort_values(
+        by=['Saison', 'Compétition', 'Date'], 
+        ascending=[False, True, True]
+    )
+    
+    # On affiche les résultats triés
+    afficher_resultats(df_tri)
 
 elif st.session_state.page == 'ephemeride':
     aujourdhui = datetime.now()
@@ -1136,6 +1145,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
