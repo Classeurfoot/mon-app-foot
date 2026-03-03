@@ -1090,7 +1090,7 @@ elif st.session_state.page == 'recherche_avancee':
     st.write("---")
     afficher_resultats(df_filtre)
 
-elif st.session_state.page == 'stats':
+elif st.session_state.page == 'statistiques':
     st.header("📊 Le Bilan de l'Inventaire")
     st.markdown("<p style='color: gray; font-size:16px;'>L'étendue du Grenier résumée en chiffres et en graphiques.</p>", unsafe_allow_html=True)
     st.write("---")
@@ -1278,6 +1278,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
