@@ -206,7 +206,8 @@ def load_data():
         # 2. Sauvetage des Multiplex (remplissage des vides)
         df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
         df['Extérieur'] = df['Extérieur'].fillna("-")
-        df['Score'] = df['Score'].fillna("-")
+        # On remplace les "5-3" par "5 - 3" (avec des espaces) pour que ça fasse un vrai score de foot et bloquer le format date
+        df['Score'] = df['Score'].fillna("-").astype(str).str.replace("-", " - ")
         df['Stade'] = df['Stade'].fillna("Plusieurs stades")
         df['Date'] = df['Date'].fillna("")
 
@@ -1283,6 +1284,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
