@@ -1138,8 +1138,9 @@ elif st.session_state.page == 'statistiques':
         df_equipes = equipes.value_counts().head(15).reset_index()
         df_equipes.columns = ['Équipe', 'Apparitions']
         
+        # --- CORRECTION ICI : Utilisation de la palette standard 'Oranges' ---
         fig_equipes = px.bar(df_equipes, x='Apparitions', y='Équipe', orientation='h',
-                             color='Apparitions', color_continuous_scale='copper')
+                             color='Apparitions', color_continuous_scale='Oranges')
         fig_equipes.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
         st.plotly_chart(fig_equipes, use_container_width=True)
 
@@ -1278,6 +1279,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
