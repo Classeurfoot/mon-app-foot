@@ -246,7 +246,7 @@ def load_data():
 
 # Application du chargement
 df = load_data()
-colonnes_possibles = ['Match', 'Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
+colonnes_possibles = ['ID Match', 'Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 # --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
@@ -1184,6 +1184,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
