@@ -1198,19 +1198,23 @@ with foot_a:
 
 with foot_b:
     st.markdown("**Navigation rapide**")
-    # On utilise de petits boutons discrets qui font la même chose que ceux du menu haut
+    # On utilise de petits boutons discrets
     c1, c2 = st.columns(2)
     with c1:
         if st.button("❓ F.A.Q", key="btn_footer_faq", use_container_width=True):
-            popup_faq() # Remplace "popup_faq()" par le vrai nom de ta fonction si différent
+            # On change la page dans la mémoire du site et on relance
+            st.session_state.page = 'faq'  # Vérifie juste que c'est bien 'faq' ou 'F.A.Q' dans ton code
+            st.rerun()
     with c2:
         if st.button("💶 Tarifs", key="btn_footer_tarifs", use_container_width=True):
-            popup_tarifs() # Remplace "popup_tarifs()" par le vrai nom de ta fonction si différent
+            # Si Tarifs est toujours un pop-up (comme sur l'accueil) :
+            popup_tarifs() # (Remplace par le vrai nom de ta fonction pop-up des tarifs)
 
 with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://instagram.com)") # Remplace par ton vrai lien Insta
+
 
 
 
