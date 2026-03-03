@@ -1185,6 +1185,34 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
 
+# ==========================================
+# 🛑 PIED DE PAGE (FOOTER GLOBAL)
+# ==========================================
+st.write("---") # Ligne de séparation esthétique
+
+# On crée 3 colonnes pour aligner les éléments
+foot_a, foot_b, foot_c = st.columns(3)
+
+with foot_a:
+    st.markdown("<br><p style='color: gray;'>© 2026 - Le Grenier du Football<br><i>Mémoire et préservation du patrimoine.</i></p>", unsafe_allow_html=True)
+
+with foot_b:
+    st.markdown("**Navigation rapide**")
+    # On utilise de petits boutons discrets qui font la même chose que ceux du menu haut
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("❓ F.A.Q", key="btn_footer_faq", use_container_width=True):
+            popup_faq() # Remplace "popup_faq()" par le vrai nom de ta fonction si différent
+    with c2:
+        if st.button("💶 Tarifs", key="btn_footer_tarifs", use_container_width=True):
+            popup_tarifs() # Remplace "popup_tarifs()" par le vrai nom de ta fonction si différent
+
+with foot_c:
+    st.markdown("**Le Bureau de l'Archiviste**")
+    st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
+    st.markdown("📸 [Instagram : legrenier du football](https://instagram.com)") # Remplace par ton vrai lien Insta
+
+
 
 
 
