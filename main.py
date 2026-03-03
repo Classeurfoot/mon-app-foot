@@ -247,7 +247,7 @@ def load_data():
 
 # Application du chargement
 df = load_data()
-colonnes_possibles = ['Match', 'Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
+colonnes_possibles = ['ID Match', 'Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 # --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
@@ -1279,6 +1279,7 @@ with foot_c:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
     st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
+
 
 
 
