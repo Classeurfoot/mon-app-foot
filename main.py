@@ -59,9 +59,9 @@ def popup_guide_contenu():
     Pour explorer ce catalogue massif, deux affichages s'offrent à vous (sélectionnables juste au-dessus des listes de matchs) :
     
     * 📊 **Le Tableau classique :** Idéal pour une recherche rapide. C'est une vue condensée qui vous permet de trier facilement les colonnes (par année, compétition, etc.).
-    * 📇 **Les Fiches détaillées :** La vue parfaite pour les puristes ! Plongez dans les détails de chaque match de manière beaucoup plus visuelle et aérée.
+    * 📇 **Les Fiches détaillées :** Une vue beaucoup plus visuelle et aérée.
     
-    💡 **L'astuce secrète :** Dans la vue "Fiches détaillées", **les petites étiquettes des clubs et des compétitions sont interactives !** Cliquez simplement sur "Milan AC" ou "Coupe du Monde" sur une fiche, et le site filtrera instantanément tout l'historique de cette équipe ou de ce tournoi. Bonne fouille !
+    💡 **L'astuce secrète :** Dans la vue "Fiches détaillées", **les étiquettes des clubs et compétitions sont interactives !** Cliquez simplement sur "Marseille" ou "Coupe UEFA" sur une fiche, et le site filtrera instantanément tout l'historique de cette équipe ou de ce tournoi. Bonne fouille !
     """)
 
 @st.dialog("💾 Formats & Organisation")
@@ -1184,6 +1184,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
