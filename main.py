@@ -6,7 +6,6 @@ import unicodedata
 import re
 import base64
 import urllib.parse
-import plotly.express as px
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
@@ -49,20 +48,20 @@ def popup_guide_contenu():
     **Bienvenue dans l'antre du Grenier du Football !** Ici reposent plus de 4000 matchs historiques, numérisés à partir de vieilles VHS, de diffusions TV d'époque et de DVD, dans le but de préserver le patrimoine de notre sport.
     
     **Ce que vous trouverez dans ce catalogue :**
-    * 🌍 Des **matchs de clubs** et de **sélections nationales**.    
+    * 🌍 Des **matchs de clubs** et de **sélections nationales**.
     * 🏆 Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
-    * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
     * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
+    * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
     * 🕰️ Des matchs **amicaux, historiques et rares**.
     ---
     ### 🛠️ Mode d'emploi : Comment fouiller les archives ?
     
-    Pour explorer le grenier, deux affichages s'offrent à vous (sélectionnables juste au-dessus des listes de matchs) :
+    Pour explorer ce catalogue massif, deux affichages s'offrent à vous (sélectionnables juste au-dessus des listes de matchs) :
     
     * 📊 **Le Tableau classique :** Idéal pour une recherche rapide. C'est une vue condensée qui vous permet de trier facilement les colonnes (par année, compétition, etc.).
-    * 📇 **Les Fiches détaillées :** Une vue beaucoup plus visuelle et aérée.
+    * 📇 **Les Fiches détaillées :** La vue parfaite pour les puristes ! Plongez dans les détails de chaque match de manière beaucoup plus visuelle et aérée.
     
-    💡 **L'astuce secrète :** Dans la vue "Fiches détaillées", **les étiquettes des clubs et compétitions sont interactives !** Cliquez simplement sur "Marseille" ou "Coupe UEFA" sur une fiche, et le site filtrera instantanément tout l'historique de cette équipe ou de ce tournoi. Bonne fouille !
+    💡 **L'astuce secrète :** Dans la vue "Fiches détaillées", **les petites étiquettes des clubs et des compétitions sont interactives !** Cliquez simplement sur "Milan AC" ou "Coupe du Monde" sur une fiche, et le site filtrera instantanément tout l'historique de cette équipe ou de ce tournoi. Bonne fouille !
     """)
 
 @st.dialog("💾 Formats & Organisation")
@@ -195,75 +194,32 @@ MENU_ARBO = {
 @st.cache_data
 def load_data():
     try:
-        # 1. Lecture avec encodage robuste pour Notion
-        df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
-        df.columns = df.columns.str.strip()
+        df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig")
 
-        # --- NOUVEAU : CHASSE AUX FANTÔMES ---
-        # On supprime toutes les lignes où la Saison ET la Compétition sont vides
-        df = df.dropna(subset=['Saison', 'Compétition'], how='all')
-
-        # 2. Sauvetage des Multiplex (remplissage des vides)
+# --- NOUVEAU : SAUVETAGE DES MULTIPLEX ---
+# On remplace les cases vides (NaN) par du texte pour que l'application ne les supprime pas
         df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
         df['Extérieur'] = df['Extérieur'].fillna("-")
-        # Affichage du tableau éditable
-        edited_df = st.data_editor(
-            df_display,
-            column_config={
-                "Sélection": st.column_config.CheckboxColumn("🛒 Ajouter", default=False),
-                "Score": st.column_config.TextColumn("Score") # <-- LIGNE MAGIQUE AJOUTÉE ICI
-            },
-            disabled=colonnes_presentes, # Empêche de modifier les vraies données
-            hide_index=True,
-            use_container_width=True,
-            height=400
-        )
+        df['Score'] = df['Score'].fillna("-")
         df['Stade'] = df['Stade'].fillna("Plusieurs stades")
-        df['Date'] = df['Date'].fillna("")
-
-        # --- IMPORTANT : J'ai supprimé le dropna qui supprimait tes lignes ! ---
-
-        # 3. Gestion des dates (Conversion format Excel et format FR)
+# --- LIGNE DE DÉBOGAGE À AJOUTER ---
+        df = df.dropna(subset=['Domicile', 'Extérieur'])
+        df.columns = df.columns.str.strip()
+        
         if 'Date' in df.columns:
-            # Correction pour les dates qui arrivent parfois en format "chiffre" d'Excel
             dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
             masque_excel = dates_numeriques.notna()
             dates_converties = pd.to_datetime(dates_numeriques[masque_excel], unit='D', origin='1899-12-30')
             df.loc[masque_excel, 'Date'] = dates_converties.dt.strftime('%d/%m/%Y')
-            
-            # Création d'une colonne cachée pour le tri chronologique réel
-            df['Date_Tri_Cachee'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
-
-        # 4. --- TRI GLOBAL AUTOMATIQUE ---
-        # On trie par Saison (récente en haut) puis par Date (chronologique dans la saison)
-        tri_cols = []
-        tri_order = []
-        
-        if 'Saison' in df.columns:
-            tri_cols.append('Saison')
-            tri_order.append(True) # Plus ancien en premier
-        
-        if 'Date_Tri_Cachee' in df.columns:
-            tri_cols.append('Date_Tri_Cachee')
-            tri_order.append(True)  # Chronologique (août -> mai)
-            
-        if tri_cols:
-            df = df.sort_values(by=tri_cols, ascending=tri_order)
-
-        # On supprime la colonne de tri technique pour ne pas polluer l'affichage
-        if 'Date_Tri_Cachee' in df.columns:
-            df = df.drop(columns=['Date_Tri_Cachee'])
-
         return df
-
     except Exception as e:
         st.error(f"Erreur de lecture : {e}")
         return pd.DataFrame()
 
-# Application du chargement
 df = load_data()
-colonnes_possibles = ['ID Match', 'Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
+colonnes_possibles = ['Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
+
 # --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
     if df_resultats.empty:
@@ -1106,80 +1062,16 @@ elif st.session_state.page == 'recherche_avancee':
     afficher_resultats(df_filtre)
 
 elif st.session_state.page == 'statistiques':
-    st.header("📊 Le Bilan de l'Inventaire")
-    st.markdown("<p style='color: gray; font-size:16px;'>L'étendue du Grenier résumée en chiffres et en graphiques.</p>", unsafe_allow_html=True)
+    st.header("📊 Tableau de Bord")
+    st.metric("Total des matchs dans la base", len(df))
     st.write("---")
-
-    # --- 1. LES COMPTEURS FLASH (KPIs) ---
-    col1, col2, col3, col4 = st.columns(4)
-    
-    total_matchs = len(df)
-    saison_min = df['Saison'].dropna().min()
-    saison_max = df['Saison'].dropna().max()
-    nb_competitions = df['Compétition'].nunique()
-    
-    # On compte les matchs en haute qualité (MKV, HD, MP4...)
-    nb_mkv = df['Qualité'].str.contains('MKV|HD|MP4', na=False, case=False).sum()
-
-    col1.metric("📦 Total Reliques", f"{total_matchs} matchs")
-    col2.metric("⏳ Étendue Temporelle", f"{saison_min[:4]} ➔ {saison_max[-4:]}")
-    col3.metric("🌍 Diversité", f"{nb_competitions} tournois")
-    col4.metric("📽️ Restauration (MKV/MP4)", f"{nb_mkv} fichiers")
-
-    st.write("---")
-
-    # --- 2. LES GRAPHIQUES ---
-    
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.markdown("### 📈 L'Évolution des Archives")
-        # On compte le nombre de matchs par saison et on trie chronologiquement
-        df_saisons = df['Saison'].value_counts().reset_index()
-        df_saisons.columns = ['Saison', 'Nombre']
-        df_saisons = df_saisons.sort_values('Saison')
-        
-        fig_saisons = px.line(df_saisons, x='Saison', y='Nombre', markers=True, 
-                              color_discrete_sequence=['#8b5a2b']) # Couleur marron "Grenier"
-        fig_saisons.update_layout(xaxis_title="", yaxis_title="Nombre de matchs")
-        st.plotly_chart(fig_saisons, use_container_width=True)
-
-    with c2:
-        st.markdown("### 🏆 Le Top 15 des Équipes")
-        # On regroupe Domicile et Extérieur pour voir les équipes les plus présentes
-        equipes = pd.concat([df['Domicile'], df['Extérieur']])
-        # On exclut nos faux matchs "Multiplex / Divers" et les "-"
-        equipes = equipes[~equipes.isin(["Multiplex / Divers", "-"])]
-        df_equipes = equipes.value_counts().head(15).reset_index()
-        df_equipes.columns = ['Équipe', 'Apparitions']
-        
-        # --- CORRECTION ICI : Utilisation de la palette standard 'Oranges' ---
-        fig_equipes = px.bar(df_equipes, x='Apparitions', y='Équipe', orientation='h',
-                             color='Apparitions', color_continuous_scale='Oranges')
-        fig_equipes.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
-        st.plotly_chart(fig_equipes, use_container_width=True)
-
-    c3, c4 = st.columns(2)
-
-    with c3:
-        st.markdown("### 📺 L'Audimat (Top Diffuseurs)")
-        df_diff = df['Diffuseur'].dropna().value_counts().head(10).reset_index()
-        df_diff.columns = ['Diffuseur', 'Matchs']
-        
-        fig_diff = px.pie(df_diff, values='Matchs', names='Diffuseur', hole=0.4,
-                          color_discrete_sequence=px.colors.sequential.RdBu)
-        fig_diff.update_traces(textposition='inside', textinfo='percent+label')
-        st.plotly_chart(fig_diff, use_container_width=True)
-
-    with c4:
-        st.markdown("### 📼 État des Bandes (Qualité)")
-        df_qual = df['Qualité'].dropna().value_counts().reset_index()
-        df_qual.columns = ['Format', 'Quantité']
-        
-        fig_qual = px.bar(df_qual, x='Format', y='Quantité', text='Quantité',
-                          color='Quantité', color_continuous_scale='gray')
-        fig_qual.update_layout(xaxis_title="", yaxis_title="")
-        st.plotly_chart(fig_qual, use_container_width=True)
+    col_stat1, col_stat2 = st.columns(2)
+    with col_stat1:
+        st.subheader("🏆 Top 10 Compétitions")
+        st.bar_chart(df['Compétition'].value_counts().head(10))
+    with col_stat2:
+        st.subheader("🛡️ Top 10 Équipes (Apparitions)")
+        st.bar_chart(pd.concat([df['Domicile'], df['Extérieur']]).dropna().value_counts().head(10))
 
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
@@ -1264,58 +1156,6 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
-
-# ==========================================
-# 🛑 PIED DE PAGE (FOOTER GLOBAL)
-# ==========================================
-st.write("---") # Ligne de séparation esthétique
-
-# On crée 3 colonnes pour aligner les éléments
-foot_a, foot_b, foot_c = st.columns(3)
-
-with foot_a:
-    st.markdown("<br><p style='color: gray;'>© 2026 - Le Grenier du Football<br><i>Archives du foot, pour les passionnés.</i></p>", unsafe_allow_html=True)
-
-with foot_b:
-    st.markdown("**Navigation rapide**")
-    # On utilise de petits boutons discrets
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("❓ F.A.Q", key="btn_footer_faq", use_container_width=True):
-            # On change la page dans la mémoire du site et on relance
-            st.session_state.page = 'faq'  # Vérifie juste que c'est bien 'faq' ou 'F.A.Q' dans ton code
-            st.rerun()
-    with c2:
-        if st.button("💶 Tarifs", key="btn_footer_tarifs", use_container_width=True):
-            # Si Tarifs est toujours un pop-up (comme sur l'accueil) :
-            popup_tarifs() # (Remplace par le vrai nom de ta fonction pop-up des tarifs)
-
-with foot_c:
-    st.markdown("**Le Bureau de l'Archiviste**")
-    st.markdown("✉️ [legrenierdufoot@mail.com](mailto:legrenierdufoot@mail.com)")
-    st.markdown("📸 [Instagram : legrenier du football](https://www.instagram.com/legrenierdufootball/)") 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
