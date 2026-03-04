@@ -496,10 +496,11 @@ with st.sidebar:
 # ==========================================
 if st.session_state.page == 'accueil':
     
-    # Bloc d'en-tête centré (Titre + SEO)
-    st.markdown("""
-        <div style='text-align: center; margin-bottom: 20px;'>
-            <h1 style='margin-bottom: 0px;'>🏟️ Le Grenier du Football</h1>
+    if logo_b64:
+        st.markdown(f"<h1 style='text-align: center; margin-top: -15px;'><img src='data:image/png;base64,{logo_b64}' style='width: 70px; vertical-align: middle; margin-right: 15px; border-radius: 50%;'>Le Grenier du Football</h1>", unsafe_allow_html=True)
+    else:
+        st.markdown("<h1 style='text-align: center; margin-top: -15px;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
+
             <p style='font-size: 18px; color: #888; margin-top: 5px; font-weight: 500;'>
                 L'archive ultime des passionnés de football rétro
             </p>
@@ -1264,6 +1265,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
