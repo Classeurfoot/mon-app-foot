@@ -1044,18 +1044,103 @@ elif st.session_state.page == 'recherche_avancee':
     st.write("---")
     afficher_resultats(df_filtre)
 
-elif st.session_state.page == 'statistiques':
-    st.header("📊 Tableau de Bord")
-    st.metric("Total des matchs dans la base", len(df))
+elif st.session_state.page == 'statistiquess':
+    st.header("📊 Le Bilan de l'Inventaire")
+    st.markdown("<p style='color: gray; font-size:16px;'>Plongez dans les archives du Grenier à travers ces 6 infographies exclusives.</p>", unsafe_allow_html=True)
     st.write("---")
-    col_stat1, col_stat2 = st.columns(2)
-    with col_stat1:
-        st.subheader("🏆 Top 10 Compétitions")
-        st.bar_chart(df['Compétition'].value_counts().head(10))
-    with col_stat2:
-        st.subheader("🛡️ Top 10 Équipes (Apparitions)")
-        st.bar_chart(pd.concat([df['Domicile'], df['Extérieur']]).dropna().value_counts().head(10))
 
+    # --- LIGNE 1 : ÉVOLUTION ET COMPÉTITIONS ---
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.markdown("### 📈 L'Évolution des Archives")
+        # Compte le nombre de matchs par saison (trié chronologiquement)
+        df_saisons = df['Saison'].dropna().value_counts().reset_index()
+        df_saisons.columns = ['Saison', 'Nombre']
+        df_saisons = df_saisons.sort_values('Saison')
+        
+        fig_saisons = px.line(df_saisons, x='Saison', y='Nombre', markers=True, 
+                              color_discrete_sequence=['#8b5a2b']) # Marron vintage
+        fig_saisons.update_layout(xaxis_title="", yaxis_title="Nombre de matchs")
+        st.plotly_chart(fig_saisons, use_container_width=True)
+
+    with c2:
+        st.markdown("### 🏆 Typologie des Matchs")
+        # Répartition par Type de Compétition (Coupe du Monde, Amical, etc.)
+        if 'Type Compétition' in df.columns:
+            df_type = df['Type Compétition'].dropna().value_counts().reset_index()
+            df_type.columns = ['Type', 'Nombre']
+            
+            fig_type = px.pie(df_type, values='Nombre', names='Type', hole=0.4,
+                              color_discrete_sequence=px.colors.sequential.copper)
+            fig_type.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_type, use_container_width=True)
+
+    st.write("---")
+
+    # --- LIGNE 2 : LES ÉQUIPES ET LES AFFICHES ---
+    c3, c4 = st.columns(2)
+
+    with c3:
+        st.markdown("### 🛡️ Le Top 10 des Équipes")
+        # Combine Domicile et Extérieur
+        equipes = pd.concat([df['Domicile'], df['Extérieur']])
+        equipes = equipes[~equipes.isin(["Multiplex / Divers", "-"])]
+        df_equipes = equipes.value_counts().head(10).reset_index()
+        df_equipes.columns = ['Équipe', 'Apparitions']
+        
+        fig_equipes = px.bar(df_equipes, x='Apparitions', y='Équipe', orientation='h',
+                             color='Apparitions', color_continuous_scale='Oranges')
+        fig_equipes.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
+        st.plotly_chart(fig_equipes, use_container_width=True)
+
+    with c4:
+        st.markdown("### ⚔️ Les Affiches Mythiques")
+        # Astuce : On trie alphabétiquement "Dom" et "Ext" pour que "Milan - Inter" 
+        # soit compté pareil que "Inter - Milan"
+        def generer_affiche(row):
+            dom = str(row.get('Domicile', '')).strip()
+            ext = str(row.get('Extérieur', '')).strip()
+            if dom in ["Multiplex / Divers", "-", ""] or ext in ["Multiplex / Divers", "-", ""]:
+                return None
+            equipes_triees = sorted([dom, ext])
+            return f"{equipes_triees[0]} - {equipes_triees[1]}"
+            
+        df['Affiche'] = df.apply(generer_affiche, axis=1)
+        df_affiches = df['Affiche'].dropna().value_counts().head(10).reset_index()
+        df_affiches.columns = ['Affiche', 'Rencontres']
+        
+        fig_affiches = px.bar(df_affiches, x='Rencontres', y='Affiche', orientation='h',
+                              color='Rencontres', color_continuous_scale='Reds')
+        fig_affiches.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
+        st.plotly_chart(fig_affiches, use_container_width=True)
+
+    st.write("---")
+
+    # --- LIGNE 3 : DIFFUSEURS ET QUALITÉ ---
+    c5, c6 = st.columns(2)
+
+    with c5:
+        st.markdown("### 📺 La Guerre des Chaînes")
+        # Les 10 diffuseurs les plus présents
+        df_diff = df['Diffuseur'].dropna().value_counts().head(10).reset_index()
+        df_diff.columns = ['Diffuseur', 'Matchs']
+        
+        fig_diff = px.pie(df_diff, values='Matchs', names='Diffuseur',
+                          color_discrete_sequence=px.colors.sequential.RdBu)
+        fig_diff.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_diff, use_container_width=True)
+
+    with c6:
+        st.markdown("### 📼 État des Bandes (Qualité)")
+        # La répartition des qualités techniques
+        df_qual = df['Qualité'].dropna().value_counts().head(8).reset_index()
+        df_qual.columns = ['Format', 'Quantité']
+        
+        fig_qual = px.bar(df_qual, x='Format', y='Quantité', text='Quantité',
+                          color='Quantité', color_continuous_scale='gray')
+        fig_qual.update_layout(xaxis_title="", yaxis_title="")
+        st.plotly_chart(fig_qual, use_container_width=True)
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
 # ==========================================
@@ -1164,6 +1249,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
