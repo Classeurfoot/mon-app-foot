@@ -1140,6 +1140,30 @@ elif st.session_state.page == 'arborescence':
             df_final = df[mask]
             afficher_resultats(df_final)
 
+# ==========================================
+# 🛑 PIED DE PAGE (FOOTER GLOBAL)
+# ==========================================
+st.write("---")
+
+foot_a, foot_b = st.columns([1, 1])
+
+with foot_a:
+    st.markdown("<br><p style='color: gray; font-size: 14px;'>© 2026 - Le Grenier du Football<br><i>Archives pour passionnés.</i></p>", unsafe_allow_html=True)
+
+with foot_b:
+    st.markdown("**Le Bureau de l'Archiviste**")
+    st.markdown("✉️ [legrenierdufootball@hotmail.com](mailto:legrenierdufootball@hotmail.com)")
+    
+    # Intégration du logo Instagram officiel en HTML
+    st.markdown(
+        """
+        <a href="https://www.instagram.com/legrenierdufootball/" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="16" height="16">
+            legrenierdufootball
+        </a>
+        """, 
+        unsafe_allow_html=True
+    )
 
 
 
