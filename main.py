@@ -1073,7 +1073,7 @@ elif st.session_state.page == 'statistiquess':
             df_type.columns = ['Type', 'Nombre']
             
             fig_type = px.pie(df_type, values='Nombre', names='Type', hole=0.4,
-                              color_discrete_sequence=px.colors.sequential.copper)
+                              color_discrete_sequence=px.colors.sequential.Oranges)
             fig_type.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_type, use_container_width=True)
 
@@ -1250,6 +1250,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
