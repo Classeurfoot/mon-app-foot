@@ -504,7 +504,7 @@ if st.session_state.page == 'accueil':
 
     # 2. On affiche le bloc complet (Logo + Titre + Sous-titre + Texte SEO) tout centré
     st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 20px;'>
+        <div style='text-align: center; margin-bottom: 30px;'>
             <h1 style='margin-bottom: 0px; display: flex; align-items: center; justify-content: center;'>
                 {logo_html}
                 <span>Le Grenier du Football</span>
@@ -1273,6 +1273,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
