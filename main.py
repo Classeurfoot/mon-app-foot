@@ -6,6 +6,7 @@ import unicodedata
 import re
 import base64
 import urllib.parse
+import plotly.express as px
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
@@ -1249,6 +1250,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
