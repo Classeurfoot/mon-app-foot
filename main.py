@@ -194,8 +194,12 @@ MENU_ARBO = {
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig")
+        # 1. Lecture avec le bon séparateur (;) et formatage du score en texte
+        df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
+        df.columns = df.columns.str.strip()
 
+        # 2. CHASSE AUX FANTÔMES : On supprime les lignes 100% vides d'Excel
+        df = df.dropna(subset=['Saison', 'Compétition'], how='all')
 # --- NOUVEAU : SAUVETAGE DES MULTIPLEX ---
 # On remplace les cases vides (NaN) par du texte pour que l'application ne les supprime pas
         df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
@@ -1156,6 +1160,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
