@@ -505,7 +505,7 @@ if st.session_state.page == 'accueil':
     # 2. Affichage du bloc (Titre + Texte SEO fusionnés)
     st.markdown(f"""
         <div style='text-align: center; margin-bottom: 10px;'>
-            <h1 style='margin-bottom: 10px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
+            <h1 style='margin-bottom: 0px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
                 {logo_html}
                 <span>Le Grenier du Football</span>
             </h1>
@@ -1276,6 +1276,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
