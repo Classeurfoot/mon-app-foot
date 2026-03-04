@@ -1047,14 +1047,14 @@ elif st.session_state.page == 'recherche_avancee':
 
 elif st.session_state.page == 'statistiques':
     st.header("📊 Le Bilan de l'Inventaire")
-    st.markdown("<p style='color: gray; font-size:16px;'>Plongez dans les archives du Grenier à travers ces 6 infographies exclusives.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: gray; font-size:16px;'>Plongez dans les archives du Grenier à travers ces infographies.</p>", unsafe_allow_html=True)
     st.write("---")
 
     # --- LIGNE 1 : ÉVOLUTION ET COMPÉTITIONS ---
     c1, c2 = st.columns(2)
 
     with c1:
-        st.markdown("### 📈 L'Évolution des Archives")
+        st.markdown("### ⏳ Les Époques Traversées")
         # Compte le nombre de matchs par saison (trié chronologiquement)
         df_saisons = df['Saison'].dropna().value_counts().reset_index()
         df_saisons.columns = ['Saison', 'Nombre']
@@ -1066,7 +1066,7 @@ elif st.session_state.page == 'statistiques':
         st.plotly_chart(fig_saisons, use_container_width=True)
 
     with c2:
-        st.markdown("### 🏆 Typologie des Matchs")
+        st.markdown("### 🌍 Le Profil des Compétitions")
         # Répartition par Type de Compétition (Coupe du Monde, Amical, etc.)
         if 'Type Compétition' in df.columns:
             df_type = df['Type Compétition'].dropna().value_counts().reset_index()
@@ -1083,7 +1083,7 @@ elif st.session_state.page == 'statistiques':
     c3, c4 = st.columns(2)
 
     with c3:
-        st.markdown("### 🛡️ Le Top 10 des Équipes")
+        st.markdown("### 🛡️ Les Locataires du Grenier")
         # Combine Domicile et Extérieur
         equipes = pd.concat([df['Domicile'], df['Extérieur']])
         equipes = equipes[~equipes.isin(["Multiplex / Divers", "-"])]
@@ -1096,7 +1096,7 @@ elif st.session_state.page == 'statistiques':
         st.plotly_chart(fig_equipes, use_container_width=True)
 
     with c4:
-        st.markdown("### ⚔️ Les Affiches Mythiques")
+        st.markdown("### ⚔️ Les Classiques du Grenier")
         # Astuce : On trie alphabétiquement "Dom" et "Ext" pour que "Milan - Inter" 
         # soit compté pareil que "Inter - Milan"
         def generer_affiche(row):
@@ -1122,7 +1122,7 @@ elif st.session_state.page == 'statistiques':
     c5, c6 = st.columns(2)
 
     with c5:
-        st.markdown("### 📺 La Guerre des Chaînes")
+        st.markdown("### 📻 L'Audimat d'Époque")
         # Les 10 diffuseurs les plus présents
         df_diff = df['Diffuseur'].dropna().value_counts().head(10).reset_index()
         df_diff.columns = ['Diffuseur', 'Matchs']
@@ -1133,7 +1133,7 @@ elif st.session_state.page == 'statistiques':
         st.plotly_chart(fig_diff, use_container_width=True)
 
     with c6:
-        st.markdown("### 📼 État des Bandes (Qualité)")
+        st.markdown("### 📼 L'Inventaire Technique (Qualité)")
         # La répartition des qualités techniques
         df_qual = df['Qualité'].dropna().value_counts().head(8).reset_index()
         df_qual.columns = ['Format', 'Quantité']
@@ -1250,6 +1250,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
