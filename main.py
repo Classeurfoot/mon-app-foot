@@ -874,38 +874,16 @@ elif st.session_state.page == 'pepites':
     st.markdown("<p style='color: gray; font-size:16px;'>Voici les 30 derniers matchs fraîchement exhumés des cartons et ajoutés au catalogue !</p>", unsafe_allow_html=True)
     st.write("---")
     
-        
-        # 1. Dictionnaire pour traduire les mois en anglais (nécessaire pour que Python comprenne la chronologie)
-        mois_fr = {
-            'janvier': 'January', 'février': 'February', 'mars': 'March', 'avril': 'April',
-            'mai': 'May', 'juin': 'June', 'juillet': 'July', 'août': 'August',
-            'septembre': 'September', 'octobre': 'October', 'novembre': 'November', 'décembre': 'December'
-        }
-        
-        # 2. On crée une colonne temporaire invisible pour le calcul
-        df_pepites['Date_Tri'] = df_pepites['Date ajout'].astype(str).str.lower()
-        
-        # 3. On remplace les mois français par de l'anglais
-        for fr, en in mois_fr.items():
-            df_pepites['Date_Tri'] = df_pepites['Date_Tri'].str.replace(fr, en, regex=False)
-            
-        # On trie simplement par le numéro d'ID (Match) du plus grand au plus petit
+    # --- TRI INFAILLIBLE PAR ID DE MATCH ---
+    # On trie simplement par le numéro d'ID (Match) du plus grand (récent) au plus petit (ancien)
     if 'Match' in df.columns:
         df_pepites = df.sort_values(by='Match', ascending=False).head(30)
     else:
+        # Sécurité au cas où la colonne 'Match' serait renommée un jour
         df_pepites = df.tail(30).iloc[::-1]
         
+    # On affiche les résultats
     afficher_resultats(df_pepites)
-        
-        # 5. On efface notre colonne de calcul pour que le tableau reste propre
-        df_pepites = df_pepites.drop(columns=['Date_Tri'])
-        
-    else:
-        st.warning("⚠️ La colonne 'Date ajout' est introuvable dans le fichier CSV.")
-        df_pepites = df.tail(30).iloc[::-1] 
-        
-    afficher_resultats(df_pepites)
-
 # ==========================================
 # PAGE : PROGRESSION DE LA COLLECTION
 # ==========================================
@@ -1161,6 +1139,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
