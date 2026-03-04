@@ -46,13 +46,13 @@ def go_home():
 @st.dialog("🧭 Guide & Contenu")
 def popup_guide_contenu():
     st.markdown("""
-    **Bienvenue dans l'antre du Grenier du Football !** Ici reposent plus de 4000 matchs historiques, numérisés à partir de vieilles VHS, de diffusions TV d'époque et de DVD, dans le but de préserver le patrimoine de notre sport.
+    **Bienvenue dans l'antre du Grenier du Football !** Plus de 4000 matchs au chaud : des classiques, des raretés, des “je l’avais oublié celui-là !”. du foot vintage aux saisons plus récentes, numérisés depuis VHS, enregistrements TV et DVD… et on n’a pas fini de fouiller.
     
     **Ce que vous trouverez dans ce catalogue :**
     * 🌍 Des **matchs de clubs** et de **sélections nationales**.
     * 🏆 Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
-    * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
     * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
+    * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
     * 🕰️ Des matchs **amicaux, historiques et rares**.
     ---
     ### 🛠️ Mode d'emploi : Comment fouiller les archives ?
@@ -62,7 +62,7 @@ def popup_guide_contenu():
     * 📊 **Le Tableau classique :** Idéal pour une recherche rapide. C'est une vue condensée qui vous permet de trier facilement les colonnes (par année, compétition, etc.).
     * 📇 **Les Fiches détaillées :** La vue parfaite pour les puristes ! Plongez dans les détails de chaque match de manière beaucoup plus visuelle et aérée.
     
-    💡 **L'astuce secrète :** Dans la vue "Fiches détaillées", **les petites étiquettes des clubs et des compétitions sont interactives !** Cliquez simplement sur "Milan AC" ou "Coupe du Monde" sur une fiche, et le site filtrera instantanément tout l'historique de cette équipe ou de ce tournoi. Bonne fouille !
+    💡 **L'astuce secrète :** Dans la vue "Fiches détaillées", **les petites étiquettes des clubs et compétitions sont interactives !** Cliquez simplement sur "Marseille" ou "Coupe du Monde" sur une fiche, et le site filtrera instantanément tout l'historique de cette équipe ou de ce tournoi. Bonne fouille !
     """)
 
 @st.dialog("💾 Formats & Organisation")
@@ -1276,6 +1276,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
