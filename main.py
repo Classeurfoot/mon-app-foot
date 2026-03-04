@@ -496,24 +496,21 @@ with st.sidebar:
 # ==========================================
 if st.session_state.page == 'accueil':
     
-    # 1. Préparation du Logo (Espace réduit à 10px au lieu de 20px)
+    # 1. Préparation du Logo (Espace réduit à 10px)
     if logo_b64:
-        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 100px; vertical-align: middle; margin-right: 0px; border-radius: 50%;'>"
+        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 100px; vertical-align: middle; margin-right: 10px; border-radius: 50%;'>"
     else:
         logo_html = "⚽ "
 
-    # 2. Affichage du bloc (Espaces verticaux réduits)
+    # 2. Affichage du bloc (Titre + Texte SEO fusionnés)
     st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 10px;'>
-            <h1 style='margin-bottom: -10px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
+        <div style='text-align: center; margin-bottom: 5px;'>
+            <h1 style='margin-bottom: 10px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
                 {logo_html}
                 <span>Le Grenier du Football</span>
             </h1>
-            <p style='font-size: 18px; color: #888; margin-top: 0px; margin-bottom: 10px; font-weight: 500;'>
-                L'archive ultime des passionnés de football rétro
-            </p>
-            <div style='max-width: 800px; margin: 0 auto; line-height: 1.5; font-size: 15px;'>
-                Découvrez un catalogue interactif de plus de <b>4800 matchs de foot vintage</b> en formats numérique et DVD.<br>
+            <div style='max-width: 850px; margin: 0 auto; line-height: 1.5; font-size: 16px; color: #fafafa;'>
+                Découvrez un catalogue interactif de plus de <b>4800 matchs de foot rétro</b> en formats numérique et DVD.<br>
                 Retrouvez les émotions de la <i>Coupe du Monde</i>, de la <i>Ligue des Champions</i> et des championnats historiques.<br>
                 <b>Parcourez le classeur, commandez vos matchs préférés ou proposez des échanges entre collectionneurs.</b>
             </div>
@@ -521,6 +518,9 @@ if st.session_state.page == 'accueil':
     """, unsafe_allow_html=True)
     
     st.write("---")
+    
+    # La suite de ton code (colonnes d'images...)
+    col1, col2, col3 = st.columns(3)
     
     # La suite de ton code (colonnes d'images...)
     col1, col2, col3 = st.columns(3)
@@ -1276,6 +1276,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
