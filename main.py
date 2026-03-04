@@ -874,8 +874,6 @@ elif st.session_state.page == 'pepites':
     st.markdown("<p style='color: gray; font-size:16px;'>Voici les 30 derniers matchs fraîchement exhumés des cartons et ajoutés au catalogue !</p>", unsafe_allow_html=True)
     st.write("---")
     
-    # 4. On convertit en "Vraie Date" (format Européen) et on trie
-        df_pepites['Date_Tri'] = pd.to_datetime(df_pepites['Date_Tri'], dayfirst=True, errors='coerce')
         
         # 1. Dictionnaire pour traduire les mois en anglais (nécessaire pour que Python comprenne la chronologie)
         mois_fr = {
@@ -891,9 +889,13 @@ elif st.session_state.page == 'pepites':
         for fr, en in mois_fr.items():
             df_pepites['Date_Tri'] = df_pepites['Date_Tri'].str.replace(fr, en, regex=False)
             
-        # 4. On convertit en "Vraie Date" et on trie du plus récent au plus ancien
-        df_pepites['Date_Tri'] = pd.to_datetime(df_pepites['Date_Tri'], errors='coerce')
-        df_pepites = df_pepites.sort_values(by='Date_Tri', ascending=False).head(30)
+        # On trie simplement par le numéro d'ID (Match) du plus grand au plus petit
+    if 'Match' in df.columns:
+        df_pepites = df.sort_values(by='Match', ascending=False).head(30)
+    else:
+        df_pepites = df.tail(30).iloc[::-1]
+        
+    afficher_resultats(df_pepites)
         
         # 5. On efface notre colonne de calcul pour que le tableau reste propre
         df_pepites = df_pepites.drop(columns=['Date_Tri'])
@@ -1159,6 +1161,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
