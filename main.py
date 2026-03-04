@@ -498,7 +498,7 @@ if st.session_state.page == 'accueil':
     
     # 1. On prépare la partie "Logo" (soit l'image, soit l'emoji)
     if logo_b64:
-        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 70px; vertical-align: middle; margin-right: 15px; border-radius: 50%;'>"
+        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 100px; vertical-align: middle; margin-right: 15px; border-radius: 50%;'>"
     else:
         logo_html = "⚽ "
 
@@ -1273,6 +1273,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
