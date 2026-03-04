@@ -1045,7 +1045,7 @@ elif st.session_state.page == 'recherche_avancee':
     st.write("---")
     afficher_resultats(df_filtre)
 
-elif st.session_state.page == 'statistiquess':
+elif st.session_state.page == 'statistiques':
     st.header("📊 Le Bilan de l'Inventaire")
     st.markdown("<p style='color: gray; font-size:16px;'>Plongez dans les archives du Grenier à travers ces 6 infographies exclusives.</p>", unsafe_allow_html=True)
     st.write("---")
@@ -1250,6 +1250,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
