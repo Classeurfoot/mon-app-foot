@@ -874,9 +874,8 @@ elif st.session_state.page == 'pepites':
     st.markdown("<p style='color: gray; font-size:16px;'>Voici les 30 derniers matchs fraîchement exhumés des cartons et ajoutés au catalogue !</p>", unsafe_allow_html=True)
     st.write("---")
     
-    # --- LE NOUVEAU TRI PAR DATE D'AJOUT ---
-    if 'Date ajout' in df.columns:
-        df_pepites = df.copy()
+    # 4. On convertit en "Vraie Date" (format Européen) et on trie
+        df_pepites['Date_Tri'] = pd.to_datetime(df_pepites['Date_Tri'], dayfirst=True, errors='coerce')
         
         # 1. Dictionnaire pour traduire les mois en anglais (nécessaire pour que Python comprenne la chronologie)
         mois_fr = {
@@ -1160,6 +1159,7 @@ elif st.session_state.page == 'arborescence':
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask]
             afficher_resultats(df_final)
+
 
 
 
