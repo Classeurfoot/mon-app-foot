@@ -492,25 +492,26 @@ with st.sidebar:
         st.rerun()
 
 # ==========================================
-# PAGE D'ACCUEIL
+# PAGE : ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
     
-    if logo_b64:
-        st.markdown(f"<h1 style='text-align: center; margin-top: -15px;'><img src='data:image/png;base64,{logo_b64}' style='width: 70px; vertical-align: middle; margin-right: 15px; border-radius: 50%;'>Le Grenier du Football</h1>", unsafe_allow_html=True)
-    else:
-        st.markdown("<h1 style='text-align: center; margin-top: -15px;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
-        
-    # --- BLOC SEO ---
+    # Bloc d'en-tête centré (Titre + SEO)
     st.markdown("""
-    ### L'archive ultime des passionnés de football rétro
-    Découvrez un catalogue interactif de plus de **4800 matchs de foot vintage** en formats numérique et DVD.  
-    Retrouvez les émotions de la *Coupe du Monde*, de la *Ligue des Champions* et des championnats historiques.  
-    **Parcourez le classeur, commandez vos matchs préférés ou proposez des échanges entre collectionneurs.**
-    """)
+        <div style='text-align: center; margin-bottom: 20px;'>
+            <h1 style='margin-bottom: 0px;'>🏟️ Le Grenier du Football</h1>
+            <p style='font-size: 18px; color: #888; margin-top: 5px; font-weight: 500;'>
+                L'archive ultime des passionnés de football rétro
+            </p>
+            <div style='max-width: 800px; margin: 0 auto; line-height: 1.6;'>
+                Découvrez un catalogue interactif de plus de <b>4800 matchs de foot vintage</b> en formats numérique et DVD.<br>
+                Retrouvez les émotions de la <i>Coupe du Monde</i>, de la <i>Ligue des Champions</i> et des championnats historiques.<br>
+                <b>Parcourez le classeur, commandez vos matchs préférés ou proposez des échanges entre collectionneurs.</b>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
     st.write("---")
-        
-    st.write("")
     
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
     if recherche_rapide:
@@ -1263,6 +1264,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
