@@ -46,9 +46,9 @@ def go_home():
 @st.dialog("🧭 Guide & Contenu")
 def popup_guide_contenu():
     st.markdown("""
-    **Bienvenue dans l'antre du Grenier du Football !** Plus de 4000 matchs au chaud : des classiques, des raretés, des “je l’avais oublié celui-là !”. Du foot vintage, numérisés à partir de VHS, aux saisons plus récentes… et on n’a pas fini de fouiller.
+    **Bienvenue dans l'antre du Grenier du Football !** Plus de 4000 matchs au chaud : des classiques, des raretés, des “je l’avais oublié celui-là !”. Du foot vintage, numérisé à partir de VHS, aux saisons plus récentes… et on n’a pas fini de fouiller.
     
-    **Ce que vous trouverez dans ce catalogue :**
+    **Dans ce catalogue :**
     * 🌍 Des **matchs de clubs** et de **sélections nationales**.
     * 🏆 Les grandes **compétitions internationales** : Coupe du Monde, Euro, Copa America, Jeux Olympiques...
     * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
@@ -69,12 +69,14 @@ def popup_guide_contenu():
 def popup_formats():
     st.markdown("### 🗂️ Données répertoriées")
     st.markdown("""
+    * #️⃣ Numéro du match dans le grenier
     * 🗓️ Date et saison du match
     * 🏆 Compétition et phase
     * 🏟️ Lieu et stade
     * 📺 Diffuseur d'origine (TF1, Canal+, etc.)
     * 🎙️ Langue des commentaires
-    """)
+    * 📼 Qualité (DVD, MP4,...)
+        """)
     st.divider()
     st.markdown("### 📼 Formats disponibles")
     st.markdown("""
@@ -1276,6 +1278,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
