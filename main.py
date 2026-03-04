@@ -498,13 +498,13 @@ if st.session_state.page == 'accueil':
     
     # 1. Préparation du Logo (Espace réduit à 10px)
     if logo_b64:
-        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 100px; vertical-align: middle; margin-right: 10px; border-radius: 50%;'>"
+        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 100px; vertical-align: middle; margin-right: 0px; border-radius: 50%;'>"
     else:
         logo_html = "⚽ "
 
     # 2. Affichage du bloc (Titre + Texte SEO fusionnés)
     st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 5px;'>
+        <div style='text-align: center; margin-bottom: 10px;'>
             <h1 style='margin-bottom: 10px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
                 {logo_html}
                 <span>Le Grenier du Football</span>
@@ -512,7 +512,7 @@ if st.session_state.page == 'accueil':
             <div style='max-width: 850px; margin: 0 auto; line-height: 1.5; font-size: 16px; color: #fafafa;'>
                 Découvrez un catalogue interactif de plus de <b>4800 matchs de foot rétro</b> en formats numérique et DVD.<br>
                 Retrouvez les émotions de la <i>Coupe du Monde</i>, de la <i>Ligue des Champions</i> et des championnats historiques.<br>
-                <b>Parcourez le classeur, commandez vos matchs préférés ou proposez des échanges entre collectionneurs.</b>
+                <b>Parcourez le classeur, commandez vos matchs vintage préférés ou proposez des échanges entre collectionneurs.</b>
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -1276,6 +1276,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
