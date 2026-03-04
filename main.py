@@ -496,11 +496,19 @@ with st.sidebar:
 # ==========================================
 if st.session_state.page == 'accueil':
     
+    # 1. On prépare la partie "Logo" (soit l'image, soit l'emoji)
     if logo_b64:
-        st.markdown(f"<h1 style='text-align: center; margin-top: -15px;'><img src='data:image/png;base64,{logo_b64}' style='width: 70px; vertical-align: middle; margin-right: 15px; border-radius: 50%;'>Le Grenier du Football</h1>", unsafe_allow_html=True)
+        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 70px; vertical-align: middle; margin-right: 15px; border-radius: 50%;'>"
     else:
-        st.markdown("<h1 style='text-align: center; margin-top: -15px;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
+        logo_html = "⚽ "
 
+    # 2. On affiche le bloc complet (Logo + Titre + Sous-titre + Texte SEO) tout centré
+    st.markdown(f"""
+        <div style='text-align: center; margin-bottom: 20px;'>
+            <h1 style='margin-bottom: 0px; display: flex; align-items: center; justify-content: center;'>
+                {logo_html}
+                <span>Le Grenier du Football</span>
+            </h1>
             <p style='font-size: 18px; color: #888; margin-top: 5px; font-weight: 500;'>
                 L'archive ultime des passionnés de football rétro
             </p>
@@ -1265,6 +1273,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
