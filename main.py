@@ -501,7 +501,14 @@ if st.session_state.page == 'accueil':
     else:
         st.markdown("<h1 style='text-align: center; margin-top: -15px;'>⚽ Le Grenier du Football</h1>", unsafe_allow_html=True)
         
-    st.markdown(f"<p style='text-align: center; font-size: 18px; color: #aaaaaa;'>Plongez dans l'histoire. Retrouvez plus de 4000 matchs en vidéo.</p>", unsafe_allow_html=True)
+    # --- BLOC SEO ---
+    st.markdown("""
+    ### L'archive ultime des passionnés de football rétro
+    Découvrez un catalogue interactif de plus de **4800 matchs de foot vintage** en formats numérique et DVD.  
+    Retrouvez les émotions de la *Coupe du Monde*, de la *Ligue des Champions* et des championnats historiques.  
+    **Parcourez le classeur, commandez vos matchs préférés ou proposez des échanges entre collectionneurs.**
+    """)
+    st.write("---")
         
     st.write("")
     
@@ -1256,6 +1263,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
