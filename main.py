@@ -755,13 +755,14 @@ elif st.session_state.page == 'panier':
     if len(st.session_state.panier) == 0:
         st.info("Votre panier est vide pour le moment. Naviguez dans le catalogue pour ajouter des matchs !")
         if st.button("Retourner à l'accueil"):
-            go_home()
+            st.session_state.page = 'accueil' # Correction mineure ici : go_home() n'était pas défini partout
             st.rerun()
     else:
         st.markdown(f"**Vous avez sélectionné {len(st.session_state.panier)} match(s).**")
         st.write("---")
         
-        total_prix = 0
+        total_prix_base = 0
+        total_remise_defauts = 0
         liste_prix = []
         items_a_supprimer = []
         
@@ -774,21 +775,36 @@ elif st.session_state.page == 'panier':
             ext_m = match.get('Extérieur', '')
             qual_m = str(match.get('Qualité', '')).lower()
             
+            # --- DÉTECTION DU DÉFAUT (-1€) ---
+            commentaire = str(match.get('Commentaires sur fichier', '')).strip()
+            # On vérifie qu'il y a un texte et que ce n'est pas juste une case vide Excel (nan)
+            a_defaut = bool(commentaire and commentaire.lower() not in ['nan', 'none', ''])
+            
             with col_info:
                 st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m}<br>⚔️ **{dom_m} - {ext_m}**", unsafe_allow_html=True)
+                # Affichage du petit texte explicatif si défaut
+                if a_defaut:
+                    st.markdown(f"<span style='color: #d97706; font-size: 13px;'>🩹 <i>Archive imparfaite : {commentaire}</i></span>", unsafe_allow_html=True)
             
             with col_fmt:
+                # Création des étiquettes de prix adaptées
+                p_dvd = 4 if a_defaut else 5
+                p_num = 2 if a_defaut else 3
+                
+                lbl_dvd = f"💿 DVD ({p_dvd}€ au lieu de 5€)" if a_defaut else "💿 DVD (5€)"
+                lbl_num = f"💻 Numérique ({p_num}€ au lieu de 3€)" if a_defaut else "💻 Numérique (3€)"
+
                 if 'dvd' in qual_m or 'vob' in qual_m:
                     idx_actuel = 0 if match.get('format_choisi') == 'DVD' else 1
                     choix_fmt = st.selectbox(
                         "Format :", 
-                        ["💿 DVD (5€)", "💻 Numérique (3€)"], 
+                        [lbl_dvd, lbl_num], 
                         key=f"fmt_sel_{i}",
                         index=idx_actuel
                     )
                     match['format_choisi'] = 'DVD' if 'DVD' in choix_fmt else 'Numérique'
                 else:
-                    st.markdown("<div style='margin-top: 30px; color: gray; font-size: 15px;'>💻 Numérique (3€)</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='margin-top: 30px; color: gray; font-size: 15px;'>{lbl_num}</div>", unsafe_allow_html=True)
                     match['format_choisi'] = 'Numérique'
                     
             with col_btn:
@@ -798,10 +814,15 @@ elif st.session_state.page == 'panier':
             
             st.divider()
             
-            # Récupération des prix pour le calcul global
-            prix_match = 5 if match['format_choisi'] == 'DVD' else 3
-            total_prix += prix_match
-            liste_prix.append(prix_match)
+            # --- CALCULS POUR CE MATCH ---
+            prix_base = 5 if match['format_choisi'] == 'DVD' else 3
+            prix_final_match = prix_base - 1 if a_defaut else prix_base
+            
+            total_prix_base += prix_base
+            if a_defaut:
+                total_remise_defauts += 1
+                
+            liste_prix.append(prix_final_match)
                 
         # Exécution de la suppression si demandée
         if items_a_supprimer:
@@ -810,25 +831,32 @@ elif st.session_state.page == 'panier':
             st.rerun()
             
         # ==================================
-        # CALCUL DE LA RÉDUCTION (Idée B)
+        # CALCUL DE LA RÉDUCTION (Matchs Gratuits)
         # ==================================
         nb_articles = len(st.session_state.panier)
         nb_gratuits = nb_articles // 11
-        reduction = 0
+        reduction_gratuits = 0
         
         if nb_gratuits > 0:
-            # On trie la liste des prix du moins cher au plus cher
+            # On trie la liste des prix FINAUX du moins cher au plus cher
             liste_prix.sort()
-            # La réduction = la somme des 'x' matchs les moins chers
-            reduction = sum(liste_prix[:nb_gratuits])
+            reduction_gratuits = sum(liste_prix[:nb_gratuits])
             
-        total_final = total_prix - reduction
+        total_final = total_prix_base - total_remise_defauts - reduction_gratuits
         
+        # ==================================
+        # AFFICHAGE DU RÉCAPITULATIF
+        # ==================================
         st.subheader("💳 Récapitulatif")
-        st.markdown(f"**Sous-total :** {total_prix} €")
+        st.markdown(f"**Sous-total brut :** {total_prix_base} €")
         
-        if reduction > 0:
-            st.success(f"🎁 **Offre Spéciale :** La valeur de vos {nb_gratuits} match(s) offert(s) a été déduite ! (-{reduction} €)")
+        # Le fameux bloc Info Bleu pour les défauts
+        if total_remise_defauts > 0:
+            st.info(f"🩹 **Archive Imparfaite :** Une remise a été appliquée pour compenser l'usure du temps (qualité altérée, fichier incomplet...) sur vos bandes. (-{total_remise_defauts} €)")
+            
+        # Le bloc Vert pour la promo 10 = 1 offert
+        if reduction_gratuits > 0:
+            st.success(f"🎁 **Offre Spéciale :** La valeur de vos {nb_gratuits} match(s) offert(s) a été déduite ! (-{reduction_gratuits} €)")
             
         st.markdown(f"### **Total à payer : {total_final} €**")
         st.write("---")
@@ -837,15 +865,25 @@ elif st.session_state.page == 'panier':
         st.subheader("📩 Valider ma commande")
         st.markdown("Choisissez votre méthode préférée pour m'envoyer votre sélection :")
         
-        # Génération du texte récapitulatif
+        # ==================================
+        # GÉNÉRATION DE L'E-MAIL ET DU TEXTE DE COPIE
+        # ==================================
         texte_recap = "Bonjour, je souhaite commander ces matchs vus dans Le Grenier :\n\n"
         for match in st.session_state.panier:
             fmt_r = match.get('format_choisi', 'Numérique')
-            texte_recap += f"- [{fmt_r}] {match.get('Date', '?')} | {match.get('Domicile', '')} vs {match.get('Extérieur', '')} ({match.get('Compétition', '?')})\n"
+            
+            # Précision pour ton suivi perso dans le mail
+            commentaire_mail = str(match.get('Commentaires sur fichier', '')).strip()
+            a_defaut_mail = bool(commentaire_mail and commentaire_mail.lower() not in ['nan', 'none', ''])
+            txt_defaut = " [Archive Imparfaite]" if a_defaut_mail else ""
+            
+            texte_recap += f"- [{fmt_r}]{txt_defaut} {match.get('Date', '?')} | {match.get('Domicile', '')} vs {match.get('Extérieur', '')} ({match.get('Compétition', '?')})\n"
         
         texte_recap += f"\nTotal d'articles : {nb_articles}"
-        if reduction > 0:
-            texte_recap += f"\nRéduction appliquée : -{reduction}€ (Règle du moins cher offert)"
+        if total_remise_defauts > 0:
+            texte_recap += f"\nRemise Archive Imparfaite : -{total_remise_defauts}€"
+        if reduction_gratuits > 0:
+            texte_recap += f"\nRéduction appliquée (11ème offert) : -{reduction_gratuits}€"
         texte_recap += f"\nMontant Total : {total_final}€"
         texte_recap += "\n\nMerci de me donner les détails pour le paiement !"
 
@@ -873,7 +911,6 @@ elif st.session_state.page == 'panier':
         if st.button("🗑️ Vider tout le panier", type="secondary"):
             st.session_state.panier = []
             st.rerun()
-            
 # ==========================================
 # PAGE : F.A.Q (FOIRE AUX QUESTIONS)
 # ==========================================
@@ -1398,6 +1435,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
