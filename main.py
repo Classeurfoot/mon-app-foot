@@ -461,7 +461,7 @@ with st.sidebar:
             st.session_state.page = 'panier'
             st.rerun()
             
-   st.divider()
+    st.divider()
     st.markdown("### 📂 Catégories")
     
     # --- 🎨 INJECTION DU STYLE DES COULEURS ---
@@ -1389,6 +1389,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
