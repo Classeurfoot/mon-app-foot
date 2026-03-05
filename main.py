@@ -461,20 +461,70 @@ with st.sidebar:
             st.session_state.page = 'panier'
             st.rerun()
             
-    st.divider()
+   st.divider()
     st.markdown("### 📂 Catégories")
+    
+    # --- 🎨 INJECTION DU STYLE DES COULEURS ---
+    st.markdown("""
+    <style>
+    /* 1. NATIONS (Or Vieilli) */
+    div.element-container:has(.css-nations) + div.element-container button {
+        background-color: #b8860b !important; border-color: #b8860b !important;
+    }
+    div.element-container:has(.css-nations) + div.element-container button:hover {
+        background-color: #8b6508 !important; border-color: #8b6508 !important;
+    }
+    div.element-container:has(.css-nations) + div.element-container button p { color: white !important; font-weight: 500;}
+
+    /* 2. COUPES D'EUROPE (Bleu Nuit) */
+    div.element-container:has(.css-europe) + div.element-container button {
+        background-color: #1a2b4c !important; border-color: #1a2b4c !important;
+    }
+    div.element-container:has(.css-europe) + div.element-container button:hover {
+        background-color: #101a2e !important; border-color: #101a2e !important;
+    }
+    div.element-container:has(.css-europe) + div.element-container button p { color: white !important; font-weight: 500;}
+
+    /* 3. CHAMPIONNATS (Bordeaux) */
+    div.element-container:has(.css-champ) + div.element-container button {
+        background-color: #722f37 !important; border-color: #722f37 !important;
+    }
+    div.element-container:has(.css-champ) + div.element-container button:hover {
+        background-color: #4a1e23 !important; border-color: #4a1e23 !important;
+    }
+    div.element-container:has(.css-champ) + div.element-container button p { color: white !important; font-weight: 500;}
+
+    /* 4. AMICAUX (Vert Sauge) */
+    div.element-container:has(.css-amicaux) + div.element-container button {
+        background-color: #5b7c6c !important; border-color: #5b7c6c !important;
+    }
+    div.element-container:has(.css-amicaux) + div.element-container button:hover {
+        background-color: #435b4f !important; border-color: #435b4f !important;
+    }
+    div.element-container:has(.css-amicaux) + div.element-container button p { color: white !important; font-weight: 500;}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # --- 🔘 LES BOUTONS (AVEC LEURS MARQUEURS INVISIBLES) ---
+    st.markdown('<div class="css-nations" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
     if st.button("🌍 Nations (Mondial, Euro...)", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Nations']
         st.rerun()
+        
+    st.markdown('<div class="css-europe" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
     if st.button("🏆 Coupes d'Europe (LDC...)", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ["Coupes d'Europe"]
         st.rerun()
+        
+    st.markdown('<div class="css-champ" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
     if st.button("🏟️ Championnats & Coupes", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Championnats & Coupes']
         st.rerun()
+        
+    st.markdown('<div class="css-amicaux" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
     if st.button("🤝 Amicaux Internationaux", width="stretch"):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Amicaux Internationaux']
@@ -1195,6 +1245,46 @@ elif st.session_state.page == 'statistiques':
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
 # ==========================================
 elif st.session_state.page == 'arborescence':
+    
+    # --- 🎨 AJOUT DU CSS DYNAMIQUE POUR LES SOUS-MENUS ---
+    if len(st.session_state.chemin) > 0:
+        cat_principale = st.session_state.chemin[0]
+        
+        # Couleurs par défaut
+        couleur_fond = "#333333" 
+        couleur_survol = "#222222"
+        
+        # On repère la catégorie et on charge la bonne couleur
+        if cat_principale == "Nations":
+            couleur_fond, couleur_survol = "#b8860b", "#8b6508"
+        elif cat_principale == "Coupes d'Europe":
+            couleur_fond, couleur_survol = "#1a2b4c", "#101a2e"
+        elif cat_principale == "Championnats & Coupes":
+            couleur_fond, couleur_survol = "#722f37", "#4a1e23"
+        elif cat_principale == "Amicaux Internationaux":
+            couleur_fond, couleur_survol = "#5b7c6c", "#435b4f"
+
+        # On applique le style à tous les boutons du sous-menu
+        st.markdown(f"""
+        <style>
+        /* Cible les boutons situés dans la grille (les sous-menus) */
+        div[data-testid="column"] div.stButton > button {{
+            background-color: {couleur_fond} !important;
+            border-color: {couleur_fond} !important;
+            transition: all 0.2s ease;
+        }}
+        div[data-testid="column"] div.stButton > button p {{
+            color: #ffffff !important;
+            font-weight: 500;
+        }}
+        div[data-testid="column"] div.stButton > button:hover {{
+            background-color: {couleur_survol} !important;
+            border-color: {couleur_survol} !important;
+            transform: scale(1.02); /* Petit effet de zoom élégant au survol */
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+    
     noeud_actuel = MENU_ARBO
     for etape in st.session_state.chemin:
         if isinstance(noeud_actuel, dict): noeud_actuel = noeud_actuel[etape]
@@ -1299,6 +1389,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
