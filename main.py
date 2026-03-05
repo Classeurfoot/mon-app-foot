@@ -224,7 +224,7 @@ def load_data():
         return pd.DataFrame()
 
 df = load_data()
-colonnes_possibles = ['Match','Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité']
+colonnes_possibles = ['Match','Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
 # --- OUTIL : FICHES DE MATCHS ---
@@ -1278,6 +1278,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
