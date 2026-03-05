@@ -419,9 +419,9 @@ with st.sidebar:
         st.session_state.page = 'faq'
         st.rerun()
 
-    # --- NOUVEAU BOUTON : INSTALLER L'APPLI ---
-    if st.button("📱 Installer l'Appli", width="stretch"):
-        popup_installer_app()
+        # --- BOUTON : Le Grenier sur mobile ---
+    if st.button("📱 Le Grenier sur mobile", width="stretch"):
+        popup_raccourci_mobile() # <-- LE BON NOM
 
     # --- NOUVEAU BOUTON INSTAGRAM (AVEC LE VRAI LOGO) ---
     st.markdown("""
@@ -1299,6 +1299,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
