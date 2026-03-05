@@ -124,6 +124,23 @@ def popup_echanges():
     * 📋 Envoyez-moi votre liste de matchs ou vos propositions par e-mail à **legrenierdufootball@hotmail.com** ou sur Instagram **[@legrenierdufootball](https://www.instagram.com/legrenierdufootball/)**.
     * 🔄 Nous pourrons alors convenir d'un échange équitable de fichiers numériques.
     """)
+
+@st.dialog("📱 Le Grenier sur mobile")
+def popup_raccourci_mobile():
+    st.markdown("""
+    ### Gardez le Grenier à portée de main !
+    Vous pouvez ajouter un raccourci de ce site directement sur l'écran d'accueil de votre téléphone. Cela créera une icône pour y accéder en un clic.
+    
+    🍎 **Sur iPhone (Safari) :**
+    1. Appuyez sur l'icône **Partager** (le carré avec une flèche vers le haut, en bas de l'écran).
+    2. Faites défiler vers le bas et appuyez sur **Sur l'écran d'accueil**.
+    3. Confirmez en appuyant sur **Ajouter**.
+
+    🤖 **Sur Android (Chrome) :**
+    1. Appuyez sur les **trois petits points** (en haut à droite).
+    2. Appuyez sur **Ajouter à l'écran d'accueil**.
+    3. Confirmez en appuyant sur **Ajouter**.
+    """)
 # ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
@@ -401,6 +418,10 @@ with st.sidebar:
     if st.button("❓ F.A.Q & Infos", width="stretch"):
         st.session_state.page = 'faq'
         st.rerun()
+
+    # --- NOUVEAU BOUTON : INSTALLER L'APPLI ---
+    if st.button("📱 Installer l'Appli", width="stretch"):
+        popup_installer_app()
 
     # --- NOUVEAU BOUTON INSTAGRAM (AVEC LE VRAI LOGO) ---
     st.markdown("""
@@ -1278,6 +1299,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
