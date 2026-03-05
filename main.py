@@ -98,6 +98,7 @@ def popup_tarifs():
     st.markdown("### 🎁 Offres & Réductions")
     st.markdown("""
     * 🆓 **1 match offert** tous les 10 matchs achetés (le match le moins cher de votre sélection est automatiquement déduit à partir du 11ème match).
+    * 🩹 **Remise "Archive Imparfaite" (-1 €) :** Si un match présente un défaut lié à l'usure du temps (qualité altérée, fichier incomplet...), une remise de 1€ est automatiquement déduite dans votre panier. Le prix de l'authenticité !
     * 🔄 **Offre cumulable :** 2 matchs offerts pour 20 achetés, 3 pour 30, etc.
     * 📦 **Packs thématiques** disponibles sur demande (ex : France 98, parcours européens...).
     """)
@@ -1435,6 +1436,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
