@@ -1441,16 +1441,21 @@ with foot_b:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufootball@hotmail.com](mailto:legrenierdufootball@hotmail.com)")
     
-    # Intégration du logo Instagram officiel en HTML
+    # Intégration des logos Instagram et Facebook alignés
     st.markdown(
         """
-        <a href="https://www.instagram.com/legrenierdufootball/" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="16" height="16">
-            legrenierdufootball
-        </a>
-        """, 
-        unsafe_allow_html=True
+        <div style='display: flex; gap: 15px; margin-top: 10px; align-items: center;'>
+            <a href="https://www.instagram.com/legrenierdufootball/" target="_blank" style="text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="30" alt="Instagram Le Grenier du Football">
+            </a>
+            
+            <a href="https://www.facebook.com/profile.php?id=61584405236853" target="_blank" style="text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" width="30" alt="Facebook Le Grenier du Football">
+            </a>
+        </div>
+        """, unsafe_allow_html=True
     )
+
 
 
 
