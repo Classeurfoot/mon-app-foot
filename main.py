@@ -463,9 +463,9 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.markdown("### 📂 Catégories")    
-    # --- 🎨 INJECTION DU STYLE DES COULEURS ---
     st.markdown("""
+    <h3 style='margin-bottom: -10px;'>📂 Catégories</h3>
+    
     <style>
     /* 1. NATIONS (Or Vieilli) */
     div.element-container:has(.css-nations) + div.element-container button {
@@ -1435,6 +1435,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
