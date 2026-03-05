@@ -681,26 +681,35 @@ if st.session_state.page == 'accueil':
                 
     st.write("---")
     
-    st.markdown("### 📂 Explorer le Classeur")
-    st.markdown("<p style='color: gray; margin-bottom: 15px;'>Sélectionnez une catégorie pour naviguer dans l'arborescence des archives.</p>", unsafe_allow_html=True)
+    st.markdown("### 📂 Explorer le Grenier")
     
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        if st.button("🌍 NATIONS (Mondial, Euro...)", use_container_width=True, type="primary"):
+    col_cat1, col_cat2 = st.columns(2)
+    with col_cat1:
+        # Marqueur invisible pour "Nations"
+        st.markdown('<div class="css-nations" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
+        if st.button("🌍 Nations (Mondial, Euro...)", use_container_width=True, key="btn_acc_nat"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
-        if st.button("🏟️ CHAMPIONNATS & COUPES", use_container_width=True, type="primary"):
+            
+        # Marqueur invisible pour "Coupes d'Europe"
+        st.markdown('<div class="css-europe" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
+        if st.button("🏆 Coupes d'Europe (LDC...)", use_container_width=True, key="btn_acc_eur"):
+            st.session_state.page = 'arborescence'
+            st.session_state.chemin = ["Coupes d'Europe"]
+            st.rerun()
+
+    with col_cat2:
+        # Marqueur invisible pour "Championnats"
+        st.markdown('<div class="css-champ" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
+        if st.button("🏟️ Championnats & Coupes", use_container_width=True, key="btn_acc_champ"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Championnats & Coupes']
             st.rerun()
             
-    with col_c2:
-        if st.button("🏆 COUPES D'EUROPE (LDC...)", use_container_width=True, type="primary"):
-            st.session_state.page = 'arborescence'
-            st.session_state.chemin = ["Coupes d'Europe"]
-            st.rerun()
-        if st.button("🤝 AMICAUX INTERNATIONAUX", use_container_width=True, type="primary"):
+        # Marqueur invisible pour "Amicaux"
+        st.markdown('<div class="css-amicaux" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
+        if st.button("🤝 Amicaux Internationaux", use_container_width=True, key="btn_acc_ami"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Amicaux Internationaux']
             st.rerun()
@@ -1389,6 +1398,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
