@@ -773,28 +773,37 @@ elif st.session_state.page == 'panier':
             comp_m = match.get('Compétition', '?')
             dom_m = match.get('Domicile', '')
             ext_m = match.get('Extérieur', '')
+            
+            # --- ANALYSE DES FORMATS DISPONIBLES ---
             qual_m = str(match.get('Qualité', '')).lower()
+            # On détecte s'il y a du format physique
+            has_dvd = 'dvd' in qual_m or 'vob' in qual_m
+            # On détecte s'il y a du format numérique (ajoute d'autres extensions si besoin)
+            has_num = any(ext in qual_m for ext in ['mp4', 'mkv', 'avi', 'ts', 'numérique', 'mpeg', 'wmv', 'divx'])
+            
+            # Si la case est vide ou non reconnue, on force en numérique par défaut
+            if not has_dvd and not has_num:
+                has_num = True
             
             # --- DÉTECTION DU DÉFAUT (-1€) ---
             commentaire = str(match.get('Commentaires sur fichier', '')).strip()
-            # On vérifie qu'il y a un texte et que ce n'est pas juste une case vide Excel (nan)
             a_defaut = bool(commentaire and commentaire.lower() not in ['nan', 'none', ''])
             
             with col_info:
                 st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m}<br>⚔️ **{dom_m} - {ext_m}**", unsafe_allow_html=True)
-                # Affichage du petit texte explicatif si défaut
                 if a_defaut:
                     st.markdown(f"<span style='color: #d97706; font-size: 13px;'>🩹 <i>Archive imparfaite : {commentaire}</i></span>", unsafe_allow_html=True)
             
             with col_fmt:
-                # Création des étiquettes de prix adaptées
+                # Étiquettes de prix adaptées
                 p_dvd = 4 if a_defaut else 5
                 p_num = 2 if a_defaut else 3
-                
                 lbl_dvd = f"💿 DVD ({p_dvd}€ au lieu de 5€)" if a_defaut else "💿 DVD (5€)"
                 lbl_num = f"💻 Numérique ({p_num}€ au lieu de 3€)" if a_defaut else "💻 Numérique (3€)"
 
-                if 'dvd' in qual_m or 'vob' in qual_m:
+                # === LA NOUVELLE LOGIQUE D'AFFICHAGE ===
+                if has_dvd and has_num:
+                    # CAS 1 : Les deux formats sont détectés -> On offre le choix
                     idx_actuel = 0 if match.get('format_choisi') == 'DVD' else 1
                     choix_fmt = st.selectbox(
                         "Format :", 
@@ -803,8 +812,15 @@ elif st.session_state.page == 'panier':
                         index=idx_actuel
                     )
                     match['format_choisi'] = 'DVD' if 'DVD' in choix_fmt else 'Numérique'
+                    
+                elif has_dvd and not has_num:
+                    # CAS 2 : Uniquement DVD -> Texte figé
+                    st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_dvd}</div>", unsafe_allow_html=True)
+                    match['format_choisi'] = 'DVD'
+                    
                 else:
-                    st.markdown(f"<div style='margin-top: 30px; color: gray; font-size: 15px;'>{lbl_num}</div>", unsafe_allow_html=True)
+                    # CAS 3 : Uniquement Numérique -> Texte figé
+                    st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_num}</div>", unsafe_allow_html=True)
                     match['format_choisi'] = 'Numérique'
                     
             with col_btn:
@@ -1435,6 +1451,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
