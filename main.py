@@ -463,8 +463,7 @@ with st.sidebar:
             st.rerun()
             
     st.divider()
-    st.markdown("### 📂 Catégories")
-    
+    st.markdown("### 📂 Catégories")    
     # --- 🎨 INJECTION DU STYLE DES COULEURS ---
     st.markdown("""
     <style>
@@ -1436,6 +1435,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
