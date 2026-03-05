@@ -572,7 +572,7 @@ if st.session_state.page == 'accueil':
     
     # 1. Préparation du Logo (Espace réduit à 10px)
     if logo_b64:
-        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 120px; vertical-align: middle; margin-right: 0px; border-radius: 20%;'>"
+        logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 120px; vertical-align: middle; margin-right: 0px; border-radius: 80%;'>"
     else:
         logo_html = "⚽ "
 
@@ -1436,6 +1436,7 @@ with foot_b:
         """, 
         unsafe_allow_html=True
     )
+
 
 
 
