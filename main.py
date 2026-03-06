@@ -1270,7 +1270,7 @@ elif st.session_state.page == 'statistiques':
 
     st.write("---")
 
-    # --- LIGNE 2 : LES ÉQUIPES ET LES AFFICHES ---
+# --- LIGNE 2 : LES ÉQUIPES ET LES AFFICHES ---
     c3, c4 = st.columns(2)
 
     with c3:
@@ -1282,16 +1282,20 @@ elif st.session_state.page == 'statistiques':
         df_equipes = equipes.value_counts().head(10).reset_index()
         df_equipes.columns = ['Équipe', 'Apparitions']
         
+        # AJOUT DU TEXTE SUR LE GRAPHIQUE
         fig_equipes = px.bar(df_equipes, x='Apparitions', y='Équipe', orientation='h',
-                             color='Apparitions', color_continuous_scale='Oranges')
+                             color='Apparitions', color_continuous_scale='Oranges',
+                             text='Apparitions') # <--- C'est ici qu'on dit quoi afficher
+        
+        # On place le texte à l'extérieur de la barre et en gras
+        fig_equipes.update_traces(textposition='outside', textfont=dict(weight='bold'))
         fig_equipes.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
         st.plotly_chart(fig_equipes, use_container_width=True)
 
     with c4:
         st.markdown("### ⚔️ Les Classiques du Grenier")
         st.caption("Les 10 affiches les plus répertoriées.")
-        # Astuce : On trie alphabétiquement "Dom" et "Ext" pour que "Milan - Inter" 
-        # soit compté pareil que "Inter - Milan"
+        # Astuce : On trie alphabétiquement "Dom" et "Ext"
         def generer_affiche(row):
             dom = str(row.get('Domicile', '')).strip()
             ext = str(row.get('Extérieur', '')).strip()
@@ -1304,8 +1308,13 @@ elif st.session_state.page == 'statistiques':
         df_affiches = df['Affiche'].dropna().value_counts().head(10).reset_index()
         df_affiches.columns = ['Affiche', 'Rencontres']
         
+        # AJOUT DU TEXTE SUR LE GRAPHIQUE
         fig_affiches = px.bar(df_affiches, x='Rencontres', y='Affiche', orientation='h',
-                              color='Rencontres', color_continuous_scale='Reds')
+                              color='Rencontres', color_continuous_scale='Reds',
+                              text='Rencontres') # <--- C'est ici qu'on dit quoi afficher
+        
+        # On place le texte à l'extérieur de la barre et en gras
+        fig_affiches.update_traces(textposition='outside', textfont=dict(weight='bold'))
         fig_affiches.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
         st.plotly_chart(fig_affiches, use_container_width=True)
 
@@ -1501,6 +1510,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
