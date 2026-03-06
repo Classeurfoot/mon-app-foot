@@ -568,6 +568,40 @@ with st.sidebar:
 # PAGE : ACCUEIL
 # ==========================================
 if st.session_state.page == 'accueil':
+
+    # --- 📱 OPTIMISATIONS SPÉCIALES POUR TÉLÉPHONE ---
+    st.markdown("""
+    <style>
+    /* Ces règles ne s'appliquent que sur les écrans de moins de 768px (téléphones) */
+    @media (max-width: 768px) {
+        /* 1. On empile le logo au-dessus du titre et on réduit sa taille */
+        h1 { 
+            flex-direction: column !important; 
+            gap: 10px; 
+        }
+        h1 img { 
+            width: 80px !important; /* Logo plus petit */
+            margin-right: 0 !important; 
+        }
+        h1 span { 
+            font-size: 26px !important; /* Titre plus petit */
+            text-align: center; 
+            white-space: normal !important;
+        }
+        
+        /* 2. On réduit la taille de la police du texte d'intro */
+        div[style*="max-width: 850px"] { 
+            font-size: 14px !important; 
+            padding: 0 10px; 
+        }
+        
+        /* 3. On réduit l'espace vide entre les 5 boutons d'information empilés */
+        div[data-testid="stVerticalBlock"] > div:has(button) {
+            padding-bottom: 0px !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     # 1. Préparation du Logo (Espace réduit à 10px)
     if logo_b64:
@@ -1452,6 +1486,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
