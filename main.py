@@ -1436,12 +1436,18 @@ elif st.session_state.page == 'arborescence':
                 editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
                 if editions:
                     st.subheader("🗓️ Choisissez l'édition :")
-                    cols = st.columns(4)
-                    for i, ed in enumerate(editions):
-                        with cols[i % 4]:
-                            if st.button(str(ed), width="stretch"):
-                                st.session_state.edition_choisie = ed
-                                st.rerun()
+                    
+                    # --- NOUVELLE LOGIQUE POUR MOBILE (Création de rangées de 4) ---
+                    for i in range(0, len(editions), 4):
+                        cols = st.columns(4) # Crée une nouvelle ligne de 4 colonnes
+                        for j in range(4):
+                            if i + j < len(editions):
+                                ed = editions[i + j]
+                                with cols[j]:
+                                    # use_container_width=True remplace width="stretch" (plus moderne)
+                                    if st.button(str(ed), use_container_width=True, key=f"btn_ed_{i+j}"):
+                                        st.session_state.edition_choisie = ed
+                                        st.rerun()
                 else:
                     st.warning("Aucune édition trouvée pour ce choix.")
             else:
@@ -1495,6 +1501,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
