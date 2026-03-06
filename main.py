@@ -746,24 +746,6 @@ if st.session_state.page == 'accueil':
                 st.session_state.page = 'recherche_date'
                 st.rerun()
 
-    # ==========================================
-    # 🌟 NOUVEAU BLOC : LE COURRIER DES PASSIONNÉS
-    # ==========================================
-    st.write("---")
-    st.markdown("### 🖋️ Le Courrier des Passionnés")
-    st.markdown("<p style='color: gray; font-size: 15px;'>Quelques retours de collectionneurs qui ont déjà fouillé dans le Grenier...</p>", unsafe_allow_html=True)
-    
-    col_avis1, col_avis2, col_avis3 = st.columns(3)
-    
-    with col_avis1:
-        st.info("⭐⭐⭐⭐⭐\n\n*« Échange parfait ! J'ai pu récupérer des vieux matchs de l'AC Milan introuvables ailleurs. Les fichiers VOB sont impeccables. Merci l'Archiviste ! »*\n\n**— Julien T. (Via Instagram)**")
-        
-    with col_avis2:
-        st.success("⭐⭐⭐⭐⭐\n\n*« Site super sérieux. J'ai commandé 3 matchs de Coupe du Monde 98 en format MP4, lien reçu dans la journée. Qualité VHS au top pour la nostalgie. »*\n\n**— Marc94 (Via E-mail)**")
-        
-    with col_avis3:
-        st.warning("⭐⭐⭐⭐⭐\n\n*« Une vraie mine d'or. J'ai proposé un échange avec mes propres archives, super contact et très pro. Je recommande les yeux fermés ! »*\n\n**— Seb_Collection (Via Facebook)**")
-
 # ==========================================
 # PAGE : LE PANIER MAGIQUE (PRIX & CHOIX)
 # ==========================================
@@ -1470,6 +1452,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
