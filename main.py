@@ -1401,20 +1401,29 @@ elif st.session_state.page == 'arborescence':
     st.divider()
     
     if isinstance(noeud_actuel, dict):
-        cols = st.columns(3)
-        for i, cle in enumerate(noeud_actuel.keys()):
-            with cols[i % 3]:
-                if st.button(cle, width="stretch"):
-                    st.session_state.chemin.append(cle)
-                    st.rerun()
+        cles = list(noeud_actuel.keys())
+        # Affichage en "vraies lignes" pour que l'ordre reste parfait sur téléphone
+        for i in range(0, len(cles), 3):
+            cols = st.columns(3)
+            for j in range(3):
+                if i + j < len(cles):
+                    cle = cles[i + j]
+                    with cols[j]:
+                        if st.button(cle, use_container_width=True):
+                            st.session_state.chemin.append(cle)
+                            st.rerun()
 
     elif isinstance(noeud_actuel, list):
-        cols = st.columns(3)
-        for i, element in enumerate(noeud_actuel):
-            with cols[i % 3]:
-                if st.button(element, width="stretch"):
-                    st.session_state.chemin.append(element)
-                    st.rerun()
+        # Affichage en "vraies lignes" pour que l'ordre reste parfait sur téléphone
+        for i in range(0, len(noeud_actuel), 3):
+            cols = st.columns(3)
+            for j in range(3):
+                if i + j < len(noeud_actuel):
+                    element = noeud_actuel[i + j]
+                    with cols[j]:
+                        if st.button(element, use_container_width=True):
+                            st.session_state.chemin.append(element)
+                            st.rerun()
 
     elif isinstance(noeud_actuel, str):
         if noeud_actuel.startswith("FILTER_"):
@@ -1486,6 +1495,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
