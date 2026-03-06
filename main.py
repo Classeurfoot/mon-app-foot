@@ -184,11 +184,11 @@ MENU_ARBO = {
         "Jeux Olympiques": "Jeux Olympiques"
     },
     "Coupes d'Europe": {
-        "C1 - Ligue des Champions (ex-Coupe des Clubs Champions)": "FILTER_C1",
-        "C2 - Coupe des Coupes (CWC)": "FILTER_C2",
-        "C3 - Ligue Europa (ex-Coupe UEFA)": "FILTER_C3",
-        "C4 - Ligue Europa Conférence": "FILTER_C4",
-        "Supercoupe d'Europe": "FILTER_SUPERCOUPE"
+        "C1": ["Coupe d'Europe des clubs champions", "Champions League"],
+        "C2": ["Coupe des Coupes"],
+        "C3": ["Coupe Intertoto", "Coupe UEFA", "Europa League"],
+        "C4": ["Europa Conference"],
+        "Supercoupe d'Europe": "Supercoupe d'Europe"
     },
     "Championnats & Coupes": {
         "Tournois internationaux clubs": {
