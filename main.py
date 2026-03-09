@@ -1487,8 +1487,8 @@ elif st.session_state.page == 'arborescence':
 
 
 # ==========================================
-    # 🏟️ ENCART ALERTE : LE GRAAL DU GRENIER
-    # ==========================================
+# 🏟️ ENCART ALERTE : LE GRAAL DU GRENIER
+# ==========================================
     st.write("---")
     
     with st.container(border=True):
@@ -1548,6 +1548,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
