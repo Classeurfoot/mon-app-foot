@@ -7,6 +7,8 @@ import re
 import base64
 import urllib.parse
 import plotly.express as px
+import smtplib
+from email.mime.text import MIMEText
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
@@ -782,6 +784,64 @@ if st.session_state.page == 'accueil':
 
 
 # ==========================================
+# 🏟️ ENCART ALERTE : LE GRAAL DU GRENIER
+# ==========================================
+    st.write("---")
+    
+    with st.container(border=True):
+        st.markdown("<h3 style='text-align: center; color: #d97706; margin-bottom: 5px;'>🏟️ Le Graal est peut-être au fond du Grenier...</h3>", unsafe_allow_html=True)
+        
+        st.markdown("""
+        <p style='text-align: center; font-style: italic; color: #a1a1aa; font-size: 16px;'>
+        « Tu te souviens de ce match précis ? Celui de ton enfance, avec les maillots trop larges, les pubs Kodak et la prise d'antenne TF1 à la descente du bus ? »
+        </p>
+        <p style='text-align: center; font-size: 15px;'>
+        On fouille les archives 24h/24 pour exhumer des trésors. Si le match que tu cherches n'est pas encore dans le catalogue, ne le laisse pas s'échapper une deuxième fois. Laisse ton contact et je te préviendrai personnellement. <b>Zéro spam, promis.</b>
+        </p>
+        """, unsafe_allow_html=True)
+        
+        st.write("") # Espace aéré
+        
+        # Champs de saisie sur deux colonnes pour un rendu compact sur PC
+        col_form1, col_form2 = st.columns(2)
+        with col_form1:
+            email_alerte = st.text_input("✉️ Ton Email :", placeholder="Le maillot au fond du sac...")
+        with col_form2:
+            match_alerte = st.text_input("📼 Le match que tu cherches :", placeholder="Ex : Nantes-Juventus 96, un vieux derby...")
+            
+        st.write("")
+        
+        # Le bouton d'action
+        if st.button("🚨 ALERTE-MOI DÈS QU'IL SORT DU GRENIER", use_container_width=True, type="primary"):
+            if email_alerte and match_alerte:
+                try:
+                    # Préparation de l'e-mail
+                    sujet = "🚨 ALERTE GRAAL : Nouvelle recherche sur le site"
+                    corps = f"Salut l'Archiviste,\n\nUn collectionneur cherche une pépite :\n\n- E-mail du contact : {email_alerte}\n- Match recherché : {match_alerte}\n\nÀ toi de jouer !"
+                    
+                    msg = MIMEText(corps)
+                    msg['Subject'] = sujet
+                    msg['From'] = st.secrets["email_archiviste"]
+                    msg['To'] = st.secrets["email_archiviste"] # Tu te l'envoies à toi-même
+                    
+                    # Connexion au serveur de Google et envoi
+                    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as serveur:
+                        serveur.login(st.secrets["email_archiviste"], st.secrets["mdp_archiviste"])
+                        serveur.send_message(msg)
+                        
+                    # Si ça marche, on affiche le message de succès au visiteur
+                    st.success("✅ C'est bien noté ! Je pars fouiller les cartons. Tu seras le premier prévenu dès que je mets la main dessus !")
+                    st.balloons() 
+                    
+                except Exception as e:
+                    # S'il y a un bug (mauvais mot de passe, etc.)
+                    st.error("⚠️ Oups, les serveurs de la Poste du Grenier sont en panne. N'hésite pas à m'envoyer ta demande directement par e-mail ou sur les réseaux !")
+                    
+            else:
+                st.warning("⚠️ Oups, n'oublie pas de remplir ton e-mail et le match que tu cherches pour que je puisse te recontacter !")
+
+
+# ==========================================
 # PAGE : LE PANIER MAGIQUE (PRIX & CHOIX)
 # ==========================================
 elif st.session_state.page == 'panier':
@@ -1511,6 +1571,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
