@@ -46,7 +46,7 @@ def go_home():
 @st.dialog("🧭 Guide & Contenu")
 def popup_guide_contenu():
     st.markdown("""
-    **Bienvenue dans l'antre du Grenier du Football !** Plus de 4000 matchs au chaud : des classiques, des raretés, des “je l’avais oublié celui-là !”. Du foot vintage, numérisé à partir de VHS, aux saisons plus récentes… et on n’a pas fini de fouiller.
+    **Bienvenue dans l'antre du Grenier du Football !** Près de 5000 matchs au chaud : des classiques, des raretés, des “je l’avais oublié celui-là !”. Du foot vintage, numérisé à partir de VHS, aux saisons plus récentes… et on n’a pas fini de fouiller.
     
     **Dans ce catalogue :**
     * 🌍 Des **matchs de clubs** et de **sélections nationales**.
@@ -617,7 +617,7 @@ if st.session_state.page == 'accueil':
                 <span>Le Grenier du Football</span>
             </h1>
             <div style='max-width: 850px; margin: 0 auto; line-height: 1.5; font-size: 16px; color: #fafafa;'>
-                Découvrez un catalogue interactif de plus de <b>4000 matchs de foot rétro</b> en formats numérique et DVD.<br>
+                Découvrez un catalogue interactif de près de <b>5000 matchs de foot rétro</b> en formats numérique.<br>
                 Retrouvez les émotions de la <i>Coupe du Monde</i>, de la <i>Ligue des Champions</i> et des championnats historiques.<br>
                 <b>Parcourez le classeur, commandez vos matchs vintage préférés ou proposez des échanges entre collectionneurs.</b>
             </div>
@@ -1510,6 +1510,7 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
+
 
 
 
