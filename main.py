@@ -1122,16 +1122,16 @@ elif st.session_state.page == 'mes_recherches':
 # ==========================================
 elif st.session_state.page == 'pepites':
     st.header("✨ Les Archives Dépoussiérées")
-    st.markdown("<p style='color: gray; font-size:16px;'>Voici les 30 derniers matchs fraîchement exhumés des cartons et ajoutés au catalogue !</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: gray; font-size:16px;'>Voici les 50 derniers matchs fraîchement exhumés des cartons et ajoutés au catalogue !</p>", unsafe_allow_html=True)
     st.write("---")
     
     # --- TRI INFAILLIBLE PAR ID DE MATCH ---
     # On trie simplement par le numéro d'ID (Match) du plus grand (récent) au plus petit (ancien)
     if 'Match' in df.columns:
-        df_pepites = df.sort_values(by='Match', ascending=False).head(30)
+        df_pepites = df.sort_values(by='Match', ascending=False).head(50)
     else:
         # Sécurité au cas où la colonne 'Match' serait renommée un jour
-        df_pepites = df.tail(30).iloc[::-1]
+        df_pepites = df.tail(50).iloc[::-1]
         
     # On affiche les résultats
     afficher_resultats(df_pepites)
