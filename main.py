@@ -811,35 +811,37 @@ if st.session_state.page == 'accueil':
             
         st.write("")
         
-        # Le bouton d'action
-        if st.button("🚨 ALERTE-MOI DÈS QU'IL SORT DU GRENIER", use_container_width=True, type="primary"):
-            if email_alerte and match_alerte:
-                try:
-                    # Préparation de l'e-mail
-                    sujet = "🚨 ALERTE GRAAL : Nouvelle recherche sur le site"
-                    corps = f"Salut l'Archiviste,\n\nUn collectionneur cherche une pépite :\n\n- E-mail du contact : {email_alerte}\n- Match recherché : {match_alerte}\n\nÀ toi de jouer !"
-                    
-                    msg = MIMEText(corps)
-                    msg['Subject'] = sujet
-                    msg['From'] = st.secrets["email_archiviste"]
-                    msg['To'] = st.secrets["email_archiviste"] # Tu te l'envoies à toi-même
-                    
-                    # Connexion au serveur de Microsoft (Hotmail / Outlook)
-                    with smtplib.SMTP('smtp-mail.outlook.com', 587) as serveur:
-                        serveur.starttls() # Sécurise la connexion
-                        serveur.login(st.secrets["email_archiviste"], st.secrets["mdp_archiviste"])
-                        serveur.send_message(msg)
-                        
-                    # Si ça marche, on affiche le message de succès au visiteur
-                    st.success("✅ C'est bien noté ! Je pars fouiller les cartons. Tu seras le premier prévenu dès que je mets la main dessus !")
-                    st.balloons() 
-                    
-                except Exception as e:
-                    # S'il y a un bug (mauvais mot de passe, etc.)
-                    st.error("⚠️ Oups, les serveurs de la Poste du Grenier sont en panne. N'hésite pas à m'envoyer ta demande directement par e-mail ou sur les réseaux !")
-                    
-            else:
-                st.warning("⚠️ Oups, n'oublie pas de remplir ton e-mail et le match que tu cherches pour que je puisse te recontacter !")
+        # ...
+# Le bouton d'action
+if st.button("🚨 ALERTE-MOI DÈS QU'IL SORT DU GRENIER", use_container_width=True, type="primary"):
+    if email_alerte and match_alerte:
+        try:
+            # Préparation de l'e-mail
+            sujet = "🚨 ALERTE GRAAL : Nouvelle recherche sur le site"
+            corps = f"Salut l'Archiviste,\n\nUn collectionneur cherche une pépite :\n\n- E-mail du contact : {email_alerte}\n- Match recherché : {match_alerte}\n\nÀ toi de jouer !"
+
+            msg = MIMEText(corps)
+            msg['Subject'] = sujet
+            # L'e-mail est envoyé DEPUIS le Gmail du site
+            msg['From'] = st.secrets["email_archiviste"]
+            # L'e-mail est envoyé VERS votre Hotmail perso
+            msg['To'] = st.secrets["email_reception"]
+
+            # Connexion au serveur de Google (port 465 avec SSL, généralement plus fiable sur le Cloud)
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as serveur:
+                serveur.login(st.secrets["email_archiviste"], st.secrets["mdp_archiviste"])
+                serveur.send_message(msg)
+
+            st.success("✅ C'est bien noté ! Je pars fouiller les cartons. Tu seras le premier prévenu dès que je mets la main dessus !")
+            st.balloons()
+
+        except Exception as e:
+            st.error(f"⚠️ Oups, une erreur s'est produite lors de l'envoi de l'alerte. Veuillez me contacter directement sur legrenierdufootball@hotmail.com.")
+            # st.error(f"Détail de l'erreur : {e}") # Décommentez pour afficher l'erreur technique si besoin
+
+    else:
+        st.warning("⚠️ Oups, n'oublie pas de remplir ton e-mail et le match que tu cherches pour que je puisse te recontacter !")
+# ...
 
 
 # ==========================================
