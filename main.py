@@ -824,8 +824,9 @@ if st.session_state.page == 'accueil':
                     msg['From'] = st.secrets["email_archiviste"]
                     msg['To'] = st.secrets["email_archiviste"] # Tu te l'envoies à toi-même
                     
-                    # Connexion au serveur de Google et envoi
-                    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as serveur:
+                    # Connexion au serveur de Microsoft (Hotmail / Outlook)
+                    with smtplib.SMTP('smtp-mail.outlook.com', 587) as serveur:
+                        serveur.starttls() # Sécurise la connexion
                         serveur.login(st.secrets["email_archiviste"], st.secrets["mdp_archiviste"])
                         serveur.send_message(msg)
                         
