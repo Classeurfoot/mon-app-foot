@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import requests
 import os
 from datetime import datetime
 import unicodedata
@@ -217,9 +218,86 @@ MENU_ARBO = {
 @st.cache_data
 def load_data():
     try:
-        # 1. Lecture avec le bon séparateur (;) et formatage du score en texte
-        df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
-        df.columns = df.columns.str.strip()
+       @st.cache_data(ttl=3600) # Garde les données en mémoire pendant 1h pour ne pas faire exploser l'API
+def charger_donnees():
+    url_notion = f"https://api.notion.com/v1/databases/{st.secrets['notion_database_id']}/query"
+    
+    en_tete = {
+        "Authorization": f"Bearer {st.secrets['notion_token']}",
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json"
+    }
+    
+    tous_les_matchs = []
+    il_y_a_une_suite = True
+    page_suivante = None
+    
+    # 1. On boucle pour récupérer les matchs 100 par 100
+    while il_y_a_une_suite:
+        parametres = {}
+        if page_suivante:
+            parametres["start_cursor"] = page_suivante
+            
+        reponse = requests.post(url_notion, headers=en_tete, json=parametres)
+        donnees = reponse.json()
+        
+        tous_les_matchs.extend(donnees.get("results", []))
+        il_y_a_une_suite = donnees.get("has_more", False)
+        page_suivante = donnees.get("next_cursor", None)
+
+    # 2. On traduit le "charabia" JSON de Notion en un beau tableau Python
+    matchs_propres = []
+    
+    for item in tous_les_matchs:
+        props = item.get("properties", {})
+        
+        # Petite fonction interne pour extraire facilement selon le type Notion
+        def extraire(nom_colonne):
+            prop = props.get(nom_colonne, {})
+            type_prop = prop.get("type", "")
+            
+            if type_prop == "select" and prop.get("select"):
+                return prop["select"].get("name", "")
+            elif type_prop == "multi_select":
+                return ", ".join([x["name"] for x in prop.get("multi_select", [])])
+            elif type_prop == "number":
+                return prop.get("number", "")
+            elif type_prop == "date" and prop.get("date"):
+                return prop["date"].get("start", "")
+            elif type_prop == "title": # Notion oblige toujours une colonne à être de type 'title'
+                return "".join([t.get("plain_text", "") for t in prop.get("title", [])])
+            elif type_prop == "rich_text":
+                return "".join([t.get("plain_text", "") for t in prop.get("rich_text", [])])
+            return ""
+
+        # On crée la ligne du match
+        ligne = {
+            "Saison": extraire("Saison"),
+            "Compétition": extraire("Compétition"),
+            "Phase": extraire("Phase"),
+            "Journée": extraire("Journée"),
+            "Date": extraire("Date"),
+            "Domicile": extraire("Domicile"),
+            "Extérieur": extraire("Extérieur"),
+            "Score": extraire("Score"),
+            "Stade": extraire("Stade"),
+            "Diffuseur": extraire("Diffuseur"),
+            "Langue": extraire("Langue"),
+            "Qualité": extraire("Qualité"),
+            "Commentaire sur fichier": extraire("Commentaire sur fichier")
+        }
+        matchs_propres.append(ligne)
+        
+    # 3. On transforme tout ça en DataFrame Pandas (exactement comme ton ancien CSV !)
+    df = pd.DataFrame(matchs_propres)
+    
+    # Optionnel : Remplacer les valeurs vides par ce que tu veux
+    df.fillna("", inplace=True) 
+    
+    return df
+
+# Appel de la fonction pour charger le tableau dans l'application
+df = charger_donnees()
 
         # 2. CHASSE AUX FANTÔMES : On supprime les lignes 100% vides d'Excel
         df = df.dropna(subset=['Saison', 'Compétition'], how='all')
