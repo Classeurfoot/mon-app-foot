@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 st.set_page_config(page_title="Le Grenier du Football", layout="wide")
 
 # --- LECTURE DU LOGO LGF ---
-@st.cache_data   # <-- LA LIGNE MAGIQUE À AJOUTER ICI
+@st.cache_data
 def get_base64_image(image_path):
     try:
         with open(image_path, "rb") as img_file:
@@ -88,7 +88,6 @@ def popup_formats():
     * 📼 **VHS :** pour les puristes, quelques exemplaires disponibles au format original.
     """)
 
-# --- MISE À JOUR : POPUP DES TARIFS ---
 @st.dialog("💶 Tarifs & Offres")
 def popup_tarifs():
     st.markdown("### 💰 Grille Tarifaire")
@@ -103,7 +102,6 @@ def popup_tarifs():
     * 🆓 **1 match offert** tous les 10 matchs achetés (le match le moins cher de votre sélection est automatiquement déduit à partir du 11ème match).
     * 🩹 **Remise "Archive Imparfaite" (-1 €) :** Si un match présente un défaut lié à l'usure du temps (qualité altérée, fichier incomplet...), une remise de 1€ est automatiquement déduite dans votre panier.
     * 🔄 **Offre cumulable :** 2 matchs offerts pour 20 achetés, 3 pour 30, etc.
-
     """)
 
 @st.dialog("✉️ Contact & Commandes")
@@ -145,6 +143,7 @@ def popup_raccourci_mobile():
     2. Appuyez sur **Ajouter à l'écran d'accueil**.
     3. Confirmez en appuyant sur **Ajouter**.
     """)
+
 # ==========================================
 # ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
 # ==========================================
@@ -214,114 +213,108 @@ MENU_ARBO = {
     }
 }
 
-# 3. Chargement des données
-@st.cache_data
+# ==========================================
+# 3. LECTURE DES DONNÉES (NOTION API)
+# ==========================================
+@st.cache_data(ttl=3600)
 def load_data():
     try:
-       @st.cache_data(ttl=3600) # Garde les données en mémoire pendant 1h pour ne pas faire exploser l'API
-def charger_donnees():
-    url_notion = f"https://api.notion.com/v1/databases/{st.secrets['notion_database_id']}/query"
-    
-    en_tete = {
-        "Authorization": f"Bearer {st.secrets['notion_token']}",
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json"
-    }
-    
-    tous_les_matchs = []
-    il_y_a_une_suite = True
-    page_suivante = None
-    
-    # 1. On boucle pour récupérer les matchs 100 par 100
-    while il_y_a_une_suite:
-        parametres = {}
-        if page_suivante:
-            parametres["start_cursor"] = page_suivante
-            
-        reponse = requests.post(url_notion, headers=en_tete, json=parametres)
-        donnees = reponse.json()
+        url_notion = f"https://api.notion.com/v1/databases/{st.secrets['notion_database_id']}/query"
         
-        tous_les_matchs.extend(donnees.get("results", []))
-        il_y_a_une_suite = donnees.get("has_more", False)
-        page_suivante = donnees.get("next_cursor", None)
-
-    # 2. On traduit le "charabia" JSON de Notion en un beau tableau Python
-    matchs_propres = []
-    
-    for item in tous_les_matchs:
-        props = item.get("properties", {})
-        
-        # Petite fonction interne pour extraire facilement selon le type Notion
-        def extraire(nom_colonne):
-            prop = props.get(nom_colonne, {})
-            type_prop = prop.get("type", "")
-            
-            if type_prop == "select" and prop.get("select"):
-                return prop["select"].get("name", "")
-            elif type_prop == "multi_select":
-                return ", ".join([x["name"] for x in prop.get("multi_select", [])])
-            elif type_prop == "number":
-                return prop.get("number", "")
-            elif type_prop == "date" and prop.get("date"):
-                return prop["date"].get("start", "")
-            elif type_prop == "title": # Notion oblige toujours une colonne à être de type 'title'
-                return "".join([t.get("plain_text", "") for t in prop.get("title", [])])
-            elif type_prop == "rich_text":
-                return "".join([t.get("plain_text", "") for t in prop.get("rich_text", [])])
-            return ""
-
-        # On crée la ligne du match
-        ligne = {
-            "Saison": extraire("Saison"),
-            "Compétition": extraire("Compétition"),
-            "Phase": extraire("Phase"),
-            "Journée": extraire("Journée"),
-            "Date": extraire("Date"),
-            "Domicile": extraire("Domicile"),
-            "Extérieur": extraire("Extérieur"),
-            "Score": extraire("Score"),
-            "Stade": extraire("Stade"),
-            "Diffuseur": extraire("Diffuseur"),
-            "Langue": extraire("Langue"),
-            "Qualité": extraire("Qualité"),
-            "Commentaire sur fichier": extraire("Commentaire sur fichier")
+        en_tete = {
+            "Authorization": f"Bearer {st.secrets['notion_token']}",
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json"
         }
-        matchs_propres.append(ligne)
         
-    # 3. On transforme tout ça en DataFrame Pandas (exactement comme ton ancien CSV !)
-    df = pd.DataFrame(matchs_propres)
-    
-    # Optionnel : Remplacer les valeurs vides par ce que tu veux
-    df.fillna("", inplace=True) 
-    
-    return df
+        tous_les_matchs = []
+        il_y_a_une_suite = True
+        page_suivante = None
+        
+        # 1. On boucle pour récupérer les matchs 100 par 100
+        while il_y_a_une_suite:
+            parametres = {}
+            if page_suivante:
+                parametres["start_cursor"] = page_suivante
+                
+            reponse = requests.post(url_notion, headers=en_tete, json=parametres)
+            reponse.raise_for_status() # Lève une erreur claire si l'API refuse l'accès
+            donnees = reponse.json()
+            
+            tous_les_matchs.extend(donnees.get("results", []))
+            il_y_a_une_suite = donnees.get("has_more", False)
+            page_suivante = donnees.get("next_cursor", None)
 
-# Appel de la fonction pour charger le tableau dans l'application
-df = charger_donnees()
+        # 2. On traduit le "charabia" JSON de Notion en un beau tableau Python
+        matchs_propres = []
+        
+        for item in tous_les_matchs:
+            props = item.get("properties", {})
+            
+            # Petite fonction interne pour extraire facilement selon le type Notion
+            def extraire(nom_colonne):
+                prop = props.get(nom_colonne, {})
+                type_prop = prop.get("type", "")
+                
+                if type_prop == "select" and prop.get("select"):
+                    return prop["select"].get("name", "")
+                elif type_prop == "multi_select":
+                    return ", ".join([x["name"] for x in prop.get("multi_select", [])])
+                elif type_prop == "number":
+                    return prop.get("number", "")
+                elif type_prop == "date" and prop.get("date"):
+                    return prop["date"].get("start", "")
+                elif type_prop == "title": 
+                    return "".join([t.get("plain_text", "") for t in prop.get("title", [])])
+                elif type_prop == "rich_text":
+                    return "".join([t.get("plain_text", "") for t in prop.get("rich_text", [])])
+                return ""
 
-        # 2. CHASSE AUX FANTÔMES : On supprime les lignes 100% vides d'Excel
-        df = df.dropna(subset=['Saison', 'Compétition'], how='all')
-# --- NOUVEAU : SAUVETAGE DES MULTIPLEX ---
-# On remplace les cases vides (NaN) par du texte pour que l'application ne les supprime pas
-        df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
-        df['Extérieur'] = df['Extérieur'].fillna("-")
-        df['Score'] = df['Score'].fillna("-")
-        df['Stade'] = df['Stade'].fillna("Plusieurs stades")
-# --- LIGNE DE DÉBOGAGE À AJOUTER ---
+            # On crée la ligne du match
+            ligne = {
+                "Match": extraire("Match"), # Essentiel pour la page "Pépites"
+                "Saison": extraire("Saison"),
+                "Compétition": extraire("Compétition"),
+                "Phase": extraire("Phase"),
+                "Journée": extraire("Journée"),
+                "Date": extraire("Date"),
+                "Domicile": extraire("Domicile"),
+                "Extérieur": extraire("Extérieur"),
+                "Score": extraire("Score"),
+                "Stade": extraire("Stade"),
+                "Diffuseur": extraire("Diffuseur"),
+                "Langue": extraire("Langue"),
+                "Qualité": extraire("Qualité"),
+                "Commentaires sur fichier": extraire("Commentaires sur fichier") # Corrigé au pluriel
+            }
+            matchs_propres.append(ligne)
+            
+        # 3. On transforme tout ça en DataFrame Pandas
+        df = pd.DataFrame(matchs_propres)
+        
+        # 4. Nettoyage et formatage des données
+        df['Domicile'] = df['Domicile'].replace("", "Multiplex / Divers").fillna("Multiplex / Divers")
+        df['Extérieur'] = df['Extérieur'].replace("", "-").fillna("-")
+        df['Score'] = df['Score'].replace("", "-").fillna("-")
+        df['Stade'] = df['Stade'].replace("", "Plusieurs stades").fillna("Plusieurs stades")
+        
         df = df.dropna(subset=['Domicile', 'Extérieur'])
         df.columns = df.columns.str.strip()
         
+        # Convertit les dates Notion (YYYY-MM-DD) au format français (DD/MM/YYYY)
         if 'Date' in df.columns:
-            dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
-            masque_excel = dates_numeriques.notna()
-            dates_converties = pd.to_datetime(dates_numeriques[masque_excel], unit='D', origin='1899-12-30')
-            df.loc[masque_excel, 'Date'] = dates_converties.dt.strftime('%d/%m/%Y')
+            df['Date'] = pd.to_datetime(df['Date'], errors='coerce').dt.strftime('%d/%m/%Y')
+            df['Date'] = df['Date'].fillna("")
+
         return df
+
     except Exception as e:
-        st.error(f"Erreur de lecture : {e}")
+        st.error(f"Erreur de connexion à Notion : {e}")
         return pd.DataFrame()
 
+# Appel global de la fonction
 df = load_data()
+
 colonnes_possibles = ['Match','Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
@@ -338,23 +331,20 @@ def afficher_resultats(df_resultats):
     if mode == "📊 Tableau classique":
         st.markdown("<p style='color: gray; font-size:14px;'>☑️ Cochez les matchs dans la première colonne, puis cliquez sur le bouton en dessous pour les ajouter au panier.</p>", unsafe_allow_html=True)
         
-        # Création d'une copie du dataframe pour l'affichage interactif
         df_display = df_resultats[colonnes_presentes].copy()
         df_display.insert(0, "Sélection", False)
         
-        # Affichage du tableau éditable
         edited_df = st.data_editor(
             df_display,
             column_config={
                 "Sélection": st.column_config.CheckboxColumn("🛒 Ajouter", default=False)
             },
-            disabled=colonnes_presentes, # Empêche de modifier les vraies données
+            disabled=colonnes_presentes,
             hide_index=True,
             use_container_width=True,
             height=400
         )
         
-        # Récupérer les lignes cochées
         selected_rows = edited_df[edited_df["Sélection"] == True]
         
         if len(selected_rows) > 0:
@@ -370,8 +360,6 @@ def afficher_resultats(df_resultats):
                         match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
                         st.session_state.panier.append(match_dict)
                         nb_ajouts += 1
-                
-                # Relance l'application pour mettre à jour le compteur du panier
                 st.rerun()
 
     else:
@@ -487,24 +475,20 @@ def afficher_resultats(df_resultats):
 # 🧭 BARRE LATÉRALE PERSISTANTE
 # ==========================================
 with st.sidebar:
-    # On utilise une balise HTML (h2) pour centrer le texte et l'emoji
     st.markdown("<h2 style='text-align: center;'>📺 Menu Rapide</h2>", unsafe_allow_html=True)
-    st.write("") # Ajoute un petit espace invisible pour bien aérer avant le bouton Accueil
+    st.write("")
     
-    if st.button("🏠 Accueil", width="stretch"):
+    if st.button("🏠 Accueil", use_container_width=True):
         go_home()
         st.rerun()
                 
-    # --- BOUTON F.A.Q ---
-    if st.button("❓ F.A.Q & Infos", width="stretch"):
+    if st.button("❓ F.A.Q & Infos", use_container_width=True):
         st.session_state.page = 'faq'
         st.rerun()
 
-        # --- BOUTON : Le Grenier sur mobile ---
-    if st.button("📱 Le Grenier sur mobile", width="stretch"):
-        popup_raccourci_mobile() # <-- LE BON NOM
+    if st.button("📱 Le Grenier sur mobile", use_container_width=True):
+        popup_raccourci_mobile()
 
-    # --- NOUVEAU BOUTON INSTAGRAM (AVEC LE VRAI LOGO) ---
     st.markdown("""
         <a href="https://www.instagram.com/legrenierdufootball/" target="_blank" style="
             display: flex;
@@ -531,23 +515,19 @@ with st.sidebar:
     """, unsafe_allow_html=True)
         
     st.divider()
-                     
+                      
     nb_articles = len(st.session_state.panier)
-    if nb_articles > 0:
-        if st.button(f"🛒 Mon Panier ({nb_articles})", width="stretch", type="primary"):
-            st.session_state.page = 'panier'
-            st.rerun()
-    else:
-        if st.button("🛒 Mon Panier (0)", width="stretch"):
-            st.session_state.page = 'panier'
-            st.rerun()
+    texte_panier = f"🛒 Mon Panier ({nb_articles})"
+    
+    if st.button(texte_panier, use_container_width=True, type="primary" if nb_articles > 0 else "secondary"):
+        st.session_state.page = 'panier'
+        st.rerun()
             
     st.divider()
     st.markdown("""
     <h3 style='margin-bottom: -10px;'>📂 Catégories</h3>
     
     <style>
-    /* 1. NATIONS (Or Vieilli) */
     div.element-container:has(.css-nations) + div.element-container button {
         background-color: #b8860b !important; border-color: #b8860b !important;
     }
@@ -556,7 +536,6 @@ with st.sidebar:
     }
     div.element-container:has(.css-nations) + div.element-container button p { color: white !important; font-weight: 500;}
 
-    /* 2. COUPES D'EUROPE (Bleu Nuit) */
     div.element-container:has(.css-europe) + div.element-container button {
         background-color: #1a2b4c !important; border-color: #1a2b4c !important;
     }
@@ -565,7 +544,6 @@ with st.sidebar:
     }
     div.element-container:has(.css-europe) + div.element-container button p { color: white !important; font-weight: 500;}
 
-    /* 3. CHAMPIONNATS (Bordeaux) */
     div.element-container:has(.css-champ) + div.element-container button {
         background-color: #722f37 !important; border-color: #722f37 !important;
     }
@@ -574,7 +552,6 @@ with st.sidebar:
     }
     div.element-container:has(.css-champ) + div.element-container button p { color: white !important; font-weight: 500;}
 
-    /* 4. AMICAUX (Vert Sauge) */
     div.element-container:has(.css-amicaux) + div.element-container button {
         background-color: #5b7c6c !important; border-color: #5b7c6c !important;
     }
@@ -585,62 +562,60 @@ with st.sidebar:
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 🔘 LES BOUTONS (AVEC LEURS MARQUEURS INVISIBLES) ---
     st.markdown('<div class="css-nations" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
-    if st.button("🌍 Nations (Mondial, Euro...)", width="stretch"):
+    if st.button("🌍 Nations (Mondial, Euro...)", use_container_width=True):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Nations']
         st.rerun()
         
     st.markdown('<div class="css-europe" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
-    if st.button("🏆 Coupes d'Europe (LDC...)", width="stretch"):
+    if st.button("🏆 Coupes d'Europe (LDC...)", use_container_width=True):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ["Coupes d'Europe"]
         st.rerun()
         
     st.markdown('<div class="css-champ" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
-    if st.button("🏟️ Championnats & Coupes", width="stretch"):
+    if st.button("🏟️ Championnats & Coupes", use_container_width=True):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Championnats & Coupes']
         st.rerun()
         
     st.markdown('<div class="css-amicaux" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
-    if st.button("🤝 Amicaux Internationaux", width="stretch"):
+    if st.button("🤝 Amicaux Internationaux", use_container_width=True):
         st.session_state.page = 'arborescence'
         st.session_state.chemin = ['Amicaux Internationaux']
         st.rerun()
         
     st.divider()
     st.markdown("### 🌟 Nouveautés")
-    # --- ON RENOMME DANS LE THÈME DU GRENIER ---
-    if st.button("✨ Archives Dépoussiérées", width="stretch"):
+    if st.button("✨ Archives Dépoussiérées", use_container_width=True):
         st.session_state.page = 'pepites'
         st.rerun()
-    if st.button("🎯 Progression Collection", width="stretch"):
+    if st.button("🎯 Progression Collection", use_container_width=True):
         st.session_state.page = 'progression'
         st.rerun()
         
     st.divider()
     st.markdown("### 🤝 Échanges & Requêtes")
-    if st.button("🔎 Mes Recherches", width="stretch"):
+    if st.button("🔎 Mes Recherches", use_container_width=True):
         st.session_state.page = 'mes_recherches'
         st.rerun()
         
     st.divider()
     st.markdown("### 🔍 Outils")
-    if st.button("📖 Catalogue Complet", width="stretch"):
+    if st.button("📖 Catalogue Complet", use_container_width=True):
         st.session_state.page = 'catalogue'
         st.rerun()
-    if st.button("📊 Statistiques", width="stretch"):
+    if st.button("📊 Statistiques", use_container_width=True):
         st.session_state.page = 'statistiques'
         st.rerun()
-    if st.button("🛡️ Par Équipe", width="stretch"):
+    if st.button("🛡️ Par Équipe", use_container_width=True):
         st.session_state.page = 'recherche_equipe'
         st.rerun()
-    if st.button("⚔️ Face-à-Face", width="stretch"):
+    if st.button("⚔️ Face-à-Face", use_container_width=True):
         st.session_state.page = 'face_a_face'
         st.rerun()
-    if st.button("🕵️ Recherche Avancée", width="stretch"):
+    if st.button("🕵️ Recherche Avancée", use_container_width=True):
         st.session_state.page = 'recherche_avancee'
         st.rerun()
 
@@ -649,33 +624,26 @@ with st.sidebar:
 # ==========================================
 if st.session_state.page == 'accueil':
 
-    # --- 📱 OPTIMISATIONS SPÉCIALES POUR TÉLÉPHONE ---
     st.markdown("""
     <style>
-    /* Ces règles ne s'appliquent que sur les écrans de moins de 768px (téléphones) */
     @media (max-width: 768px) {
-        /* 1. On empile le logo au-dessus du titre et on réduit sa taille */
         h1 { 
             flex-direction: column !important; 
             gap: 10px; 
         }
         h1 img { 
-            width: 80px !important; /* Logo plus petit */
+            width: 80px !important;
             margin-right: 0 !important; 
         }
         h1 span { 
-            font-size: 26px !important; /* Titre plus petit */
+            font-size: 26px !important;
             text-align: center; 
             white-space: normal !important;
         }
-        
-        /* 2. On réduit la taille de la police du texte d'intro */
         div[style*="max-width: 850px"] { 
             font-size: 14px !important; 
             padding: 0 10px; 
         }
-        
-        /* 3. On réduit l'espace vide entre les 5 boutons d'information empilés */
         div[data-testid="stVerticalBlock"] > div:has(button) {
             padding-bottom: 0px !important;
         }
@@ -683,13 +651,11 @@ if st.session_state.page == 'accueil':
     </style>
     """, unsafe_allow_html=True)
     
-    # 1. Préparation du Logo (Espace réduit à 10px)
     if logo_b64:
         logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width: 120px; vertical-align: middle; margin-right: 0px; border-radius: 80%;'>"
     else:
         logo_html = "⚽ "
 
-    # 2. Affichage du bloc (Titre + Texte SEO fusionnés)
     st.markdown(f"""
         <div style='text-align: center; margin-bottom: 10px;'>
             <h1 style='margin-bottom: 0px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
@@ -705,12 +671,6 @@ if st.session_state.page == 'accueil':
     """, unsafe_allow_html=True)
     
     st.write("---")
-    
-    # La suite de ton code (colonnes d'images...)
-    col1, col2, col3 = st.columns(3)
-    
-    # La suite de ton code (colonnes d'images...)
-    col1, col2, col3 = st.columns(3)
     
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
     if recherche_rapide:
@@ -728,54 +688,33 @@ if st.session_state.page == 'accueil':
         afficher_resultats(df_trouve)
         st.write("---")
 
-    # --- ASTUCE CSS POUR COLORER LES BOUTONS SPECIFIQUES ---
     st.markdown("""
     <style>
-    /* 🟢 BOUTON COMMANDES (4ème colonne) */
     div[data-testid="stHorizontalBlock"] > div:nth-child(4) button {
-        background-color: #2e7d32 !important;
-        border-color: #2e7d32 !important;
-        transition: all 0.3s ease;
+        background-color: #2e7d32 !important; border-color: #2e7d32 !important; transition: all 0.3s ease;
     }
-    div[data-testid="stHorizontalBlock"] > div:nth-child(4) button p {
-        color: #ffffff !important;
-        font-weight: 600 !important;
-    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(4) button p { color: #ffffff !important; font-weight: 600 !important; }
     div[data-testid="stHorizontalBlock"] > div:nth-child(4) button:hover {
-        background-color: #1b5e20 !important;
-        border-color: #1b5e20 !important;
-        transform: scale(1.02);
+        background-color: #1b5e20 !important; border-color: #1b5e20 !important; transform: scale(1.02);
     }
-
-    /* 🔵 BOUTON ÉCHANGES (5ème colonne) */
     div[data-testid="stHorizontalBlock"] > div:nth-child(5) button {
-        background-color: #1565c0 !important;
-        border-color: #1565c0 !important;
-        transition: all 0.3s ease;
+        background-color: #1565c0 !important; border-color: #1565c0 !important; transition: all 0.3s ease;
     }
-    div[data-testid="stHorizontalBlock"] > div:nth-child(5) button p {
-        color: #ffffff !important;
-        font-weight: 600 !important;
-    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(5) button p { color: #ffffff !important; font-weight: 600 !important; }
     div[data-testid="stHorizontalBlock"] > div:nth-child(5) button:hover {
-        background-color: #0d47a1 !important;
-        border-color: #0d47a1 !important;
-        transform: scale(1.02);
+        background-color: #0d47a1 !important; border-color: #0d47a1 !important; transform: scale(1.02);
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # Rangée des 5 boutons d'informations
     col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
     with col_btn1:
-        if st.button("🧭 Guide & Contenu", use_container_width=True):
-            popup_guide_contenu()
+        if st.button("🧭 Guide & Contenu", use_container_width=True): popup_guide_contenu()
     with col_btn2:
         if st.button("💾 Formats", use_container_width=True): popup_formats()
     with col_btn3:
         if st.button("💶 Tarifs", use_container_width=True): popup_tarifs()
     with col_btn4:
-        # Pas besoin de mettre type="primary", le CSS s'en occupe !
         if st.button("✉️ Commandes", use_container_width=True): popup_contact_commandes()
     with col_btn5:
         if st.button("🤝 Échanges", use_container_width=True): popup_echanges()
@@ -799,14 +738,12 @@ if st.session_state.page == 'accueil':
     
     col_cat1, col_cat2 = st.columns(2)
     with col_cat1:
-        # Marqueur invisible pour "Nations"
         st.markdown('<div class="css-nations" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
         if st.button("🌍 Nations (Mondial, Euro...)", use_container_width=True, key="btn_acc_nat"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Nations']
             st.rerun()
             
-        # Marqueur invisible pour "Coupes d'Europe"
         st.markdown('<div class="css-europe" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
         if st.button("🏆 Coupes d'Europe (LDC...)", use_container_width=True, key="btn_acc_eur"):
             st.session_state.page = 'arborescence'
@@ -814,14 +751,12 @@ if st.session_state.page == 'accueil':
             st.rerun()
 
     with col_cat2:
-        # Marqueur invisible pour "Championnats"
         st.markdown('<div class="css-champ" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
         if st.button("🏟️ Championnats & Coupes", use_container_width=True, key="btn_acc_champ"):
             st.session_state.page = 'arborescence'
             st.session_state.chemin = ['Championnats & Coupes']
             st.rerun()
             
-        # Marqueur invisible pour "Amicaux"
         st.markdown('<div class="css-amicaux" style="margin-bottom: -15px;"></div>', unsafe_allow_html=True)
         if st.button("🤝 Amicaux Internationaux", use_container_width=True, key="btn_acc_ami"):
             st.session_state.page = 'arborescence'
@@ -834,7 +769,7 @@ if st.session_state.page == 'accueil':
     with col_cat:
         st.markdown("### 📖 Tout voir d'un coup")
         st.markdown("<p style='color: gray;'>Vous préférez flâner ? Affichez la liste complète de tous les matchs disponibles.</p>", unsafe_allow_html=True)
-        if st.button("Afficher le Catalogue Complet", width="stretch"):
+        if st.button("Afficher le Catalogue Complet", use_container_width=True):
             st.session_state.page = 'catalogue'
             st.rerun()
             
@@ -851,19 +786,18 @@ if st.session_state.page == 'accueil':
 
         if nb_matchs_jour > 0:
             st.success(f"🔥 **{nb_matchs_jour} matchs** se sont joués un {date_affichee} !")
-            if st.button("Voir les matchs du jour", width="stretch"):
+            if st.button("Voir les matchs du jour", use_container_width=True):
                 st.session_state.page = 'ephemeride'
                 st.rerun()
         else:
             st.info(f"Que s'est-il passé un {date_affichee} ?")
-            if st.button("Chercher autre date", width="stretch"):
+            if st.button("Chercher autre date", use_container_width=True):
                 st.session_state.page = 'recherche_date'
                 st.rerun()
 
-
-# ==========================================
-# 🏟️ ENCART ALERTE : LE GRAAL DU GRENIER
-# ==========================================
+    # ==========================================
+    # 🏟️ ENCART ALERTE : LE GRAAL DU GRENIER
+    # ==========================================
     st.write("---")
     
     with st.container(border=True):
@@ -878,9 +812,8 @@ if st.session_state.page == 'accueil':
         </p>
         """, unsafe_allow_html=True)
         
-        st.write("") # Espace aéré
+        st.write("") 
         
-        # Champs de saisie sur deux colonnes pour un rendu compact sur PC
         col_form1, col_form2 = st.columns(2)
         with col_form1:
             email_alerte = st.text_input("✉️ Ton Email :", placeholder="Le maillot au fond du sac...")
@@ -889,37 +822,27 @@ if st.session_state.page == 'accueil':
             
         st.write("")
         
-        # ...
-# Le bouton d'action
-if st.button("🚨 ALERTE-MOI DÈS QU'IL SORT DU GRENIER", use_container_width=True, type="primary"):
-    if email_alerte and match_alerte:
-        try:
-            # Préparation de l'e-mail
-            sujet = "🚨 ALERTE GRAAL : Nouvelle recherche sur le site"
-            corps = f"Salut l'Archiviste,\n\nUn collectionneur cherche une pépite :\n\n- E-mail du contact : {email_alerte}\n- Match recherché : {match_alerte}\n\nÀ toi de jouer !"
+        if st.button("🚨 ALERTE-MOI DÈS QU'IL SORT DU GRENIER", use_container_width=True, type="primary"):
+            if email_alerte and match_alerte:
+                try:
+                    sujet = "🚨 ALERTE GRAAL : Nouvelle recherche sur le site"
+                    corps = f"Salut l'Archiviste,\n\nUn collectionneur cherche une pépite :\n\n- E-mail du contact : {email_alerte}\n- Match recherché : {match_alerte}\n\nÀ toi de jouer !"
+                    msg = MIMEText(corps)
+                    msg['Subject'] = sujet
+                    msg['From'] = st.secrets["email_archiviste"]
+                    msg['To'] = st.secrets["email_reception"]
 
-            msg = MIMEText(corps)
-            msg['Subject'] = sujet
-            # L'e-mail est envoyé DEPUIS le Gmail du site
-            msg['From'] = st.secrets["email_archiviste"]
-            # L'e-mail est envoyé VERS votre Hotmail perso
-            msg['To'] = st.secrets["email_reception"]
+                    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as serveur:
+                        serveur.login(st.secrets["email_archiviste"], st.secrets["mdp_archiviste"])
+                        serveur.send_message(msg)
 
-            # Connexion au serveur de Google (port 465 avec SSL, généralement plus fiable sur le Cloud)
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as serveur:
-                serveur.login(st.secrets["email_archiviste"], st.secrets["mdp_archiviste"])
-                serveur.send_message(msg)
+                    st.success("✅ C'est bien noté ! Je pars fouiller les cartons. Tu seras le premier prévenu dès que je mets la main dessus !")
+                    st.balloons()
 
-            st.success("✅ C'est bien noté ! Je pars fouiller les cartons. Tu seras le premier prévenu dès que je mets la main dessus !")
-            st.balloons()
-
-        except Exception as e:
-            st.error(f"⚠️ Oups, une erreur s'est produite lors de l'envoi de l'alerte. Veuillez me contacter directement sur legrenierdufootball@hotmail.com.")
-            # st.error(f"Détail de l'erreur : {e}") # Décommentez pour afficher l'erreur technique si besoin
-
-    else:
-        st.warning("⚠️ Oups, n'oublie pas de remplir ton e-mail et le match que tu cherches pour que je puisse te recontacter !")
-# ...
+                except Exception as e:
+                    st.error(f"⚠️ Oups, une erreur s'est produite lors de l'envoi de l'alerte. Veuillez me contacter directement sur legrenierdufootball@hotmail.com.")
+            else:
+                st.warning("⚠️ Oups, n'oublie pas de remplir ton e-mail et le match que tu cherches pour que je puisse te recontacter !")
 
 
 # ==========================================
@@ -931,7 +854,7 @@ elif st.session_state.page == 'panier':
     if len(st.session_state.panier) == 0:
         st.info("Votre panier est vide pour le moment. Naviguez dans le catalogue pour ajouter des matchs !")
         if st.button("Retourner à l'accueil"):
-            st.session_state.page = 'accueil' # Correction mineure ici : go_home() n'était pas défini partout
+            go_home()
             st.rerun()
     else:
         st.markdown(f"**Vous avez sélectionné {len(st.session_state.panier)} match(s).**")
@@ -950,18 +873,13 @@ elif st.session_state.page == 'panier':
             dom_m = match.get('Domicile', '')
             ext_m = match.get('Extérieur', '')
             
-            # --- ANALYSE DES FORMATS DISPONIBLES ---
             qual_m = str(match.get('Qualité', '')).lower()
-            # On détecte s'il y a du format physique
             has_dvd = 'dvd' in qual_m or 'vob' in qual_m
-            # On détecte s'il y a du format numérique (ajoute d'autres extensions si besoin)
             has_num = any(ext in qual_m for ext in ['mp4', 'mkv', 'avi', 'ts', 'numérique', 'mpeg', 'wmv', 'divx'])
             
-            # Si la case est vide ou non reconnue, on force en numérique par défaut
             if not has_dvd and not has_num:
                 has_num = True
             
-            # --- DÉTECTION DU DÉFAUT (-1€) ---
             commentaire = str(match.get('Commentaires sur fichier', '')).strip()
             a_defaut = bool(commentaire and commentaire.lower() not in ['nan', 'none', ''])
             
@@ -971,31 +889,19 @@ elif st.session_state.page == 'panier':
                     st.markdown(f"<span style='color: #d97706; font-size: 13px;'>🩹 <i>Archive imparfaite : {commentaire}</i></span>", unsafe_allow_html=True)
             
             with col_fmt:
-                # Étiquettes de prix adaptées
                 p_dvd = 4 if a_defaut else 5
                 p_num = 2 if a_defaut else 3
-                lbl_dvd = f"💿 DVD ({p_dvd}€ au lieu de 5€)" if a_defaut else "💿 DVD (5€)"
-                lbl_num = f"💻 Numérique ({p_num}€ au lieu de 3€)" if a_defaut else "💻 Numérique (3€)"
+                lbl_dvd = f"💿 DVD ({p_dvd}€)" if a_defaut else "💿 DVD (5€)"
+                lbl_num = f"💻 Numérique ({p_num}€)" if a_defaut else "💻 Numérique (3€)"
 
-                # === LA NOUVELLE LOGIQUE D'AFFICHAGE ===
                 if has_dvd and has_num:
-                    # CAS 1 : Les deux formats sont détectés -> On offre le choix
                     idx_actuel = 0 if match.get('format_choisi') == 'DVD' else 1
-                    choix_fmt = st.selectbox(
-                        "Format :", 
-                        [lbl_dvd, lbl_num], 
-                        key=f"fmt_sel_{i}",
-                        index=idx_actuel
-                    )
+                    choix_fmt = st.selectbox("Format :", [lbl_dvd, lbl_num], key=f"fmt_sel_{i}", index=idx_actuel)
                     match['format_choisi'] = 'DVD' if 'DVD' in choix_fmt else 'Numérique'
-                    
                 elif has_dvd and not has_num:
-                    # CAS 2 : Uniquement DVD -> Texte figé
                     st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_dvd}</div>", unsafe_allow_html=True)
                     match['format_choisi'] = 'DVD'
-                    
                 else:
-                    # CAS 3 : Uniquement Numérique -> Texte figé
                     st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_num}</div>", unsafe_allow_html=True)
                     match['format_choisi'] = 'Numérique'
                     
@@ -1006,7 +912,6 @@ elif st.session_state.page == 'panier':
             
             st.divider()
             
-            # --- CALCULS POUR CE MATCH ---
             prix_base = 5 if match['format_choisi'] == 'DVD' else 3
             prix_final_match = prix_base - 1 if a_defaut else prix_base
             
@@ -1016,59 +921,42 @@ elif st.session_state.page == 'panier':
                 
             liste_prix.append(prix_final_match)
                 
-        # Exécution de la suppression si demandée
         if items_a_supprimer:
             for idx in sorted(items_a_supprimer, reverse=True):
                 st.session_state.panier.pop(idx)
             st.rerun()
             
-        # ==================================
-        # CALCUL DE LA RÉDUCTION (Matchs Gratuits)
-        # ==================================
         nb_articles = len(st.session_state.panier)
         nb_gratuits = nb_articles // 11
         reduction_gratuits = 0
         
         if nb_gratuits > 0:
-            # On trie la liste des prix FINAUX du moins cher au plus cher
             liste_prix.sort()
             reduction_gratuits = sum(liste_prix[:nb_gratuits])
             
         total_final = total_prix_base - total_remise_defauts - reduction_gratuits
         
-        # ==================================
-        # AFFICHAGE DU RÉCAPITULATIF
-        # ==================================
         st.subheader("💳 Récapitulatif")
         st.markdown(f"**Sous-total brut :** {total_prix_base} €")
         
-        # Le fameux bloc Info Bleu pour les défauts
         if total_remise_defauts > 0:
             st.info(f"🩹 **Archive Imparfaite :** Une remise a été appliquée pour compenser l'usure du temps (qualité altérée, fichier incomplet...) sur vos bandes. (-{total_remise_defauts} €)")
             
-        # Le bloc Vert pour la promo 10 = 1 offert
         if reduction_gratuits > 0:
             st.success(f"🎁 **Offre Spéciale :** La valeur de vos {nb_gratuits} match(s) offert(s) a été déduite ! (-{reduction_gratuits} €)")
             
         st.markdown(f"### **Total à payer : {total_final} €**")
         st.write("---")
         
-        st.write("---")
         st.subheader("📩 Valider ma commande")
         st.markdown("Choisissez votre méthode préférée pour m'envoyer votre sélection :")
         
-        # ==================================
-        # GÉNÉRATION DE L'E-MAIL ET DU TEXTE DE COPIE
-        # ==================================
         texte_recap = "Bonjour, je souhaite commander ces matchs vus dans Le Grenier :\n\n"
         for match in st.session_state.panier:
             fmt_r = match.get('format_choisi', 'Numérique')
-            
-            # Précision pour ton suivi perso dans le mail
             commentaire_mail = str(match.get('Commentaires sur fichier', '')).strip()
             a_defaut_mail = bool(commentaire_mail and commentaire_mail.lower() not in ['nan', 'none', ''])
             txt_defaut = " [Archive Imparfaite]" if a_defaut_mail else ""
-            
             texte_recap += f"- [{fmt_r}]{txt_defaut} {match.get('Date', '?')} | {match.get('Domicile', '')} vs {match.get('Extérieur', '')} ({match.get('Compétition', '?')})\n"
         
         texte_recap += f"\nTotal d'articles : {nb_articles}"
@@ -1079,7 +967,6 @@ elif st.session_state.page == 'panier':
         texte_recap += f"\nMontant Total : {total_final}€"
         texte_recap += "\n\nMerci de me donner les détails pour le paiement !"
 
-        # --- LES DEUX COLONNES D'ENVOI ---
         col_mail, col_copy = st.columns(2)
         
         with col_mail:
@@ -1087,7 +974,6 @@ elif st.session_state.page == 'panier':
                 st.markdown("<h4 style='text-align: center;'>📧 Option 1 : Par E-mail</h4>", unsafe_allow_html=True)
                 st.markdown("<p style='text-align: center; color: gray; font-size: 14px;'>Votre application d'e-mail va s'ouvrir automatiquement avec le récapitulatif.</p>", unsafe_allow_html=True)
                 
-                # Encodage du mail pour le bouton
                 sujet_mail = "Nouvelle commande - Le Grenier du Football"
                 lien_mailto = f"mailto:legrenierdufootball@hotmail.com?subject={urllib.parse.quote(sujet_mail)}&body={urllib.parse.quote(texte_recap)}"
                 
@@ -1103,8 +989,9 @@ elif st.session_state.page == 'panier':
         if st.button("🗑️ Vider tout le panier", type="secondary"):
             st.session_state.panier = []
             st.rerun()
+
 # ==========================================
-# PAGE : F.A.Q (FOIRE AUX QUESTIONS)
+# PAGE : F.A.Q
 # ==========================================
 elif st.session_state.page == 'faq':
     st.header("❓ Foire Aux Questions & Informations")
@@ -1112,45 +999,25 @@ elif st.session_state.page == 'faq':
     st.write("---")
 
     with st.expander("📺 D'où proviennent toutes ces archives ?"):
-        st.markdown("""
-        Ces matchs sont le fruit de plusieurs années de passion, de numérisations personnelles (anciennes cassettes VHS, enregistrements TV d'époque) et d'échanges avec d'autres collectionneurs à travers le monde. Le Grenier du Football est avant tout un véritable travail de sauvegarde du patrimoine footballistique !
-        """)
+        st.markdown("Ces matchs sont le fruit de plusieurs années de passion, de numérisations personnelles...")
 
-    with st.expander("🎞️ Quelle est la qualité vidéo des matchs ? Sont-ils en HD ?"):
-        st.markdown("""
-        L'honnêteté avant tout : la grande majorité des matchs d'avant 2005-2010 conservent le charme et le "grain" typique de leur époque. Il s'agit de diffusions standard (SD), de numérisations VHS ou de premiers DVD. Ce n'est pas de la 4K, c'est de l'Histoire pure dans son jus d'origine ! Les matchs plus récents sont, bien entendu, dans des résolutions supérieures.
-        
-        💡 **À savoir (DVD vs Numérique) :** Lorsqu'un match vous est proposé à la fois en format DVD et en format Numérique, **le format DVD offrira toujours la meilleure qualité d'image brute**, même pour les archives les plus anciennes. Le format numérique (mp4, mkv...) implique une compression vidéo pour réduire le poids du fichier, ce qui n'est pas le cas du format DVD (.VOB) qui conserve le flux vidéo intact.
-        """)
+    with st.expander("🎞️ Quelle est la qualité vidéo des matchs ?"):
+        st.markdown("L'honnêteté avant tout : la grande majorité des matchs d'avant 2005-2010 conservent le charme et le grain typique de leur époque...")
 
     with st.expander("🎙️ Un match a plusieurs diffuseurs ou langues. Comment faire le bon choix ?"):
-        st.markdown("""
-        Il est fréquent qu'un match mythique soit disponible avec plusieurs choix de diffuseurs (TF1, Canal+, RAI...) et de langues de commentaires. 
-        
-        ⚠️ **Attention : ces versions ne sont pas toujours de la même qualité !** L'une peut provenir d'un DVD irréprochable avec des commentaires étrangers, tandis que l'autre peut être une numérisation VHS avec une image plus modeste, conservée uniquement pour la nostalgie des commentaires français d'époque.
-        
-        ✉️ **Mon conseil :** Pour éviter toute méprise, n'hésitez pas à me contacter par message avant de valider votre commande. Je pourrai vous renseigner précisément sur le trio **Diffuseur - Qualité - Langue** pour chaque version !
-        """)
+        st.markdown("Il est fréquent qu'un match mythique soit disponible avec plusieurs choix de diffuseurs...")
 
     with st.expander("🤝 Comment fonctionne un échange de matchs ?"):
-        st.markdown("""
-        C'est très simple ! Si vous avez des archives qui pourraient m'intéresser (jetez un œil à la rubrique **Mes Recherches**), envoyez-moi votre liste. Nous comparons nos catalogues, nous nous mettons d'accord sur un échange équitable (1 match contre 1 match, par exemple), et nous nous transmettons les fichiers numériques via des plateformes sécurisées.
-        """)
+        st.markdown("C'est très simple ! Si vous avez des archives qui pourraient m'intéresser...")
 
     with st.expander("💳 Comment se passe le paiement pour une commande directe ? Est-ce sécurisé ?"):
-        st.markdown("""
-        Absolument. Une fois votre sélection faite via le panier, vous m'envoyez le récapitulatif. Je vous confirme rapidement la disponibilité de vos fichiers. Le règlement s'effectue ensuite de manière 100% sécurisée via **PayPal**. 
-        """)
+        st.markdown("Absolument. Une fois votre sélection faite via le panier, vous m'envoyez le récapitulatif...")
 
     with st.expander("⏳ Dans quel délai vais-je recevoir mes matchs après le paiement ?"):
-        st.markdown("""
-        Le Grenier du Football est géré par un passionné, il n'y a pas de robot d'envoi automatisé ! Une fois votre paiement validé, je prépare vos fichiers manuellement et vous envoie votre lien de téléchargement privé dans un délai très rapide, généralement **entre 24h et 48h maximum**.
-        """)
+        st.markdown("Le Grenier du Football est géré par un passionné, il n'y a pas de robot d'envoi automatisé !")
 
     with st.expander("🔗 Combien de temps mes liens de téléchargement sont-ils valables ?"):
-        st.markdown("""
-        Les transferts se font via des plateformes sécurisées (*SwissTransfer, WeTransfer, GrosFichiers...*). Ces plateformes suppriment automatiquement les fichiers au bout d'un certain temps (généralement **entre 7 et 30 jours**). Il est donc indispensable de télécharger vos matchs rapidement à réception du lien et de les sauvegarder précieusement sur votre propre disque dur !
-        """)
+        st.markdown("Les transferts se font via des plateformes sécurisées (SwissTransfer, WeTransfer, GrosFichiers...).")
         
     st.write("---")
     st.info("💡 **Vous n'avez pas trouvé votre réponse ?** N'hésitez pas à me contacter directement par e-mail ou sur Instagram !")
@@ -1174,8 +1041,7 @@ elif st.session_state.page == 'mes_recherches':
             <hr style='border-color: #e32221; margin-top: 15px; margin-bottom: 20px;'>
             <div style='color: white; line-height: 1.8; font-size: 15px;'>
                 <p><b>🔴⚫ Tifoso du Milan</b> (plus de 600 matchs dans ma collection)</p>
-                <p>Je cherche en continu de nouvelles vidéos pour étoffer ma collection : matchs complets toutes compétitions confondues (versions française ou italienne uniquement).</p>
-                <p>🎥 Si vous possédez des enregistrements du Milan, je suis preneur.</p>
+                <p>Je cherche en continu de nouvelles vidéos pour étoffer ma collection : matchs complets toutes compétitions confondues.</p>
                 <p>📩 Contactez-moi en DM pour proposer un échange ou une vente.</p>
             </div>
         </div>
@@ -1190,32 +1056,27 @@ elif st.session_state.page == 'mes_recherches':
             <hr style='border-color: #1a5fb4; margin-top: 15px; margin-bottom: 20px;'>
             <div style='color: white; line-height: 1.8; font-size: 15px;'>
                 <p><b>✨ Projet France 98 :</b> construire l’archive idéale.</p>
-                <p>Mon but : je cherche à réunir les 64 matchs du tournoi en meilleure qualité possible, avec toutes les versions TV françaises (TF1, France TV, Canal+, Eurosport...). Il m'en manque encore !!!</p>
-                <p>🎞️ Matchs complets, résumés, magazines : tout m’intéresse.</p>
-                <p>🗂️ Je recherche aussi les avant/après-match et émissions spéciales.</p>
+                <p>Mon but : je cherche à réunir les 64 matchs du tournoi en meilleure qualité possible.</p>
                 <p>📩 Contactez-moi en DM pour proposer un échange ou une vente.</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
 # ==========================================
-# PAGE : ARCHIVES DÉPOUSSIÉRÉES (Anciennement Dernières Pépites)
+# PAGE : ARCHIVES DÉPOUSSIÉRÉES
 # ==========================================
 elif st.session_state.page == 'pepites':
     st.header("✨ Les Archives Dépoussiérées")
     st.markdown("<p style='color: gray; font-size:16px;'>Voici les 200 derniers matchs fraîchement exhumés des cartons et ajoutés au catalogue !</p>", unsafe_allow_html=True)
     st.write("---")
     
-    # --- TRI INFAILLIBLE PAR ID DE MATCH ---
-    # On trie simplement par le numéro d'ID (Match) du plus grand (récent) au plus petit (ancien)
     if 'Match' in df.columns:
         df_pepites = df.sort_values(by='Match', ascending=False).head(200)
     else:
-        # Sécurité au cas où la colonne 'Match' serait renommée un jour
         df_pepites = df.tail(200).iloc[::-1]
         
-    # On affiche les résultats
     afficher_resultats(df_pepites)
+
 # ==========================================
 # PAGE : PROGRESSION DE LA COLLECTION
 # ==========================================
@@ -1269,23 +1130,9 @@ elif st.session_state.page == 'progression':
 elif st.session_state.page == 'catalogue':
     st.header("📚 Le Catalogue Complet")
     
-    # --- PRÉPARATION DU TRI ---
     df_tri = df.copy()
-    
-    # On convertit temporairement la colonne Date en format date Python pour un tri réel
-    # dayfirst=True est crucial car tes dates sont au format FR (JJ/MM/AAAA)
     df_tri['Date_Sort'] = pd.to_datetime(df_tri['Date'], dayfirst=True, errors='coerce')
-    
-    # --- LE TRI MULTI-CRITÈRES ---
-    # 1. Saison (du plus récent au plus ancien)
-    # 2. Compétition (ordre alphabétique)
-    # 3. Date_Sort (chronologique au sein de la compétition)
-    df_tri = df_tri.sort_values(
-        by=['Saison', 'Compétition', 'Date_Sort'], 
-        ascending=[True, True, True]
-    )
-    
-    # On supprime la colonne temporaire avant l'affichage
+    df_tri = df_tri.sort_values(by=['Saison', 'Compétition', 'Date_Sort'], ascending=[True, True, True])
     df_tri = df_tri.drop(columns=['Date_Sort'])
     
     afficher_resultats(df_tri)
@@ -1360,7 +1207,7 @@ elif st.session_state.page == 'recherche_avancee':
         
     col3, col4, col5 = st.columns(3)
     with col3:
-        f_phases = st.multiselect("⏱️ Phase (ex: Finale, 1/8) :", phases) if phases else []
+        f_phases = st.multiselect("⏱️ Phase :", phases) if phases else []
     with col4:
         f_stades = st.multiselect("🏟️ Stade :", stades) if stades else []
     with col5:
@@ -1381,55 +1228,43 @@ elif st.session_state.page == 'statistiques':
     st.markdown("<p style='color: gray; font-size:16px;'>Plongez dans les archives du Grenier à travers ces infographies.</p>", unsafe_allow_html=True)
     st.write("---")
 
-    # --- LIGNE 1 : ÉVOLUTION ET COMPÉTITIONS ---
     c1, c2 = st.columns(2)
 
     with c1:
         st.markdown("### ⏳ Les Époques Traversées")
         st.caption("L'évolution chronologique du catalogue, saison par saison.")
-        # Compte le nombre de matchs par saison (trié chronologiquement)
         df_saisons = df['Saison'].dropna().value_counts().reset_index()
         df_saisons.columns = ['Saison', 'Nombre']
         df_saisons = df_saisons.sort_values('Saison')
         
-        fig_saisons = px.line(df_saisons, x='Saison', y='Nombre', markers=True, 
-                              color_discrete_sequence=['#8b5a2b']) # Marron vintage
+        fig_saisons = px.line(df_saisons, x='Saison', y='Nombre', markers=True, color_discrete_sequence=['#8b5a2b'])
         fig_saisons.update_layout(xaxis_title="", yaxis_title="Nombre de matchs")
         st.plotly_chart(fig_saisons, use_container_width=True)
 
     with c2:
         st.markdown("### 🌍 Le Profil des Compétitions")
         st.caption("La répartition entre clubs, nations et tournois.")
-        # Répartition par Type de Compétition (Coupe du Monde, Amical, etc.)
         if 'Type Compétition' in df.columns:
             df_type = df['Type Compétition'].dropna().value_counts().reset_index()
             df_type.columns = ['Type', 'Nombre']
             
-            fig_type = px.pie(df_type, values='Nombre', names='Type', hole=0.4,
-                              color_discrete_sequence=px.colors.sequential.Oranges)
+            fig_type = px.pie(df_type, values='Nombre', names='Type', hole=0.4, color_discrete_sequence=px.colors.sequential.Oranges)
             fig_type.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_type, use_container_width=True)
 
     st.write("---")
 
-# --- LIGNE 2 : LES ÉQUIPES ET LES AFFICHES ---
     c3, c4 = st.columns(2)
 
     with c3:
         st.markdown("### 🛡️ Les Locataires du Grenier")
         st.caption("Les 10 équipes les plus archivées.")
-        # Combine Domicile et Extérieur
         equipes = pd.concat([df['Domicile'], df['Extérieur']])
         equipes = equipes[~equipes.isin(["Multiplex / Divers", "-"])]
         df_equipes = equipes.value_counts().head(10).reset_index()
         df_equipes.columns = ['Équipe', 'Apparitions']
         
-        # AJOUT DU TEXTE SUR LE GRAPHIQUE
-        fig_equipes = px.bar(df_equipes, x='Apparitions', y='Équipe', orientation='h',
-                             color='Apparitions', color_continuous_scale='Oranges',
-                             text='Apparitions') # <--- C'est ici qu'on dit quoi afficher
-        
-        # On place le texte à l'extérieur de la barre et en gras
+        fig_equipes = px.bar(df_equipes, x='Apparitions', y='Équipe', orientation='h', color='Apparitions', color_continuous_scale='Oranges', text='Apparitions')
         fig_equipes.update_traces(textposition='outside', textfont=dict(weight='bold'))
         fig_equipes.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
         st.plotly_chart(fig_equipes, use_container_width=True)
@@ -1437,7 +1272,6 @@ elif st.session_state.page == 'statistiques':
     with c4:
         st.markdown("### ⚔️ Les Classiques du Grenier")
         st.caption("Les 10 affiches les plus répertoriées.")
-        # Astuce : On trie alphabétiquement "Dom" et "Ext"
         def generer_affiche(row):
             dom = str(row.get('Domicile', '')).strip()
             ext = str(row.get('Extérieur', '')).strip()
@@ -1450,58 +1284,46 @@ elif st.session_state.page == 'statistiques':
         df_affiches = df['Affiche'].dropna().value_counts().head(10).reset_index()
         df_affiches.columns = ['Affiche', 'Rencontres']
         
-        # AJOUT DU TEXTE SUR LE GRAPHIQUE
-        fig_affiches = px.bar(df_affiches, x='Rencontres', y='Affiche', orientation='h',
-                              color='Rencontres', color_continuous_scale='Reds',
-                              text='Rencontres') # <--- C'est ici qu'on dit quoi afficher
-        
-        # On place le texte à l'extérieur de la barre et en gras
+        fig_affiches = px.bar(df_affiches, x='Rencontres', y='Affiche', orientation='h', color='Rencontres', color_continuous_scale='Reds', text='Rencontres')
         fig_affiches.update_traces(textposition='outside', textfont=dict(weight='bold'))
         fig_affiches.update_layout(yaxis={'categoryorder':'total ascending'}, yaxis_title="")
         st.plotly_chart(fig_affiches, use_container_width=True)
 
     st.write("---")
 
-    # --- LIGNE 3 : DIFFUSEURS ET QUALITÉ ---
     c5, c6 = st.columns(2)
 
     with c5:
         st.markdown("### 📻 L'Audimat d'Époque")
         st.caption("Les chaînes de télévision d'origine les plus représentées.")
-        # Les 10 diffuseurs les plus présents
         df_diff = df['Diffuseur'].dropna().value_counts().head(10).reset_index()
         df_diff.columns = ['Diffuseur', 'Matchs']
         
-        fig_diff = px.pie(df_diff, values='Matchs', names='Diffuseur',
-                          color_discrete_sequence=px.colors.sequential.RdBu)
+        fig_diff = px.pie(df_diff, values='Matchs', names='Diffuseur', color_discrete_sequence=px.colors.sequential.RdBu)
         fig_diff.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(fig_diff, use_container_width=True)
 
     with c6:
         st.markdown("### 📼 L'Inventaire Technique")
         st.caption("La répartition des supports et formats de conservation.")
-        # La répartition des qualités techniques
         df_qual = df['Qualité'].dropna().value_counts().head(8).reset_index()
         df_qual.columns = ['Format', 'Quantité']
         
-        fig_qual = px.bar(df_qual, x='Format', y='Quantité', text='Quantité',
-                          color='Quantité', color_continuous_scale='gray')
+        fig_qual = px.bar(df_qual, x='Format', y='Quantité', text='Quantité', color='Quantité', color_continuous_scale='gray')
         fig_qual.update_layout(xaxis_title="", yaxis_title="")
         st.plotly_chart(fig_qual, use_container_width=True)
+
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
 # ==========================================
 elif st.session_state.page == 'arborescence':
     
-    # --- 🎨 AJOUT DU CSS DYNAMIQUE POUR LES SOUS-MENUS ---
     if len(st.session_state.chemin) > 0:
         cat_principale = st.session_state.chemin[0]
         
-        # Couleurs par défaut
         couleur_fond = "#333333" 
         couleur_survol = "#222222"
         
-        # On repère la catégorie et on charge la bonne couleur
         if cat_principale == "Nations":
             couleur_fond, couleur_survol = "#b8860b", "#8b6508"
         elif cat_principale == "Coupes d'Europe":
@@ -1511,23 +1333,14 @@ elif st.session_state.page == 'arborescence':
         elif cat_principale == "Amicaux Internationaux":
             couleur_fond, couleur_survol = "#5b7c6c", "#435b4f"
 
-        # On applique le style à tous les boutons du sous-menu
         st.markdown(f"""
         <style>
-        /* Cible les boutons situés dans la grille (les sous-menus) */
         div[data-testid="column"] div.stButton > button {{
-            background-color: {couleur_fond} !important;
-            border-color: {couleur_fond} !important;
-            transition: all 0.2s ease;
+            background-color: {couleur_fond} !important; border-color: {couleur_fond} !important; transition: all 0.2s ease;
         }}
-        div[data-testid="column"] div.stButton > button p {{
-            color: #ffffff !important;
-            font-weight: 500;
-        }}
+        div[data-testid="column"] div.stButton > button p {{ color: #ffffff !important; font-weight: 500; }}
         div[data-testid="column"] div.stButton > button:hover {{
-            background-color: {couleur_survol} !important;
-            border-color: {couleur_survol} !important;
-            transform: scale(1.02); /* Petit effet de zoom élégant au survol */
+            background-color: {couleur_survol} !important; border-color: {couleur_survol} !important; transform: scale(1.02);
         }}
         </style>
         """, unsafe_allow_html=True)
@@ -1553,7 +1366,6 @@ elif st.session_state.page == 'arborescence':
     
     if isinstance(noeud_actuel, dict):
         cles = list(noeud_actuel.keys())
-        # Affichage en "vraies lignes" pour que l'ordre reste parfait sur téléphone
         for i in range(0, len(cles), 3):
             cols = st.columns(3)
             for j in range(3):
@@ -1565,7 +1377,6 @@ elif st.session_state.page == 'arborescence':
                             st.rerun()
 
     elif isinstance(noeud_actuel, list):
-        # Affichage en "vraies lignes" pour que l'ordre reste parfait sur téléphone
         for i in range(0, len(noeud_actuel), 3):
             cols = st.columns(3)
             for j in range(3):
@@ -1587,15 +1398,12 @@ elif st.session_state.page == 'arborescence':
                 editions = sorted(df[mask]['Compétition'].dropna().unique(), reverse=True)
                 if editions:
                     st.subheader("🗓️ Choisissez l'édition :")
-                    
-                    # --- NOUVELLE LOGIQUE POUR MOBILE (Création de rangées de 4) ---
                     for i in range(0, len(editions), 4):
-                        cols = st.columns(4) # Crée une nouvelle ligne de 4 colonnes
+                        cols = st.columns(4)
                         for j in range(4):
                             if i + j < len(editions):
                                 ed = editions[i + j]
                                 with cols[j]:
-                                    # use_container_width=True remplace width="stretch" (plus moderne)
                                     if st.button(str(ed), use_container_width=True, key=f"btn_ed_{i+j}"):
                                         st.session_state.edition_choisie = ed
                                         st.rerun()
@@ -1605,7 +1413,6 @@ elif st.session_state.page == 'arborescence':
                 c1, c2 = st.columns([4, 1])
                 with c1: st.header(f"📍 {st.session_state.edition_choisie}")
                 with c2:
-                    # --- NOUVEAU : RECHERCHE DYNAMIQUE DU LOGO DE LA COMPÉTITION ---
                     cle_logo = nettoyer_nom_equipe(st.session_state.edition_choisie)
                     chemin_logo = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_logo)
                     if chemin_logo and os.path.exists(chemin_logo):
@@ -1617,7 +1424,6 @@ elif st.session_state.page == 'arborescence':
             c1, c2 = st.columns([4, 1])
             with c1: st.header(f"🏆 {noeud_actuel}")
             with c2:
-                # --- NOUVEAU : RECHERCHE DYNAMIQUE DU LOGO DE LA COMPÉTITION ---
                 cle_logo = nettoyer_nom_equipe(noeud_actuel)
                 chemin_logo = DICTIONNAIRE_LOGOS_EQUIPES.get(cle_logo)
                 if chemin_logo and os.path.exists(chemin_logo):
@@ -1641,7 +1447,6 @@ with foot_b:
     st.markdown("**Le Bureau de l'Archiviste**")
     st.markdown("✉️ [legrenierdufootball@hotmail.com](mailto:legrenierdufootball@hotmail.com)")
     
-    # Intégration des logos Instagram et Facebook
     st.markdown("""
         <div style="display: flex; gap: 15px; margin-top: 10px; align-items: center;">
             <a href="https://www.instagram.com/legrenierdufootball/" target="_blank">
@@ -1652,64 +1457,3 @@ with foot_b:
             </a>
         </div>
     """, unsafe_allow_html=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
