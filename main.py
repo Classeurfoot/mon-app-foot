@@ -370,7 +370,7 @@ def afficher_resultats(df_resultats):
                     has_diff = pd.notna(diffuseur) and str(diffuseur).strip() != ""
                     has_qual = pd.notna(qualite) and str(qualite).strip() != ""
                     
-                    # --- NOUVEAUTÉ : TAGS VISUELS ---
+                    # --- TAGS VISUELS ---
                     if has_diff or has_qual:
                         html_footer = "<div style='text-align: center; margin-top:12px; border-top: 0.5px solid #444; padding-top:8px;'>"
                         if has_diff:
@@ -529,14 +529,6 @@ with st.sidebar:
         st.session_state.page = 'progression'
         st.rerun()
         
-    # --- NOUVEAUTÉ : BOUTON HASARD ---
-    st.divider()
-    st.markdown("### 🎲 Découverte")
-    if st.button("📼 Cassette au hasard", use_container_width=True):
-        st.session_state.page = 'hasard'
-        st.session_state.df_hasard = df.sample(1) 
-        st.rerun()
-
     st.divider()
     st.markdown("### 🤝 Échanges & Requêtes")
     if st.button("🔎 Mes Recherches", use_container_width=True):
@@ -1156,7 +1148,7 @@ elif st.session_state.page == 'face_a_face':
     df_face = df[((df['Domicile'] == eq1) & (df['Extérieur'] == eq2)) | ((df['Domicile'] == eq2) & (df['Extérieur'] == eq1))]
     afficher_resultats(df_face)
 
-# --- NOUVEAUTÉ : RECHERCHE AVANCÉE AVEC FILTRE QUALITÉ ---
+# --- RECHERCHE AVANCÉE AVEC FILTRE QUALITÉ ---
 elif st.session_state.page == 'recherche_avancee':
     st.header("🕵️ Recherche Avancée")
     
@@ -1177,7 +1169,6 @@ elif st.session_state.page == 'recherche_avancee':
     with col2:
         f_comps = st.multiselect("🏆 Compétitions :", competitions, default=def_comp)
         
-    # --- ON PASSE À 4 COLONNES POUR INTÉGRER LA QUALITÉ ---
     col3, col4, col5, col6 = st.columns(4)
     with col3:
         f_phases = st.multiselect("⏱️ Phase :", phases) if phases else []
@@ -1196,7 +1187,6 @@ elif st.session_state.page == 'recherche_avancee':
     if f_stades: df_filtre = df_filtre[df_filtre['Stade'].isin(f_stades)]
     if f_saisons: df_filtre = df_filtre[df_filtre['Saison'].isin(f_saisons)]
     
-    # --- FILTRE DE QUALITÉ ---
     if choix_qualite == "DVD/VOB":
         df_filtre = df_filtre[df_filtre['Qualité'].str.contains('DVD|VOB', case=False, na=False)]
     elif choix_qualite == "Numérique (MP4, AVI...)":
@@ -1304,21 +1294,6 @@ elif st.session_state.page == 'statistiques':
                           color='Quantité', color_continuous_scale='gray')
         fig_qual.update_layout(xaxis_title="", yaxis_title="")
         st.plotly_chart(fig_qual, use_container_width=True)
-
-# --- NOUVEAUTÉ : PAGE HASARD ---
-elif st.session_state.page == 'hasard':
-    st.header("🎲 La Cassette au Hasard")
-    st.markdown("<p style='color: gray; font-size:16px;'>On a plongé la main au fond d'un carton, et on a ressorti ça pour vous...</p>", unsafe_allow_html=True)
-    st.write("---")
-    
-    if st.button("🔄 Piocher une autre cassette", type="primary"):
-        st.session_state.df_hasard = df.sample(1)
-        st.rerun()
-        
-    st.write("") 
-    
-    if 'df_hasard' in st.session_state:
-        afficher_resultats(st.session_state.df_hasard)
 
 # ==========================================
 # PAGE ARBORESCENCE (NAVIGATION DYNAMIQUE)
