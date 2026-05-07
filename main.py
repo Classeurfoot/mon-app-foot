@@ -10,8 +10,8 @@ import plotly.express as px
 import smtplib
 from email.mime.text import MIMEText
 
-# 1. Configuration de la page
-st.set_page_config(page_title="Le Grenier du Football", layout="wide")
+# 1. Configuration de la page (Optimisée SEO)
+st.set_page_config(page_title="Le Grenier du Football | Archives & Matchs de Foot Rétro en Vidéo", layout="wide")
 
 # --- LECTURE DU LOGO LGF ---
 @st.cache_data
@@ -590,16 +590,17 @@ if st.session_state.page == 'accueil':
     else:
         logo_html = "⚽ "
 
+    # --- TEXTE OPTIMISÉ SEO ---
     st.markdown(f"""
         <div style='text-align: center; margin-bottom: 10px;'>
             <h1 style='margin-bottom: 0px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
                 {logo_html}
                 <span>Le Grenier du Football</span>
             </h1>
-            <div style='max-width: 850px; margin: 0 auto; line-height: 1.5; font-size: 16px; color: #fafafa;'>
-                Découvrez un catalogue interactif de près de <b>5000 matchs de foot rétro</b> en format numérique.<br>
-                Retrouvez les émotions de la <i>Coupe du Monde</i>, de la <i>Ligue des Champions</i> et des championnats historiques.<br>
-                <b>Parcourez le classeur, commandez vos matchs vintage préférés ou proposez des échanges entre collectionneurs.</b>
+            <div style='max-width: 850px; margin: 0 auto; line-height: 1.6; font-size: 16px; color: #fafafa; margin-top: 15px;'>
+                Découvrez la plus grande <b>archive francophone de matchs de football rétro</b>. Explorez un catalogue interactif de près de <b>5000 matchs classiques</b>, numérisés à partir de véritables <b>cassettes VHS et DVD</b>.<br><br>
+                Revivez en vidéo les rencontres historiques de la <i>Coupe du Monde</i>, de la <i>Ligue des Champions</i> et des grands championnats européens. De l'Équipe de France aux clubs de légende, l'Histoire du foot est ici.<br><br>
+                <b>Téléchargez vos matchs vintage préférés, complétez votre collection, ou proposez vos propres vidéos pour un échange entre passionnés.</b>
             </div>
         </div>
     """, unsafe_allow_html=True)
