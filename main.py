@@ -598,7 +598,7 @@ if st.session_state.page == 'accueil':
                 <span>Le Grenier du Football</span>
             </h1>
             <div style='max-width: 850px; margin: 0 auto; line-height: 1.6; font-size: 16px; color: #fafafa; margin-top: 15px;'>
-                Découvrez la plus grande <b>archive francophone de matchs de football rétro</b>. Explorez un catalogue interactif de près de <b>5000 matchs classiques</b>, numérisés à partir de véritables <b>cassettes VHS et DVD</b>.<br><br>
+                Découvrez un grand choix d' <b>archives de matchs de football rétro</b>. Explorez un catalogue interactif de près de <b>5000 matchs classiques</b>, numérisés à partir de véritables <b>cassettes VHS et DVD</b>.<br><br>
                 Revivez en vidéo les rencontres historiques de la <i>Coupe du Monde</i>, de la <i>Ligue des Champions</i> et des grands championnats européens. De l'Équipe de France aux clubs de légende, l'Histoire du foot est ici.<br><br>
                 <b>Téléchargez vos matchs vintage préférés, complétez votre collection, ou proposez vos propres vidéos pour un échange entre passionnés.</b>
             </div>
