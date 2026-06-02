@@ -448,6 +448,8 @@ with st.sidebar:
     st.divider()
                       
     nb_articles = len(st.session_state.panier)
+    
+    # 1. Affichage du bouton Panier
     if nb_articles > 0:
         if st.button(f"🛒 Mon Panier ({nb_articles})", use_container_width=True, type="primary"):
             st.session_state.page = 'panier'
@@ -456,6 +458,29 @@ with st.sidebar:
         if st.button("🛒 Mon Panier (0)", use_container_width=True):
             st.session_state.page = 'panier'
             st.rerun()
+            
+    # 2. JAUGE DE PROGRESSION (Cadeau)
+    reste = nb_articles % 11
+    
+    if nb_articles == 0:
+        msg_jauge = "🎁 1 match offert tous les 10 achetés !"
+        val_jauge = 0.0
+    elif reste == 0:
+        nb_gratuits = nb_articles // 11
+        pluriel = "s" if nb_gratuits > 1 else ""
+        msg_jauge = f"🎉 {nb_gratuits} match{pluriel} offert{pluriel} ! (Encore 11 pour le prochain)"
+        val_jauge = 1.0 # Jauge pleine à 100%
+    elif reste == 10:
+        msg_jauge = "🚨 Plus qu'un match pour débloquer votre cadeau !"
+        val_jauge = reste / 11.0
+    else:
+        manquant = 11 - reste
+        msg_jauge = f"🔥 Plus que {manquant} matchs pour en avoir 1 offert !"
+        val_jauge = reste / 11.0
+
+    # Affichage du texte dynamique et de la barre
+    st.markdown(f"<p style='text-align: center; font-size: 13px; color: #d97706; margin-bottom: 5px; font-weight: 600;'>{msg_jauge}</p>", unsafe_allow_html=True)
+    st.progress(val_jauge)
             
     st.divider()
     st.markdown("""
