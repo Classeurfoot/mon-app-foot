@@ -1110,21 +1110,42 @@ elif st.session_state.page == 'progression':
 # ==========================================
 # PAGE : CATALOGUE COMPLET
 # ==========================================
-elif st.session_state.page == 'catalogue':
-    st.header("📚 Le Catalogue Complet")
+if st.session_state.page == 'catalogue':
+    st.header("📚 Catalogue Complet")
     
-    df_tri = df.copy()
+    # On travaille sur tout le catalogue
+    df_catalogue = df.copy()
     
-    df_tri['Date_Sort'] = pd.to_datetime(df_tri['Date'], dayfirst=True, errors='coerce')
+    # 🔍 ZONE DE FILTRES (Identique à celle utilisée dans les compétitions)
+    st.write("---")
+    col_saison, col_equipe = st.columns(2)
     
-    df_tri = df_tri.sort_values(
-        by=['Saison', 'Compétition', 'Date_Sort'], 
-        ascending=[True, True, True]
-    )
+    # Extraction dynamique des saisons
+    col_saison_nom = 'Saison' if 'Saison' in df_catalogue.columns else 'Année'
+    liste_saisons = ["Toutes les saisons"] + sorted(df_catalogue[col_saison_nom].dropna().unique().astype(str).tolist(), reverse=True)
     
-    df_tri = df_tri.drop(columns=['Date_Sort'])
+    with col_saison:
+        saison_choisie = st.selectbox("📅 Filtrer par Saison :", liste_saisons)
+        
+    # Extraction dynamique des équipes
+    equipes = set(df_catalogue['Domicile'].dropna().unique()).union(set(df_catalogue['Extérieur'].dropna().unique()))
+    liste_equipes = ["Toutes les équipes"] + sorted(list(equipes))
     
-    afficher_resultats(df_tri)
+    with col_equipe:
+        equipe_choisie = st.selectbox("⚽ Filtrer par Équipe :", liste_equipes)
+    
+    # Application des filtres
+    if saison_choisie != "Toutes les saisons":
+        df_catalogue = df_catalogue[df_catalogue[col_saison_nom].astype(str) == saison_choisie]
+        
+    if equipe_choisie != "Toutes les équipes":
+        df_catalogue = df_catalogue[(df_catalogue['Domicile'] == equipe_choisie) | (df_catalogue['Extérieur'] == equipe_choisie)]
+    
+    st.markdown(f"**🎯 {len(df_catalogue)} match(s) trouvé(s)**")
+    st.write("---")
+    
+    # Affichage des résultats filtrés
+    afficher_resultats(df_catalogue)
 
 elif st.session_state.page == 'ephemeride':
     aujourdhui = datetime.now()
