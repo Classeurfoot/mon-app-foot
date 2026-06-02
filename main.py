@@ -1445,8 +1445,53 @@ elif st.session_state.page == 'arborescence':
                 if chemin_logo and os.path.exists(chemin_logo):
                     st.image(chemin_logo, width=100)
                     
+            # 1. On filtre d'abord par la compétition sélectionnée (ex: Champions League)
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
-            df_final = df[mask]
+            df_final = df[mask].copy()
+
+            # --- 🔍 ZONE DE FILTRES INTELLIGENTS ---
+            st.write("---")
+            
+            # Création de deux colonnes pour aligner les filtres proprement
+            col_saison, col_equipe = st.columns(2)
+            
+            # A. Extraction des Saisons (s'adapte si ta colonne s'appelle 'Saison' ou 'Année')
+            col_saison_nom = 'Saison' if 'Saison' in df_final.columns else ('Année' if 'Année' in df_final.columns else None)
+            
+            if col_saison_nom:
+                liste_saisons = ["Toutes les saisons"] + sorted(df_final[col_saison_nom].dropna().unique().tolist(), reverse=True)
+            else:
+                # Si aucune colonne de saison n'existe, on extrait l'année depuis la colonne Date
+                try:
+                    df_final['Annee_Extrait'] = df_final['Date'].astype(str).str.extract(r'(\d{4})')
+                    liste_saisons = ["Toutes les saisons"] + sorted(df_final['Annee_Extrait'].dropna().unique().tolist(), reverse=True)
+                    col_saison_nom = 'Annee_Extrait'
+                except:
+                    liste_saisons = ["Toutes les saisons"]
+
+            with col_saison:
+                saison_choisie = st.selectbox("📅 Filtrer par Saison :", liste_saisons, label_visibility="collapsed")
+            
+            # B. Extraction de toutes les Équipes uniques (Domicile + Extérieur) de cette compétition
+            equipes_presentes = set(df_final['Domicile'].dropna().unique()).union(set(df_final['Extérieur'].dropna().unique()))
+            liste_equipes = ["Toutes les équipes"] + sorted(list(equipes_presentes))
+            
+            with col_equipe:
+                equipe_choisie = st.selectbox("⚽ Filtrer par Équipe :", liste_equipes, label_visibility="collapsed")
+            
+            # C. Application des filtres sélectionnés sur le catalogue
+            if saison_choisie != "Toutes les saisons" and col_saison_nom:
+                df_final = df_final[df_final[col_saison_nom] == saison_choisie]
+                
+            if equipe_choisie != "Toutes les équipes":
+                df_final = df_final[(df_final['Domicile'] == equipe_choisie) | (df_final['Extérieur'] == equipe_choisie)]
+            
+            # Petit indicateur ludique du nombre de résultats restants
+            st.markdown(f"<p style='color: #d97706; font-weight: bold; margin-top: 5px;'>🎯 {len(df_final)} match(s) disponible(s) avec ces filtres</p>", unsafe_allow_html=True)
+            st.write("---")
+            # ----------------------------------------
+
+            # 2. Affichage final des résultats filtrés
             afficher_resultats(df_final)
 
 # ==========================================
