@@ -216,14 +216,11 @@ MENU_ARBO = {
 @st.cache_data
 def load_data():
     try:
-        # 1. Lecture avec le bon séparateur (;) et formatage du score en texte
         df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
         df.columns = df.columns.str.strip()
 
-        # 2. CHASSE AUX FANTÔMES : On supprime les lignes 100% vides d'Excel
         df = df.dropna(subset=['Saison', 'Compétition'], how='all')
         
-        # --- SAUVETAGE DES MULTIPLEX ---
         df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
         df['Extérieur'] = df['Extérieur'].fillna("-")
         df['Score'] = df['Score'].fillna("-")
@@ -252,7 +249,26 @@ def afficher_resultats(df_resultats):
         st.warning("Aucun match trouvé.")
         return
         
-    st.metric("Matchs trouvés", len(df_resultats))
+    # --- NOUVEAUTÉ : BOUTON TOUT AJOUTER ---
+    col_metrique, col_ajout_tout = st.columns([1, 1])
+    
+    with col_metrique:
+        st.metric("Matchs trouvés", len(df_resultats))
+        
+    with col_ajout_tout:
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button(f"🛒 Ajouter CES {len(df_resultats)} MATCHS au panier", use_container_width=True, type="primary"):
+            for _, row in df_resultats.iterrows():
+                match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
+                match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
+                in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
+                
+                if not in_cart:
+                    q = str(match_dict.get('Qualité', '')).lower()
+                    match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
+                    st.session_state.panier.append(match_dict)
+            st.rerun()
+    # ---------------------------------------
     
     mode = st.radio("Mode d'affichage :", ["📊 Tableau classique", "🃏 Fiches détaillées"], horizontal=True)
     
@@ -370,7 +386,6 @@ def afficher_resultats(df_resultats):
                     has_diff = pd.notna(diffuseur) and str(diffuseur).strip() != ""
                     has_qual = pd.notna(qualite) and str(qualite).strip() != ""
                     
-                    # --- TAGS VISUELS ---
                     if has_diff or has_qual:
                         html_footer = "<div style='text-align: center; margin-top:12px; border-top: 0.5px solid #444; padding-top:8px;'>"
                         if has_diff:
@@ -449,7 +464,6 @@ with st.sidebar:
                       
     nb_articles = len(st.session_state.panier)
     
-    # 1. Affichage du bouton Panier
     if nb_articles > 0:
         if st.button(f"🛒 Mon Panier ({nb_articles})", use_container_width=True, type="primary"):
             st.session_state.page = 'panier'
@@ -459,7 +473,6 @@ with st.sidebar:
             st.session_state.page = 'panier'
             st.rerun()
             
-    # 2. JAUGE DE PROGRESSION (Cadeau)
     reste = nb_articles % 11
     
     if nb_articles == 0:
@@ -469,7 +482,7 @@ with st.sidebar:
         nb_gratuits = nb_articles // 11
         pluriel = "s" if nb_gratuits > 1 else ""
         msg_jauge = f"🎉 {nb_gratuits} match{pluriel} offert{pluriel} ! (Encore 11 pour le prochain)"
-        val_jauge = 1.0 # Jauge pleine à 100%
+        val_jauge = 1.0
     elif reste == 10:
         msg_jauge = "🚨 Plus qu'un match pour débloquer votre cadeau !"
         val_jauge = reste / 11.0
@@ -478,7 +491,6 @@ with st.sidebar:
         msg_jauge = f"🔥 Plus que {manquant} matchs pour en avoir 1 offert !"
         val_jauge = reste / 11.0
 
-    # Affichage du texte dynamique et de la barre
     st.markdown(f"<p style='text-align: center; font-size: 13px; color: #d97706; margin-bottom: 5px; font-weight: 600;'>{msg_jauge}</p>", unsafe_allow_html=True)
     st.progress(val_jauge)
             
@@ -615,7 +627,6 @@ if st.session_state.page == 'accueil':
     else:
         logo_html = "⚽ "
 
-    # --- TEXTE OPTIMISÉ SEO ---
     st.markdown(f"""
         <div style='text-align: center; margin-bottom: 10px;'>
             <h1 style='margin-bottom: 0px; display: flex; align-items: center; justify-content: center; line-height: 1;'>
@@ -1113,28 +1124,23 @@ elif st.session_state.page == 'progression':
 if st.session_state.page == 'catalogue':
     st.header("📚 Catalogue Complet")
     
-    # On travaille sur tout le catalogue
     df_catalogue = df.copy()
     
-    # 🔍 ZONE DE FILTRES (Identique à celle utilisée dans les compétitions)
     st.write("---")
     col_saison, col_equipe = st.columns(2)
     
-    # Extraction dynamique des saisons
     col_saison_nom = 'Saison' if 'Saison' in df_catalogue.columns else 'Année'
     liste_saisons = ["Toutes les saisons"] + sorted(df_catalogue[col_saison_nom].dropna().unique().astype(str).tolist(), reverse=True)
     
     with col_saison:
         saison_choisie = st.selectbox("📅 Filtrer par Saison :", liste_saisons)
         
-    # Extraction dynamique des équipes
     equipes = set(df_catalogue['Domicile'].dropna().unique()).union(set(df_catalogue['Extérieur'].dropna().unique()))
     liste_equipes = ["Toutes les équipes"] + sorted(list(equipes))
     
     with col_equipe:
         equipe_choisie = st.selectbox("⚽ Filtrer par Équipe :", liste_equipes)
     
-    # Application des filtres
     if saison_choisie != "Toutes les saisons":
         df_catalogue = df_catalogue[df_catalogue[col_saison_nom].astype(str) == saison_choisie]
         
@@ -1144,7 +1150,6 @@ if st.session_state.page == 'catalogue':
     st.markdown(f"**🎯 {len(df_catalogue)} match(s) trouvé(s)**")
     st.write("---")
     
-    # Affichage des résultats filtrés
     afficher_resultats(df_catalogue)
 
 elif st.session_state.page == 'ephemeride':
@@ -1466,23 +1471,18 @@ elif st.session_state.page == 'arborescence':
                 if chemin_logo and os.path.exists(chemin_logo):
                     st.image(chemin_logo, width=100)
                     
-            # 1. On filtre d'abord par la compétition sélectionnée (ex: Champions League)
             mask = df['Compétition'].str.contains(noeud_actuel, na=False, case=False)
             df_final = df[mask].copy()
 
-            # --- 🔍 ZONE DE FILTRES INTELLIGENTS ---
             st.write("---")
             
-            # Création de deux colonnes pour aligner les filtres proprement
             col_saison, col_equipe = st.columns(2)
             
-            # A. Extraction des Saisons (s'adapte si ta colonne s'appelle 'Saison' ou 'Année')
             col_saison_nom = 'Saison' if 'Saison' in df_final.columns else ('Année' if 'Année' in df_final.columns else None)
             
             if col_saison_nom:
                 liste_saisons = ["Toutes les saisons"] + sorted(df_final[col_saison_nom].dropna().unique().tolist(), reverse=True)
             else:
-                # Si aucune colonne de saison n'existe, on extrait l'année depuis la colonne Date
                 try:
                     df_final['Annee_Extrait'] = df_final['Date'].astype(str).str.extract(r'(\d{4})')
                     liste_saisons = ["Toutes les saisons"] + sorted(df_final['Annee_Extrait'].dropna().unique().tolist(), reverse=True)
@@ -1493,26 +1493,21 @@ elif st.session_state.page == 'arborescence':
             with col_saison:
                 saison_choisie = st.selectbox("📅 Filtrer par Saison :", liste_saisons, label_visibility="collapsed")
             
-            # B. Extraction de toutes les Équipes uniques (Domicile + Extérieur) de cette compétition
             equipes_presentes = set(df_final['Domicile'].dropna().unique()).union(set(df_final['Extérieur'].dropna().unique()))
             liste_equipes = ["Toutes les équipes"] + sorted(list(equipes_presentes))
             
             with col_equipe:
                 equipe_choisie = st.selectbox("⚽ Filtrer par Équipe :", liste_equipes, label_visibility="collapsed")
             
-            # C. Application des filtres sélectionnés sur le catalogue
             if saison_choisie != "Toutes les saisons" and col_saison_nom:
                 df_final = df_final[df_final[col_saison_nom] == saison_choisie]
                 
             if equipe_choisie != "Toutes les équipes":
                 df_final = df_final[(df_final['Domicile'] == equipe_choisie) | (df_final['Extérieur'] == equipe_choisie)]
             
-            # Petit indicateur ludique du nombre de résultats restants
             st.markdown(f"<p style='color: #d97706; font-weight: bold; margin-top: 5px;'>🎯 {len(df_final)} match(s) disponible(s) avec ces filtres</p>", unsafe_allow_html=True)
             st.write("---")
-            # ----------------------------------------
 
-            # 2. Affichage final des résultats filtrés
             afficher_resultats(df_final)
 
 # ==========================================
