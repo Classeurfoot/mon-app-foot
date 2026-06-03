@@ -249,7 +249,7 @@ def afficher_resultats(df_resultats):
         st.warning("Aucun match trouvé.")
         return
         
-    # --- NOUVEAUTÉ : BOUTON TOUT AJOUTER ---
+    # --- BOUTON TOUT AJOUTER ---
     col_metrique, col_ajout_tout = st.columns([1, 1])
     
     with col_metrique:
@@ -268,12 +268,14 @@ def afficher_resultats(df_resultats):
                     match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
                     st.session_state.panier.append(match_dict)
             st.rerun()
-    # ---------------------------------------
     
     mode = st.radio("Mode d'affichage :", ["📊 Tableau classique", "🃏 Fiches détaillées"], horizontal=True)
     
     if mode == "📊 Tableau classique":
-        st.markdown("<p style='color: gray; font-size:14px;'>☑️ Cochez les matchs dans la première colonne, puis cliquez sur le bouton en dessous pour les ajouter au panier.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: gray; font-size:14px;'>☑️ Cochez les matchs dans la première colonne, puis cliquez sur le bouton bleu apparu juste au-dessus du tableau pour les ajouter au panier.</p>", unsafe_allow_html=True)
+        
+        # Astuce : On crée un "espace vide" au-dessus du tableau que l'on remplira plus tard
+        bouton_placeholder = st.empty()
         
         df_display = df_resultats[colonnes_presentes].copy()
         df_display.insert(0, "Sélection", False)
@@ -291,21 +293,23 @@ def afficher_resultats(df_resultats):
         
         selected_rows = edited_df[edited_df["Sélection"] == True]
         
+        # On remplit l'espace vide situé AU-DESSUS avec le bouton bleu si des cases sont cochées
         if len(selected_rows) > 0:
-            if st.button(f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier", type="primary", use_container_width=True):
-                nb_ajouts = 0
-                for _, row in selected_rows.iterrows():
-                    match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
-                    match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
-                    in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
+            with bouton_placeholder:
+                if st.button(f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier", type="primary", use_container_width=True):
+                    nb_ajouts = 0
+                    for _, row in selected_rows.iterrows():
+                        match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
+                        match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
+                        in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
+                        
+                        if not in_cart:
+                            q = str(match_dict.get('Qualité', '')).lower()
+                            match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
+                            st.session_state.panier.append(match_dict)
+                            nb_ajouts += 1
                     
-                    if not in_cart:
-                        q = str(match_dict.get('Qualité', '')).lower()
-                        match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
-                        st.session_state.panier.append(match_dict)
-                        nb_ajouts += 1
-                
-                st.rerun()
+                    st.rerun()
 
     else:
         st.write("---")
