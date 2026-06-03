@@ -257,7 +257,7 @@ def afficher_resultats(df_resultats):
         
     with col_ajout_tout:
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button(f"🛒 Ajouter CES {len(df_resultats)} MATCHS au panier", use_container_width=True, type="primary"):
+        if st.button(f"🛒 Ajouter la totalité des {len(df_resultats)} au panier", use_container_width=True, type="primary"):
             for _, row in df_resultats.iterrows():
                 match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
                 match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
