@@ -649,16 +649,21 @@ if st.session_state.page == 'accueil':
     
     col1, col2, col3 = st.columns(3)
     
-    recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
-    if recherche_rapide:
-        mask = (
-            df['Domicile'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
-            df['Extérieur'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
-            df['Compétition'].astype(str).str.contains(recherche_rapide, case=False, na=False)
-        )
-        for col in ['Phase', 'Stade', 'Saison', 'Date']:
-            if col in df.columns:
-                mask = mask | df[col].astype(str).str.contains(recherche_rapide, case=False, na=False)
+    # 1. On récupère le mot-clé dans l'URL s'il existe (venant du site vitrine)
+recherche_initiale = st.query_params.get("search", "")
+
+# 2. On ajoute 'value=recherche_initiale' pour pré-remplir la barre
+recherche_rapide = st.text_input("🔍 Recherche Rapide", value=recherche_initiale, placeholder="Tapez une équipe, une compétition, une année, un stade...")
+
+if recherche_rapide:
+    mask = (
+        df['Domicile'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
+        df['Extérieur'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
+        df['Compétition'].astype(str).str.contains(recherche_rapide, case=False, na=False)
+    )
+    for col in ['Phase', 'Stade', 'Saison', 'Date']:
+        if col in df.columns:
+            mask = mask | df[col].astype(str).str.contains(recherche_rapide, case=False, na=False)
                 
         df_trouve = df[mask]
         st.write(f"**Résultats trouvés pour :** '{recherche_rapide}'")
