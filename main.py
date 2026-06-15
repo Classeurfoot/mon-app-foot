@@ -152,6 +152,14 @@ def nettoyer_nom_equipe(nom):
     nom_propre = re.sub(r'[^a-z0-9]', '', nom_sans_accents.lower())
     return nom_propre
 
+def supprimer_accents(texte):
+    if pd.isna(texte): return ""
+    return ''.join(c for c in unicodedata.normalize('NFD', str(texte)) if unicodedata.category(c) != 'Mn')
+
+# ==========================================
+# ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
+# ==========================================
+
 # ==========================================
 # 🔍 SCANNER AUTOMATIQUE DE LOGOS
 # ==========================================
@@ -672,18 +680,23 @@ if st.session_state.page == 'accueil':
     
     st.write("---")
     
-    # --- 🔍 BARRE DE RECHERCHE RAPIDE MISE À JOUR (INCLUT LES BUTEURS) ---
+    # --- 🔍 BARRE DE RECHERCHE RAPIDE MISE À JOUR (SANS ACCENTS) ---
     recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, un joueur, une année, un stade...")
     if recherche_rapide:
+        recherche_norm = supprimer_accents(recherche_rapide).lower()
+        
+        # Outil pour chercher sans tenir compte des accents ni des majuscules
+        def mask_sans_accents(colonne):
+            return df[colonne].astype(str).apply(supprimer_accents).str.lower().str.contains(recherche_norm, na=False)
+
         mask = (
-            df['Domicile'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
-            df['Extérieur'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
-            df['Compétition'].astype(str).str.contains(recherche_rapide, case=False, na=False)
+            mask_sans_accents('Domicile') |
+            mask_sans_accents('Extérieur') |
+            mask_sans_accents('Compétition')
         )
-        # Ajout des colonnes 'Buteurs' et 'Horaire' dans la boucle de balayage automatique
         for col in ['Phase', 'Stade', 'Saison', 'Date', 'Buteurs', 'Horaire']:
             if col in df.columns:
-                mask = mask | df[col].astype(str).str.contains(recherche_rapide, case=False, na=False)
+                mask = mask | mask_sans_accents(col)
                 
         df_trouve = df[mask]
         st.write(f"**Résultats trouvés pour :** '{recherche_rapide}'")
@@ -1245,10 +1258,12 @@ elif st.session_state.page == 'recherche_avancee':
     if cible_comp and cible_comp in competitions:
         def_comp = [cible_comp]
         
-    # --- NOUVEAU : BARRE DE RECHERCHE BUTEUR ---
-    f_buteur = st.text_input("⚽ Rechercher un buteur (ex: Zidane, Shevchenko...) :", placeholder="Tapez le nom d'un joueur...")
-    st.write("") # Petit espace visuel
-    # ------------------------------------------
+    # --- NOUVEAU : APPLICATION DU FILTRE BUTEUR SANS ACCENT ---
+    if f_buteur:
+        buteur_norm = supprimer_accents(f_buteur).lower()
+        if 'Buteurs' in df_filtre.columns:
+            df_filtre = df_filtre[df_filtre['Buteurs'].astype(str).apply(supprimer_accents).str.lower().str.contains(buteur_norm, na=False)]
+    # ----------------------------------------------
     
     col1, col2 = st.columns(2)
     with col1:
