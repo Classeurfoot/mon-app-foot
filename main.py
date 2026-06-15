@@ -13,17 +13,11 @@ from email.mime.text import MIMEText
 # 1. Configuration de la page (Optimisée SEO)
 st.set_page_config(page_title="Le Grenier du Football | Archives & Matchs de Foot Rétro en Vidéo", layout="wide")
 
-# --- 🔍 OUTIL DE DÉBOGAGE NOTION ---
-st.warning("🛠️ TESTEUR DE CONNEXION NOTION")
-token_test = st.secrets.get("NOTION_TOKEN", "Introuvable")
-st.write(f"1. Le token lu par Streamlit commence par : `{token_test[:15]}...`")
-st.write(f"2. Longueur exacte lue : **{len(token_test)} caractères** (Normalement : 54)")
-
-if '"' in token_test or "'" in token_test:
-    st.error("🚨 DANGER : Streamlit a lu des guillemets ! Allez dans les Secrets et retirez-les.")
-if token_test.startswith(" "):
-    st.error("🚨 DANGER : Il y a un espace vide au tout début de votre clé dans les Secrets.")
-st.write("---")
+# Nettoyage absolu : on retire les espaces, les retours à la ligne et les guillemets fantômes
+        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip().replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
+        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "").replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
+        
+        url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
 # -----------------------------------
 # --- LECTURE DU LOGO LGF ---
 @st.cache_data
