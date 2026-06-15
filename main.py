@@ -226,8 +226,8 @@ import requests
 @st.cache_data(ttl=1800)  # Le site garde les données en mémoire 30 minutes pour charger instantanément
 def load_data():
     try:
-        NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
-        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"]
+        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip()
+        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "")
         
         NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip()
         # On enlève les espaces et les tirets pour être sûr d'avoir un format valide
