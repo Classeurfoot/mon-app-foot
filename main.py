@@ -1258,12 +1258,10 @@ elif st.session_state.page == 'recherche_avancee':
     if cible_comp and cible_comp in competitions:
         def_comp = [cible_comp]
         
-    # --- NOUVEAU : APPLICATION DU FILTRE BUTEUR SANS ACCENT ---
-    if f_buteur:
-        buteur_norm = supprimer_accents(f_buteur).lower()
-        if 'Buteurs' in df_filtre.columns:
-            df_filtre = df_filtre[df_filtre['Buteurs'].astype(str).apply(supprimer_accents).str.lower().str.contains(buteur_norm, na=False)]
-    # ----------------------------------------------
+    # --- NOUVEAU : BARRE DE RECHERCHE BUTEUR ---
+    f_buteur = st.text_input("⚽ Rechercher un buteur (ex: Zidane, Shevchenko...) :", placeholder="Tapez le nom d'un joueur...")
+    st.write("") 
+    # ------------------------------------------
     
     col1, col2 = st.columns(2)
     with col1:
@@ -1284,11 +1282,11 @@ elif st.session_state.page == 'recherche_avancee':
         
     df_filtre = df.copy()
     
-    # --- NOUVEAU : APPLICATION DU FILTRE BUTEUR ---
+    # --- APPLICATION DU FILTRE BUTEUR SANS ACCENT ---
     if f_buteur:
-        # str.contains cherche le mot n'importe où dans la case, case=False ignore les majuscules/minuscules, na=False évite les bugs sur les cases vides
+        buteur_norm = supprimer_accents(f_buteur).lower()
         if 'Buteurs' in df_filtre.columns:
-            df_filtre = df_filtre[df_filtre['Buteurs'].str.contains(f_buteur, case=False, na=False)]
+            df_filtre = df_filtre[df_filtre['Buteurs'].astype(str).apply(supprimer_accents).str.lower().str.contains(buteur_norm, na=False)]
     # ----------------------------------------------
     
     if f_equipes: df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
