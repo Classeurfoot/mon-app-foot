@@ -13,7 +13,6 @@ from email.mime.text import MIMEText
 # 1. Configuration de la page (Optimisée SEO)
 st.set_page_config(page_title="Le Grenier du Football | Archives & Matchs de Foot Rétro en Vidéo", layout="wide")
 
-
 # --- LECTURE DU LOGO LGF ---
 @st.cache_data
 def get_base64_image(image_path):
@@ -221,98 +220,36 @@ MENU_ARBO = {
     }
 }
 
-import requests
-
-# 3. Chargement des données depuis NOTION
-@st.cache_data(ttl=1800)  # Le site garde les données en mémoire 30 minutes
+# 3. Chargement des données
+@st.cache_data
 def load_data():
     try:
-        # Nettoyage absolu : on retire les espaces, les retours à la ligne et les guillemets fantômes
-        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip().replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
-        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "").replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
-        
-        url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-        headers = {
-            "Authorization": f"Bearer {NOTION_TOKEN}",
-            "Notion-Version": "2025-09-03",
-            "Content-Type": "application/json"
-        }
-        
-        # --- LES LIGNES QUI AVAIENT SAUTÉ SONT ICI 👇 ---
-        has_more = True
-        next_cursor = None
-        lignes_notion = []
-        # -----------------------------------------------
-        
-        # 1. Boucle pour récupérer vos ~5000 matchs (Notion envoie par paquets de 100)
-        while has_more:
-            payload = {}
-            if next_cursor:
-                payload["start_cursor"] = next_cursor
-                
-            response = requests.post(url, json=payload, headers=headers)
-            
-            if response.status_code != 200:
-                st.error(f"Erreur API Notion : {response.text}")
-                return pd.DataFrame()
-                
-            data = response.json()
-            lignes_notion.extend(data.get("results", []))
-            has_more = data.get("has_more", False)
-            next_cursor = data.get("next_cursor", None)
-        # 2. Fonction magique pour extraire le texte selon le type de colonne Notion
-        def extraire_valeur(prop):
-            if not prop: return ""
-            p_type = prop.get("type")
-            
-            if p_type == "title":
-                return "".join([t.get("plain_text", "") for t in prop.get("title", [])])
-            elif p_type == "rich_text":
-                return "".join([t.get("plain_text", "") for t in prop.get("rich_text", [])])
-            elif p_type == "select":
-                return prop.get("select", {}).get("name", "") if prop.get("select") else ""
-            elif p_type == "multi_select":
-                return ", ".join([opt.get("name", "") for opt in prop.get("multi_select", [])])
-            elif p_type == "number":
-                return str(prop.get("number", "")) if prop.get("number") is not None else ""
-            elif p_type == "date":
-                return prop.get("date", {}).get("start", "") if prop.get("date") else ""
-            return ""
+        df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
+        df.columns = df.columns.str.strip()
 
-        # 3. Conversion du JSON brut en tableau lisible (DataFrame)
-        donnees_propres = []
-        for page in lignes_notion:
-            props = page.get("properties", {})
-            ligne_extraite = {}
-            for nom_colonne, contenu_colonne in props.items():
-                ligne_extraite[nom_colonne] = extraire_valeur(contenu_colonne)
-            donnees_propres.append(ligne_extraite)
-            
-        df = pd.DataFrame(donnees_propres)
-        
-        # 4. Nettoyage final pour correspondre aux attentes de l'application
         df = df.dropna(subset=['Saison', 'Compétition'], how='all')
         
-        if 'Domicile' in df.columns: df['Domicile'] = df['Domicile'].replace("", "Multiplex / Divers")
-        if 'Extérieur' in df.columns: df['Extérieur'] = df['Extérieur'].replace("", "-")
-        if 'Score' in df.columns: df['Score'] = df['Score'].replace("", "-")
-        if 'Stade' in df.columns: df['Stade'] = df['Stade'].replace("", "Plusieurs stades")
+        df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
+        df['Extérieur'] = df['Extérieur'].fillna("-")
+        df['Score'] = df['Score'].fillna("-")
+        df['Stade'] = df['Stade'].fillna("Plusieurs stades")
         
-        if 'Domicile' in df.columns and 'Extérieur' in df.columns:
-            df = df.dropna(subset=['Domicile', 'Extérieur'])
-            
-        # Formatage de la date si nécessaire
+        df = df.dropna(subset=['Domicile', 'Extérieur'])
+        df.columns = df.columns.str.strip()
+        
         if 'Date' in df.columns:
-            df['Date'] = pd.to_datetime(df['Date'], errors='coerce').dt.strftime('%d/%m/%Y')
-            
+            dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
+            masque_excel = dates_numeriques.notna()
+            dates_converties = pd.to_datetime(dates_numeriques[masque_excel], unit='D', origin='1899-12-30')
+            df.loc[masque_excel, 'Date'] = dates_converties.dt.strftime('%d/%m/%Y')
         return df
-
     except Exception as e:
-        st.error(f"Erreur de lecture depuis Notion : {e}")
+        st.error(f"Erreur de lecture : {e}")
         return pd.DataFrame()
 
 df = load_data()
-colonnes_possibles = ['Match','Saison', 'Date', 'Horaire', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
+# Ajout ordonné de l'Horaire après la Date, et des Buteurs après le Score pour le tableau
+colonnes_possibles = ['Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
 # --- OUTIL : FICHES DE MATCHS ---
