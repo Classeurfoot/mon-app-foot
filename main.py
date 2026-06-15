@@ -13,12 +13,7 @@ from email.mime.text import MIMEText
 # 1. Configuration de la page (Optimisée SEO)
 st.set_page_config(page_title="Le Grenier du Football | Archives & Matchs de Foot Rétro en Vidéo", layout="wide")
 
-# Nettoyage absolu : on retire les espaces, les retours à la ligne et les guillemets fantômes
-        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip().replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
-        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "").replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
-        
-        url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-# -----------------------------------
+
 # --- LECTURE DU LOGO LGF ---
 @st.cache_data
 def get_base64_image(image_path):
@@ -229,15 +224,12 @@ MENU_ARBO = {
 import requests
 
 # 3. Chargement des données depuis NOTION
-@st.cache_data(ttl=1800)  # Le site garde les données en mémoire 30 minutes pour charger instantanément
+@st.cache_data(ttl=1800)  # Le site garde les données en mémoire 30 minutes
 def load_data():
     try:
-        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip()
-        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "")
-        
-        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip()
-        # On enlève les espaces et les tirets pour être sûr d'avoir un format valide
-        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "") 
+        # Nettoyage absolu : on retire les espaces, les retours à la ligne et les guillemets fantômes
+        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip().replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
+        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "").replace('"', '').replace("'", "").replace("\n", "").replace("\r", "")
         
         url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
         headers = {
@@ -246,10 +238,7 @@ def load_data():
             "Content-Type": "application/json"
         }
         
-        has_more = True
-        next_cursor = None
-        lignes_notion = []
-        
+        has_more = True        
         # 1. Boucle pour récupérer vos ~5000 matchs (Notion envoie par paquets de 100)
         while has_more:
             payload = {}
