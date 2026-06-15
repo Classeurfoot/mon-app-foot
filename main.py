@@ -14,18 +14,17 @@ from email.mime.text import MIMEText
 st.set_page_config(page_title="Le Grenier du Football | Archives & Matchs de Foot Rétro en Vidéo", layout="wide")
 
 # --- 🔍 OUTIL DE DÉBOGAGE NOTION ---
-    st.warning("🛠️ TESTEUR DE CONNEXION NOTION")
-    token_test = st.secrets.get("NOTION_TOKEN", "Introuvable")
-    st.write(f"1. Le token lu par Streamlit commence par : `{token_test[:15]}...`")
-    st.write(f"2. Longueur exacte lue : **{len(token_test)} caractères** (Normalement : 54)")
-    
-    if '"' in token_test or "'" in token_test:
-        st.error("🚨 DANGER : Streamlit a lu des guillemets ! Allez dans les Secrets et retirez-les.")
-    if token_test.startswith(" "):
-        st.error("🚨 DANGER : Il y a un espace vide au tout début de votre clé dans les Secrets.")
-    st.write("---")
-    # -----------------------------------
+st.warning("🛠️ TESTEUR DE CONNEXION NOTION")
+token_test = st.secrets.get("NOTION_TOKEN", "Introuvable")
+st.write(f"1. Le token lu par Streamlit commence par : `{token_test[:15]}...`")
+st.write(f"2. Longueur exacte lue : **{len(token_test)} caractères** (Normalement : 54)")
 
+if '"' in token_test or "'" in token_test:
+    st.error("🚨 DANGER : Streamlit a lu des guillemets ! Allez dans les Secrets et retirez-les.")
+if token_test.startswith(" "):
+    st.error("🚨 DANGER : Il y a un espace vide au tout début de votre clé dans les Secrets.")
+st.write("---")
+# -----------------------------------
 # --- LECTURE DU LOGO LGF ---
 @st.cache_data
 def get_base64_image(image_path):
