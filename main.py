@@ -232,7 +232,7 @@ def load_data():
         url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
         headers = {
             "Authorization": f"Bearer {NOTION_TOKEN}",
-            "Notion-Version": "2022-06-28",
+            "Notion-Version": "2025-09-03",
             "Content-Type": "application/json"
         }
         
