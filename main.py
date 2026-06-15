@@ -229,6 +229,10 @@ def load_data():
         NOTION_TOKEN = st.secrets["NOTION_TOKEN"]
         DATABASE_ID = st.secrets["NOTION_DATABASE_ID"]
         
+        NOTION_TOKEN = st.secrets["NOTION_TOKEN"].strip()
+        # On enlève les espaces et les tirets pour être sûr d'avoir un format valide
+        DATABASE_ID = st.secrets["NOTION_DATABASE_ID"].strip().replace("-", "") 
+        
         url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
         headers = {
             "Authorization": f"Bearer {NOTION_TOKEN}",
