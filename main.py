@@ -241,7 +241,7 @@ def load_data():
 
 df = load_data()
 # Ajout ordonné de l'Horaire après la Date, et des Buteurs après le Score pour le tableau
-colonnes_possibles = ['Match','Saison', 'Date', 'Horaire', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
+colonnes_possibles = ['Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
 # --- OUTIL : FICHES DE MATCHS ---
@@ -1216,7 +1216,7 @@ elif st.session_state.page == 'face_a_face':
     df_face = df[((df['Domicile'] == eq1) & (df['Extérieur'] == eq2)) | ((df['Domicile'] == eq2) & (df['Extérieur'] == eq1))]
     afficher_resultats(df_face)
 
-# --- RECHERCHE AVANCÉE AVEC FILTRE QUALITÉ ---
+# --- RECHERCHE AVANCÉE AVEC FILTRE QUALITÉ ET BUTEURS ---
 elif st.session_state.page == 'recherche_avancee':
     st.header("🕵️ Recherche Avancée")
     
@@ -1230,6 +1230,11 @@ elif st.session_state.page == 'recherche_avancee':
     cible_comp = st.session_state.get('recherche_comp_cible')
     if cible_comp and cible_comp in competitions:
         def_comp = [cible_comp]
+        
+    # --- NOUVEAU : BARRE DE RECHERCHE BUTEUR ---
+    f_buteur = st.text_input("⚽ Rechercher un buteur (ex: Zidane, Shevchenko...) :", placeholder="Tapez le nom d'un joueur...")
+    st.write("") # Petit espace visuel
+    # ------------------------------------------
     
     col1, col2 = st.columns(2)
     with col1:
@@ -1249,6 +1254,14 @@ elif st.session_state.page == 'recherche_avancee':
         choix_qualite = st.selectbox("💾 Qualité vidéo :", qualites_dispo)
         
     df_filtre = df.copy()
+    
+    # --- NOUVEAU : APPLICATION DU FILTRE BUTEUR ---
+    if f_buteur:
+        # str.contains cherche le mot n'importe où dans la case, case=False ignore les majuscules/minuscules, na=False évite les bugs sur les cases vides
+        if 'Buteurs' in df_filtre.columns:
+            df_filtre = df_filtre[df_filtre['Buteurs'].str.contains(f_buteur, case=False, na=False)]
+    # ----------------------------------------------
+    
     if f_equipes: df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
     if f_comps: df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
     if f_phases: df_filtre = df_filtre[df_filtre['Phase'].isin(f_phases)]
