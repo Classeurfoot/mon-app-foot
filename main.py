@@ -238,7 +238,12 @@ def load_data():
             "Content-Type": "application/json"
         }
         
-        has_more = True        
+        # --- LES LIGNES QUI AVAIENT SAUTÉ SONT ICI 👇 ---
+        has_more = True
+        next_cursor = None
+        lignes_notion = []
+        # -----------------------------------------------
+        
         # 1. Boucle pour récupérer vos ~5000 matchs (Notion envoie par paquets de 100)
         while has_more:
             payload = {}
@@ -255,7 +260,6 @@ def load_data():
             lignes_notion.extend(data.get("results", []))
             has_more = data.get("has_more", False)
             next_cursor = data.get("next_cursor", None)
-
         # 2. Fonction magique pour extraire le texte selon le type de colonne Notion
         def extraire_valeur(prop):
             if not prop: return ""
