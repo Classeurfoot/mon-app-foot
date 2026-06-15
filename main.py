@@ -657,18 +657,31 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
+    # --- 🌟 NOUVEAU ENCART : LES NOUVEAUTÉS DU GRENIER ---
+    with st.container(border=True):
+        st.markdown("""
+            <div style='text-align: center;'>
+                <h4 style='margin: 0 0 8px 0; color: #d97706;'>🔥 Nouveautés sur le Grenier !</h4>
+                <p style='margin: 0; font-size: 14.5px; color: #e2e8f0; line-height: 1.5;'>
+                    ⏱️ <b>Horaires & Buteurs :</b> Les fiches détaillées affichent désormais l'heure du coup d'envoi et la liste des buteurs d'époque !<br>
+                    🕵️‍♂️ <b>Recherche par Joueur :</b> Trouvez directement un match mythique en saisissant le nom d'un buteur dans la barre rapide ou avancée.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+    # -----------------------------------------------------
+    
     st.write("---")
     
-    col1, col2, col3 = st.columns(3)
-    
-    recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, une année, un stade...")
+    # --- 🔍 BARRE DE RECHERCHE RAPIDE MISE À JOUR (INCLUT LES BUTEURS) ---
+    recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, un joueur, une année, un stade...")
     if recherche_rapide:
         mask = (
             df['Domicile'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
             df['Extérieur'].astype(str).str.contains(recherche_rapide, case=False, na=False) |
             df['Compétition'].astype(str).str.contains(recherche_rapide, case=False, na=False)
         )
-        for col in ['Phase', 'Stade', 'Saison', 'Date']:
+        # Ajout des colonnes 'Buteurs' et 'Horaire' dans la boucle de balayage automatique
+        for col in ['Phase', 'Stade', 'Saison', 'Date', 'Buteurs', 'Horaire']:
             if col in df.columns:
                 mask = mask | df[col].astype(str).str.contains(recherche_rapide, case=False, na=False)
                 
@@ -676,6 +689,7 @@ if st.session_state.page == 'accueil':
         st.write(f"**Résultats trouvés pour :** '{recherche_rapide}'")
         afficher_resultats(df_trouve)
         st.write("---")
+    # ---------------------------------------------------------------------
 
     st.markdown("""
     <style>
