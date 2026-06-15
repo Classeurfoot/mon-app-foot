@@ -663,8 +663,8 @@ if st.session_state.page == 'accueil':
             <div style='text-align: center;'>
                 <h4 style='margin: 0 0 8px 0; color: #d97706;'>🔥 Nouveautés sur le Grenier !</h4>
                 <p style='margin: 0; font-size: 14.5px; color: #e2e8f0; line-height: 1.5;'>
-                    ⏱️ <b>Horaires & Buteurs :</b> Les fiches détaillées affichent désormais l'heure du coup d'envoi et la liste des buteurs d'époque !<br>
-                    🕵️‍♂️ <b>Recherche par Joueur :</b> Trouvez directement un match mythique en saisissant le nom d'un buteur dans la barre rapide ou avancée.
+                    ⏱️ <b>Horaires & buteurs :</b> Les fiches détaillées affichent désormais l'heure du coup d'envoi (heure française) et la liste des buteurs du match !<br>
+                    🕵️‍♂️ <b>Recherche par joueur :</b> Trouvez directement un match en saisissant le nom d'un joueur dans la barre rapide ou avancée.
                 </p>
             </div>
         """, unsafe_allow_html=True)
