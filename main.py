@@ -240,7 +240,8 @@ def load_data():
         return pd.DataFrame()
 
 df = load_data()
-colonnes_possibles = ['Match','Saison', 'Date', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Extérieur', 'Score', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
+# Ajout ordonné de l'Horaire après la Date, et des Buteurs après le Score pour le tableau
+colonnes_possibles = ['Match','Saison', 'Date', 'Horaire', 'Compétition', 'Phase', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
 # --- OUTIL : FICHES DE MATCHS ---
@@ -274,7 +275,6 @@ def afficher_resultats(df_resultats):
     if mode == "📊 Tableau classique":
         st.markdown("<p style='color: gray; font-size:14px;'>☑️ Cochez les matchs dans la première colonne, puis cliquez sur le bouton bleu apparu juste au-dessus du tableau pour les ajouter au panier.</p>", unsafe_allow_html=True)
         
-        # Astuce : On crée un "espace vide" au-dessus du tableau que l'on remplira plus tard
         bouton_placeholder = st.empty()
         
         df_display = df_resultats[colonnes_presentes].copy()
@@ -293,11 +293,9 @@ def afficher_resultats(df_resultats):
         
         selected_rows = edited_df[edited_df["Sélection"] == True]
         
-        # On remplit l'espace vide situé AU-DESSUS avec le bouton bleu si des cases sont cochées
         if len(selected_rows) > 0:
             with bouton_placeholder:
                 if st.button(f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier", type="primary", use_container_width=True):
-                    nb_ajouts = 0
                     for _, row in selected_rows.iterrows():
                         match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
                         match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
@@ -307,7 +305,6 @@ def afficher_resultats(df_resultats):
                             q = str(match_dict.get('Qualité', '')).lower()
                             match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
                             st.session_state.panier.append(match_dict)
-                            nb_ajouts += 1
                     
                     st.rerun()
 
@@ -331,6 +328,10 @@ def afficher_resultats(df_resultats):
                         except ValueError:
                             pass
 
+                    # Récupération et formatage propre de l'Horaire
+                    horaire = row.get('Horaire', '')
+                    horaire_str = f" à {horaire}" if pd.notna(horaire) and str(horaire).strip() not in ['', '-', 'nan'] else ""
+
                     stade = row.get('Stade', 'Stade inconnu')
                     if pd.isna(stade) or not str(stade).strip(): stade = "Stade inconnu"
                     val_phase = str(row.get('Phase', '')).strip() if pd.notna(row.get('Phase')) else ""
@@ -339,7 +340,8 @@ def afficher_resultats(df_resultats):
                     stade_str = stade
                     if val_phase: stade_str += f" - {val_phase}"
                     
-                    st.caption(f"🗓️ {date_formatee.capitalize()} | 🏟️ {stade_str}")
+                    # Intégration de l'horaire directement dans la caption temporelle
+                    st.caption(f"🗓️ {date_formatee.capitalize()}{horaire_str} | 🏟️ {stade_str}")
                     
                     if comp_name:
                         if st.button(f"🏆 {comp_name}", key=f"btn_comp_{index}_{i}", use_container_width=True):
@@ -384,6 +386,16 @@ def afficher_resultats(df_resultats):
                             st.session_state.recherche_equipe_cible = ext
                             st.session_state.page = 'recherche_equipe'
                             st.rerun()
+
+                    # --- BLOC INTERFACE LUDIQUE ET LISIBLE POUR LES BUTEURS ---
+                    buteurs = row.get('Buteurs', '')
+                    if pd.notna(buteurs) and str(buteurs).strip() not in ['', '-', 'nan']:
+                        st.markdown(f"""
+                            <div style='text-align: center; background-color: #1e1e24; border-radius: 8px; padding: 6px 12px; margin: 10px 0; border: 0.5px solid #2d2d34;'>
+                                <span style='font-size: 13px; color: #e2e8f0; font-style: italic;'>⚽ {buteurs}</span>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    # ---------------------------------------------------------
                     
                     diffuseur = row.get('Diffuseur', '')
                     qualite = row.get('Qualité', '')
