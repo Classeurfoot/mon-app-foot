@@ -221,7 +221,7 @@ MENU_ARBO = {
 }
 
 # 3. Chargement des données
-@st.cache_data
+@st.cache_data(ttl=600)  # Le cache se vide tout seul toutes les 10 minutes !
 def load_data():
     try:
         df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
