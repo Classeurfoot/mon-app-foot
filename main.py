@@ -249,7 +249,6 @@ df = load_data()
 colonnes_possibles = ['Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-
 # 4. Chargement des données DOCUMENTAIRES
 @st.cache_data(ttl=600)
 def load_docus():
@@ -276,7 +275,6 @@ def load_docus():
         return pd.DataFrame()
 
 df_docus = load_docus()
-
 
 # --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
@@ -607,7 +605,7 @@ with st.sidebar:
         st.rerun()
         
     st.divider()
-    st.markdown("### 🎬 Ciné-Club")
+    st.markdown("### 📼 Vidéothèque")
     if st.button("🎞️ Docus & Émissions", use_container_width=True):
         st.session_state.page = 'documentaires'
         st.rerun()
@@ -700,7 +698,7 @@ if st.session_state.page == 'accueil':
     with st.container(border=True):
         st.markdown("""
             <div style='text-align: center;'>
-                <h4 style='margin: 0 0 8px 0; color: #d97706;'>🔥 Nouveauté : Le Rayon Documentaires est ouvert !</h4>
+                <h4 style='margin: 0 0 8px 0; color: #d97706;'>🔥 Nouveauté : La Vidéothèque est ouverte !</h4>
                 <p style='margin: 0; font-size: 14.5px; color: #e2e8f0; line-height: 1.5;'>
                     En plus des matchs, explorez désormais notre sélection de reportages, émissions d'époque et d'archives historiques. Filtrez par thème, club ou personnage clé pour trouver votre bonheur dans la section dédiée (Menu Rapide) !
                 </p>
@@ -915,7 +913,7 @@ elif st.session_state.page == 'panier':
             if is_doc:
                 titre = article.get('Titre', '')
                 annee = article.get('Année', '')
-                titre_affiche = f"{titre} ({int(annee)})" if annee and str(annee).strip() != "" else titre
+                titre_affiche = f"{titre} ({int(float(annee))})" if annee and str(annee).strip() != "" else titre
                 
                 with col_info:
                     st.markdown(f"🎬 **{titre_affiche}**<br><span style='color: gray; font-size: 14px;'>🏷️ Documentaire / Émission</span>", unsafe_allow_html=True)
@@ -1730,10 +1728,6 @@ elif st.session_state.page == 'documentaires':
                         
                         st.rerun()
 
-# ==========================================
-# 🛑 PIED DE PAGE (FOOTER GLOBAL)
-# ==========================================
-# (La suite de votre code avec st.write("---") reste inchangée)
 # ==========================================
 # 🛑 PIED DE PAGE (FOOTER GLOBAL)
 # ==========================================
