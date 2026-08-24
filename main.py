@@ -1686,8 +1686,20 @@ elif st.session_state.page == 'documentaires':
             df_doc_display = df_docus_filtre[colonnes_docus_afficher].copy()
             df_doc_display.insert(0, "Sélection", False)
             
-            # Nettoyage visuel de l'année (pour éviter l'affichage "1998.0" si c'est un float)
+            # Nettoyage visuel de l'année (robuste contre les textes comme "1998-1999")
+            def nettoyer_annee(val):
+                if pd.isna(val): return ""
+                val_str = str(val).strip()
+                if not val_str: return ""
+                try:
+                    # Tente de convertir en nombre entier
+                    return str(int(float(val_str)))
+                except ValueError:
+                    # Si c'est du texte (ex: "Années 90"), on l'affiche tel quel
+                    return val_str
+
             if 'Année' in df_doc_display.columns:
+                df_doc_display['Année'] = df_doc_display['Année'].apply(nettoyer_annee)
                 df_doc_display['Année'] = df_doc_display['Année'].apply(lambda x: str(int(float(x))) if pd.notna(x) and str(x).strip() != "" else "")
             
             # Génération du tableau interactif
