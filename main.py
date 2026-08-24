@@ -1674,71 +1674,66 @@ elif st.session_state.page == 'documentaires':
             mask_cible = df_docus_filtre['Club-sélection'].astype(str).apply(lambda x: any(c in x for c in f_cible))
             df_docus_filtre = df_docus_filtre[mask_cible]
 
-        # --- AFFICHAGE DES RÉSULTATS ---
-        st.markdown(f"**🎯 {len(df_docus_filtre)} documentaires trouvés**")
+        # --- AFFICHAGE DES RÉSULTATS EN TABLEAU CLASSIQUE ---
+        st.markdown(f"**🎯 {len(df_docus_filtre)} documentaire(s) trouvé(s)**")
         
         if not df_docus_filtre.empty:
-            colonnes = st.columns(2)
+            st.markdown("<p style='color: gray; font-size:14px;'>☑️ Cochez les documentaires dans la première colonne, puis cliquez sur le bouton bleu apparu juste au-dessus du tableau pour les ajouter au panier (2€ / unité).</p>", unsafe_allow_html=True)
             
-            for i, (index, row) in enumerate(df_docus_filtre.iterrows()):
-                with colonnes[i % 2]:
-                    with st.container(border=True):
-                        titre = row.get('Titre', 'Titre inconnu')
-                        annee = row.get('Année', '')
-                        diffuseur = row.get('Diffuseur', '')
-                        duree = row.get('Durée (min)', 0)
-                        
-                        # En-tête de la fiche
-                        try:
-                            # Tente de convertir l'année en nombre entier si c'est possible
-                            annee_format = str(int(float(annee)))
-                        except:
-                            annee_format = str(annee)
+            bouton_placeholder_doc = st.empty()
+            
+            # Sélection des colonnes les plus pertinentes à afficher dans le tableau
+            colonnes_docus_afficher = [c for c in ['Titre', 'Année', 'Type', 'Thème', 'Club-sélection', 'Personnages clés', 'Diffuseur', 'Durée (min)'] if c in df_docus_filtre.columns]
+            
+            df_doc_display = df_docus_filtre[colonnes_docus_afficher].copy()
+            df_doc_display.insert(0, "Sélection", False)
+            
+            # Nettoyage visuel de l'année (pour éviter l'affichage "1998.0" si c'est un float)
+            if 'Année' in df_doc_display.columns:
+                df_doc_display['Année'] = df_doc_display['Année'].apply(lambda x: str(int(float(x))) if pd.notna(x) and str(x).strip() != "" else "")
+            
+            # Génération du tableau interactif
+            edited_df_doc = st.data_editor(
+                df_doc_display,
+                column_config={
+                    "Sélection": st.column_config.CheckboxColumn("🛒 Ajouter", default=False)
+                },
+                disabled=colonnes_docus_afficher,
+                hide_index=True,
+                use_container_width=True,
+                height=500
+            )
+            
+            # Récupération des lignes cochées par l'utilisateur
+            selected_docs = edited_df_doc[edited_df_doc["Sélection"] == True]
+            
+            if len(selected_docs) > 0:
+                with bouton_placeholder_doc:
+                    if st.button(f"🛒 Ajouter les {len(selected_docs)} documentaire(s) sélectionné(s) au panier", type="primary", use_container_width=True):
+                        for index, row in selected_docs.iterrows():
+                            titre = str(row.get('Titre', ''))
+                            annee = str(row.get('Année', ''))
                             
-                        titre_affiche = f"{titre} ({annee_format})" if annee_format and annee_format.strip() != "" else titre
-                        st.markdown(f"<h4 style='margin-bottom: 5px; color: #fafafa;'>🎬 {titre_affiche}</h4>", unsafe_allow_html=True)
-                        
-                        # Les petits tags sous le titre
-                        tags_html = "<div style='display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;'>"
-                        if diffuseur: tags_html += f"<span style='background-color:#1E3A8A; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>📺 {diffuseur}</span>"
-                        if duree > 0: tags_html += f"<span style='background-color:#4B5563; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>⏱️ {duree} min</span>"
-                        
-                        # Tags dynamiques (Types et Thèmes)
-                        for t in str(row.get('Type', '')).split(','):
-                            if t.strip(): tags_html += f"<span style='background-color:#0f4c5c; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>🏷️ {t.strip()}</span>"
-                        for t in str(row.get('Thème', '')).split(','):
-                            if t.strip(): tags_html += f"<span style='background-color:#9a031e; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>🎯 {t.strip()}</span>"
+                            doc_id = f"doc_{titre}_{annee}"
+                            in_cart = any(m.get('id_produit') == doc_id for m in st.session_state.panier)
                             
-                        tags_html += "</div>"
-                        st.markdown(tags_html, unsafe_allow_html=True)
-                        
-                        # Informations complémentaires
-                        personnages = row.get('Personnages clés', '')
-                        if personnages:
-                            st.markdown(f"<p style='font-size: 13px; margin-bottom: 5px; color: #a1a1aa;'>👥 <b>Avec :</b> {personnages}</p>", unsafe_allow_html=True)
-                            
-                        # Bouton d'ajout au panier
-                        st.write("")
-                        doc_id = f"doc_{titre}_{annee}"
-                        in_cart = any(m.get('id_produit') == doc_id for m in st.session_state.panier)
-                        
-                        if in_cart:
-                            if st.button("✅ Ajouté (Retirer)", key=f"cart_doc_{index}_{i}", use_container_width=True):
-                                st.session_state.panier = [m for m in st.session_state.panier if m.get('id_produit') != doc_id]
-                                st.rerun()
-                        else:
-                            if st.button("🛒 Ajouter au panier (2€)", key=f"cart_doc_{index}_{i}", type="primary", use_container_width=True):
+                            if not in_cart:
                                 doc_dict = {
                                     'id_produit': doc_id,
                                     'type_produit': 'documentaire',
                                     'Titre': titre,
-                                    'Année': annee_format,
+                                    'Année': annee,
                                     'format_choisi': 'Numérique',
                                     'prix': 2
                                 }
                                 st.session_state.panier.append(doc_dict)
-                                st.rerun()
+                        
+                        st.rerun()
 
+# ==========================================
+# 🛑 PIED DE PAGE (FOOTER GLOBAL)
+# ==========================================
+# (La suite de votre code avec st.write("---") reste inchangée)
 # ==========================================
 # 🛑 PIED DE PAGE (FOOTER GLOBAL)
 # ==========================================
