@@ -56,6 +56,7 @@ def popup_guide_contenu():
     * ✨ Les **Coupes d'Europe** : Ligue des Champions, Coupe UEFA, Coupe des Coupes...
     * 🥇 Les **grands championnats** : Ligue 1, Serie A, Liga, Premier League...
     * 🕰️ Des matchs **amicaux, historiques et rares**.
+    * 🎬 Des **documentaires et émissions d'époque**.
     ---
     ### 🛠️ Mode d'emploi : Comment fouiller les archives ?
     
@@ -91,16 +92,17 @@ def popup_formats():
 def popup_tarifs():
     st.markdown("### 💰 Grille Tarifaire")
     st.markdown("""
-    * 💿 **1 match au format DVD** = **5 €**
+    * 💿 **1 Match au format DVD** = **5 €**
       *(⚠️ Note : Pour les formats DVD, vous recevez les fichiers informatiques originaux (.VOB), il n'y a pas d'envoi de DVD physique)*
-    * 💻 **1 match au format Numérique** (mp4, mkv...) = **3 €**
+    * 💻 **1 Match au format Numérique** (mp4, mkv...) = **3 €**
+    * 🎬 **1 Documentaire / Émission** = **2 €**
     """)
     st.divider()
     st.markdown("### 🎁 Offres & Réductions")
     st.markdown("""
-    * 🆓 **1 match offert** tous les 10 matchs achetés (le match le moins cher de votre sélection est automatiquement déduit à partir du 11ème match).
+    * 🆓 **1 article offert** tous les 10 articles achetés (l'article le moins cher de votre sélection est automatiquement déduit à partir du 11ème).
     * 🩹 **Remise "Archive Imparfaite" (-1 €) :** Si un match présente un défaut lié à l'usure du temps (qualité altérée, fichier incomplet...), une remise de 1€ est automatiquement déduite dans votre panier.
-    * 🔄 **Offre cumulable :** 2 matchs offerts pour 20 achetés, 3 pour 30, etc.
+    * 🔄 **Offre cumulable :** 2 offerts pour 20 achetés, 3 pour 30, etc.
     """)
 
 @st.dialog("✉️ Contact & Commandes")
@@ -155,10 +157,6 @@ def nettoyer_nom_equipe(nom):
 def supprimer_accents(texte):
     if pd.isna(texte): return ""
     return ''.join(c for c in unicodedata.normalize('NFD', str(texte)) if unicodedata.category(c) != 'Mn')
-
-# ==========================================
-# ⚙️ FONCTION MAGIQUE POUR LES NOMS D'ÉQUIPES
-# ==========================================
 
 # ==========================================
 # 🔍 SCANNER AUTOMATIQUE DE LOGOS
@@ -220,7 +218,7 @@ MENU_ARBO = {
     }
 }
 
-# 3. Chargement des données
+# 3. Chargement des données MATCHS
 @st.cache_data(ttl=600)  # Le cache se vide tout seul toutes les 10 minutes !
 def load_data():
     try:
@@ -244,13 +242,41 @@ def load_data():
             df.loc[masque_excel, 'Date'] = dates_converties.dt.strftime('%d/%m/%Y')
         return df
     except Exception as e:
-        st.error(f"Erreur de lecture : {e}")
+        st.error(f"Erreur de lecture matchs : {e}")
         return pd.DataFrame()
 
 df = load_data()
-# Ajout ordonné de l'Horaire après la Date, et des Buteurs après le Score pour le tableau
 colonnes_possibles = ['Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
+
+
+# 4. Chargement des données DOCUMENTAIRES
+@st.cache_data(ttl=600)
+def load_docus():
+    try:
+        df_doc = pd.read_csv("docus.csv", sep=";", encoding="utf-8-sig")
+        
+        nouvelles_colonnes = {}
+        for col in df_doc.columns:
+            nom_propre = re.sub(r'[^\w\s-]', '', col).strip()
+            if col == '⏳ Durée (min)': nom_propre = 'Durée (min)'
+            elif col == '🏟️ Club-sélection': nom_propre = 'Club-sélection'
+            elif col == '🎞️ Série-Collection': nom_propre = 'Série-Collection'
+            nouvelles_colonnes[col] = nom_propre
+            
+        df_doc = df_doc.rename(columns=nouvelles_colonnes)
+        df_doc = df_doc.fillna("")
+        
+        if 'Durée (min)' in df_doc.columns:
+            df_doc['Durée (min)'] = pd.to_numeric(df_doc['Durée (min)'], errors='coerce').fillna(0).astype(int)
+            
+        return df_doc
+    except Exception as e:
+        st.error(f"Erreur de lecture documentaires : {e}")
+        return pd.DataFrame()
+
+df_docus = load_docus()
+
 
 # --- OUTIL : FICHES DE MATCHS ---
 def afficher_resultats(df_resultats):
@@ -275,6 +301,7 @@ def afficher_resultats(df_resultats):
                 if not in_cart:
                     q = str(match_dict.get('Qualité', '')).lower()
                     match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
+                    match_dict['type_produit'] = 'match'
                     st.session_state.panier.append(match_dict)
             st.rerun()
     
@@ -312,6 +339,7 @@ def afficher_resultats(df_resultats):
                         if not in_cart:
                             q = str(match_dict.get('Qualité', '')).lower()
                             match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
+                            match_dict['type_produit'] = 'match'
                             st.session_state.panier.append(match_dict)
                     
                     st.rerun()
@@ -336,7 +364,6 @@ def afficher_resultats(df_resultats):
                         except ValueError:
                             pass
 
-                    # Récupération et formatage propre de l'Horaire
                     horaire = row.get('Horaire', '')
                     horaire_str = f" à {horaire}" if pd.notna(horaire) and str(horaire).strip() not in ['', '-', 'nan'] else ""
 
@@ -348,7 +375,6 @@ def afficher_resultats(df_resultats):
                     stade_str = stade
                     if val_phase: stade_str += f" - {val_phase}"
                     
-                    # Intégration de l'horaire directement dans la caption temporelle
                     st.caption(f"🗓️ {date_formatee.capitalize()}{horaire_str} | 🏟️ {stade_str}")
                     
                     if comp_name:
@@ -395,7 +421,6 @@ def afficher_resultats(df_resultats):
                             st.session_state.page = 'recherche_equipe'
                             st.rerun()
 
-                    # --- BLOC INTERFACE LUDIQUE ET LISIBLE POUR LES BUTEURS ---
                     buteurs = row.get('Buteurs', '')
                     if pd.notna(buteurs) and str(buteurs).strip() not in ['', '-', 'nan']:
                         st.markdown(f"""
@@ -403,7 +428,6 @@ def afficher_resultats(df_resultats):
                                 <span style='font-size: 13px; color: #e2e8f0; font-style: italic;'>⚽ {buteurs}</span>
                             </div>
                         """, unsafe_allow_html=True)
-                    # ---------------------------------------------------------
                     
                     diffuseur = row.get('Diffuseur', '')
                     qualite = row.get('Qualité', '')
@@ -437,6 +461,7 @@ def afficher_resultats(df_resultats):
                                 match_dict['format_choisi'] = 'DVD'
                             else:
                                 match_dict['format_choisi'] = 'Numérique'
+                            match_dict['type_produit'] = 'match'
                                 
                             st.session_state.panier.append(match_dict)
                             st.rerun()
@@ -500,19 +525,19 @@ with st.sidebar:
     reste = nb_articles % 11
     
     if nb_articles == 0:
-        msg_jauge = "🎁 1 match offert tous les 10 achetés !"
+        msg_jauge = "🎁 1 article offert tous les 10 achetés !"
         val_jauge = 0.0
     elif reste == 0:
         nb_gratuits = nb_articles // 11
         pluriel = "s" if nb_gratuits > 1 else ""
-        msg_jauge = f"🎉 {nb_gratuits} match{pluriel} offert{pluriel} ! (Encore 11 pour le prochain)"
+        msg_jauge = f"🎉 {nb_gratuits} article{pluriel} offert{pluriel} ! (Encore 11 pour le prochain)"
         val_jauge = 1.0
     elif reste == 10:
-        msg_jauge = "🚨 Plus qu'un match pour débloquer votre cadeau !"
+        msg_jauge = "🚨 Plus qu'un article pour débloquer votre cadeau !"
         val_jauge = reste / 11.0
     else:
         manquant = 11 - reste
-        msg_jauge = f"🔥 Plus que {manquant} matchs pour en avoir 1 offert !"
+        msg_jauge = f"🔥 Plus que {manquant} articles pour en avoir 1 offert !"
         val_jauge = reste / 11.0
 
     st.markdown(f"<p style='text-align: center; font-size: 13px; color: #d97706; margin-bottom: 5px; font-weight: 600;'>{msg_jauge}</p>", unsafe_allow_html=True)
@@ -581,6 +606,12 @@ with st.sidebar:
         st.session_state.chemin = ['Amicaux Internationaux']
         st.rerun()
         
+    st.divider()
+    st.markdown("### 🎬 Ciné-Club")
+    if st.button("🎞️ Docus & Émissions", use_container_width=True):
+        st.session_state.page = 'documentaires'
+        st.rerun()
+
     st.divider()
     st.markdown("### 🌟 Nouveautés")
     if st.button("✨ Archives Dépoussiérées", use_container_width=True):
@@ -669,10 +700,9 @@ if st.session_state.page == 'accueil':
     with st.container(border=True):
         st.markdown("""
             <div style='text-align: center;'>
-                <h4 style='margin: 0 0 8px 0; color: #d97706;'>🔥 Nouveautés sur le Grenier !</h4>
+                <h4 style='margin: 0 0 8px 0; color: #d97706;'>🔥 Nouveauté : Le Rayon Documentaires est ouvert !</h4>
                 <p style='margin: 0; font-size: 14.5px; color: #e2e8f0; line-height: 1.5;'>
-                    ⏱️ <b>Horaires & buteurs :</b> Les fiches détaillées affichent désormais l'heure du coup d'envoi (heure française) et la liste des buteurs du match !<br>
-                    🕵️‍♂️ <b>Recherche par joueur :</b> Trouvez directement un match en saisissant le nom d'un joueur dans la barre rapide ou avancée.
+                    En plus des matchs, explorez désormais notre sélection de reportages, émissions d'époque et d'archives historiques. Filtrez par thème, club ou personnage clé pour trouver votre bonheur dans la section dédiée (Menu Rapide) !
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -681,11 +711,10 @@ if st.session_state.page == 'accueil':
     st.write("---")
     
     # --- 🔍 BARRE DE RECHERCHE RAPIDE MISE À JOUR (SANS ACCENTS) ---
-    recherche_rapide = st.text_input("🔍 Recherche Rapide", placeholder="Tapez une équipe, une compétition, un joueur, une année, un stade...")
+    recherche_rapide = st.text_input("🔍 Recherche Rapide (Matchs)", placeholder="Tapez une équipe, une compétition, un joueur, une année, un stade...")
     if recherche_rapide:
         recherche_norm = supprimer_accents(recherche_rapide).lower()
         
-        # Outil pour chercher sans tenir compte des accents ni des majuscules
         def mask_sans_accents(colonne):
             return df[colonne].astype(str).apply(supprimer_accents).str.lower().str.contains(recherche_norm, na=False)
 
@@ -865,12 +894,12 @@ elif st.session_state.page == 'panier':
     st.header("🛒 Mon Panier")
     
     if len(st.session_state.panier) == 0:
-        st.info("Votre panier est vide pour le moment. Naviguez dans le catalogue pour ajouter des matchs !")
+        st.info("Votre panier est vide pour le moment. Naviguez dans le catalogue pour ajouter des matchs ou des documentaires !")
         if st.button("Retourner à l'accueil"):
             st.session_state.page = 'accueil' 
             st.rerun()
     else:
-        st.markdown(f"**Vous avez sélectionné {len(st.session_state.panier)} match(s).**")
+        st.markdown(f"**Vous avez sélectionné {len(st.session_state.panier)} article(s).**")
         st.write("---")
         
         total_prix_base = 0
@@ -878,61 +907,85 @@ elif st.session_state.page == 'panier':
         liste_prix = []
         items_a_supprimer = []
         
-        for i, match in enumerate(st.session_state.panier):
+        for i, article in enumerate(st.session_state.panier):
             col_info, col_fmt, col_btn = st.columns([5, 2, 1])
             
-            date_m = match.get('Date', '?')
-            comp_m = match.get('Compétition', '?')
-            dom_m = match.get('Domicile', '')
-            ext_m = match.get('Extérieur', '')
+            is_doc = article.get('type_produit') == 'documentaire'
             
-            qual_m = str(match.get('Qualité', '')).lower()
-            has_dvd = 'dvd' in qual_m or 'vob' in qual_m
-            has_num = any(ext in qual_m for ext in ['mp4', 'mkv', 'avi', 'ts', 'numérique', 'mpeg', 'wmv', 'divx'])
-            
-            if not has_dvd and not has_num:
-                has_num = True
-            
-            commentaire = str(match.get('Commentaires sur fichier', '')).strip()
-            a_defaut = bool(commentaire and commentaire.lower() not in ['nan', 'none', ''])
-            
-            with col_info:
-                st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m}<br>⚔️ **{dom_m} - {ext_m}**", unsafe_allow_html=True)
-                if a_defaut:
-                    st.markdown(f"<span style='color: #d97706; font-size: 13px;'>🩹 <i>Archive imparfaite : {commentaire}</i></span>", unsafe_allow_html=True)
-            
-            with col_fmt:
-                p_dvd = 4 if a_defaut else 5
-                p_num = 2 if a_defaut else 3
-                lbl_dvd = f"💿 DVD ({p_dvd}€ au lieu de 5€)" if a_defaut else "💿 DVD (5€)"
-                lbl_num = f"💻 Numérique ({p_num}€ au lieu de 3€)" if a_defaut else "💻 Numérique (3€)"
-
-                if has_dvd and has_num:
-                    idx_actuel = 0 if match.get('format_choisi') == 'DVD' else 1
-                    choix_fmt = st.selectbox("Format :", [lbl_dvd, lbl_num], key=f"fmt_sel_{i}", index=idx_actuel)
-                    match['format_choisi'] = 'DVD' if 'DVD' in choix_fmt else 'Numérique'
-                elif has_dvd and not has_num:
-                    st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_dvd}</div>", unsafe_allow_html=True)
-                    match['format_choisi'] = 'DVD'
-                else:
-                    st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_num}</div>", unsafe_allow_html=True)
-                    match['format_choisi'] = 'Numérique'
-                    
-            with col_btn:
-                st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-                if st.button("❌ Retirer", key=f"del_cart_{i}"):
-                    items_a_supprimer.append(i)
-            
-            st.divider()
-            
-            prix_base = 5 if match['format_choisi'] == 'DVD' else 3
-            prix_final_match = prix_base - 1 if a_defaut else prix_base
-            
-            total_prix_base += prix_base
-            if a_defaut:
-                total_remise_defauts += 1
+            if is_doc:
+                titre = article.get('Titre', '')
+                annee = article.get('Année', '')
+                titre_affiche = f"{titre} ({int(annee)})" if annee and str(annee).strip() != "" else titre
                 
-            liste_prix.append(prix_final_match)
+                with col_info:
+                    st.markdown(f"🎬 **{titre_affiche}**<br><span style='color: gray; font-size: 14px;'>🏷️ Documentaire / Émission</span>", unsafe_allow_html=True)
+                
+                with col_fmt:
+                    st.markdown(f"<div style='margin-top: 15px; font-weight: 500; font-size: 15px;'>💻 Numérique (2€)</div>", unsafe_allow_html=True)
+                    
+                with col_btn:
+                    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+                    if st.button("❌ Retirer", key=f"del_cart_{i}"):
+                        items_a_supprimer.append(i)
+                
+                prix_final = 2
+                total_prix_base += 2
+                liste_prix.append(prix_final)
+                
+            else:
+                # Logique Matchs existante
+                date_m = article.get('Date', '?')
+                comp_m = article.get('Compétition', '?')
+                dom_m = article.get('Domicile', '')
+                ext_m = article.get('Extérieur', '')
+                
+                qual_m = str(article.get('Qualité', '')).lower()
+                has_dvd = 'dvd' in qual_m or 'vob' in qual_m
+                has_num = any(ext in qual_m for ext in ['mp4', 'mkv', 'avi', 'ts', 'numérique', 'mpeg', 'wmv', 'divx'])
+                
+                if not has_dvd and not has_num:
+                    has_num = True
+                
+                commentaire = str(article.get('Commentaires sur fichier', '')).strip()
+                a_defaut = bool(commentaire and commentaire.lower() not in ['nan', 'none', ''])
+                
+                with col_info:
+                    st.markdown(f"🗓️ **{date_m}** | 🏆 {comp_m}<br>⚔️ **{dom_m} - {ext_m}**", unsafe_allow_html=True)
+                    if a_defaut:
+                        st.markdown(f"<span style='color: #d97706; font-size: 13px;'>🩹 <i>Archive imparfaite : {commentaire}</i></span>", unsafe_allow_html=True)
+                
+                with col_fmt:
+                    p_dvd = 4 if a_defaut else 5
+                    p_num = 2 if a_defaut else 3
+                    lbl_dvd = f"💿 DVD ({p_dvd}€ au lieu de 5€)" if a_defaut else "💿 DVD (5€)"
+                    lbl_num = f"💻 Numérique ({p_num}€ au lieu de 3€)" if a_defaut else "💻 Numérique (3€)"
+
+                    if has_dvd and has_num:
+                        idx_actuel = 0 if article.get('format_choisi') == 'DVD' else 1
+                        choix_fmt = st.selectbox("Format :", [lbl_dvd, lbl_num], key=f"fmt_sel_{i}", index=idx_actuel)
+                        article['format_choisi'] = 'DVD' if 'DVD' in choix_fmt else 'Numérique'
+                    elif has_dvd and not has_num:
+                        st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_dvd}</div>", unsafe_allow_html=True)
+                        article['format_choisi'] = 'DVD'
+                    else:
+                        st.markdown(f"<div style='margin-top: 30px; font-weight: 500; font-size: 15px;'>{lbl_num}</div>", unsafe_allow_html=True)
+                        article['format_choisi'] = 'Numérique'
+                        
+                with col_btn:
+                    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+                    if st.button("❌ Retirer", key=f"del_cart_{i}"):
+                        items_a_supprimer.append(i)
+                
+                prix_base = 5 if article['format_choisi'] == 'DVD' else 3
+                prix_final_match = prix_base - 1 if a_defaut else prix_base
+                
+                total_prix_base += prix_base
+                if a_defaut:
+                    total_remise_defauts += 1
+                    
+                liste_prix.append(prix_final_match)
+
+            st.divider()
                 
         if items_a_supprimer:
             for idx in sorted(items_a_supprimer, reverse=True):
@@ -953,10 +1006,10 @@ elif st.session_state.page == 'panier':
         st.markdown(f"**Sous-total brut :** {total_prix_base} €")
         
         if total_remise_defauts > 0:
-            st.info(f"🩹 **Archive Imparfaite :** Une remise a été appliquée pour compenser l'usure du temps (qualité altérée, fichier incomplet...) sur vos bandes. (-{total_remise_defauts} €)")
+            st.info(f"🩹 **Archive Imparfaite :** Une remise a été appliquée pour compenser l'usure du temps sur vos bandes. (-{total_remise_defauts} €)")
             
         if reduction_gratuits > 0:
-            st.success(f"🎁 **Offre Spéciale :** La valeur de vos {nb_gratuits} match(s) offert(s) a été déduite ! (-{reduction_gratuits} €)")
+            st.success(f"🎁 **Offre Spéciale :** La valeur de vos {nb_gratuits} article(s) offert(s) a été déduite ! (-{reduction_gratuits} €)")
             
         st.markdown(f"### **Total à payer : {total_final} €**")
         st.write("---")
@@ -965,13 +1018,16 @@ elif st.session_state.page == 'panier':
         st.subheader("📩 Valider ma commande")
         st.markdown("Choisissez votre méthode préférée pour m'envoyer votre sélection :")
         
-        texte_recap = "Bonjour, je souhaite commander ces matchs vus dans Le Grenier :\n\n"
-        for match in st.session_state.panier:
-            fmt_r = match.get('format_choisi', 'Numérique')
-            commentaire_mail = str(match.get('Commentaires sur fichier', '')).strip()
-            a_defaut_mail = bool(commentaire_mail and commentaire_mail.lower() not in ['nan', 'none', ''])
-            txt_defaut = " [Archive Imparfaite]" if a_defaut_mail else ""
-            texte_recap += f"- [{fmt_r}]{txt_defaut} {match.get('Date', '?')} | {match.get('Domicile', '')} vs {match.get('Extérieur', '')} ({match.get('Compétition', '?')})\n"
+        texte_recap = "Bonjour, je souhaite commander ces archives vues dans Le Grenier :\n\n"
+        for article in st.session_state.panier:
+            if article.get('type_produit') == 'documentaire':
+                texte_recap += f"- [Numérique] 🎬 {article.get('Titre', '')} ({article.get('Année', '')})\n"
+            else:
+                fmt_r = article.get('format_choisi', 'Numérique')
+                commentaire_mail = str(article.get('Commentaires sur fichier', '')).strip()
+                a_defaut_mail = bool(commentaire_mail and commentaire_mail.lower() not in ['nan', 'none', ''])
+                txt_defaut = " [Archive Imparfaite]" if a_defaut_mail else ""
+                texte_recap += f"- [{fmt_r}]{txt_defaut} {article.get('Date', '?')} | {article.get('Domicile', '')} vs {article.get('Extérieur', '')} ({article.get('Compétition', '?')})\n"
         
         texte_recap += f"\nTotal d'articles : {nb_articles}"
         if total_remise_defauts > 0:
@@ -1165,7 +1221,7 @@ elif st.session_state.page == 'progression':
 # PAGE : CATALOGUE COMPLET
 # ==========================================
 if st.session_state.page == 'catalogue':
-    st.header("📚 Catalogue Complet")
+    st.header("📚 Catalogue Complet (Matchs)")
     
     df_catalogue = df.copy()
     
@@ -1245,7 +1301,7 @@ elif st.session_state.page == 'face_a_face':
 
 # --- RECHERCHE AVANCÉE AVEC FILTRE QUALITÉ ET BUTEURS ---
 elif st.session_state.page == 'recherche_avancee':
-    st.header("🕵️ Recherche Avancée")
+    st.header("🕵️ Recherche Avancée (Matchs)")
     
     toutes_les_equipes = sorted(pd.concat([df['Domicile'], df['Extérieur']]).dropna().astype(str).unique())
     competitions = sorted(df['Compétition'].dropna().astype(str).unique()) if 'Compétition' in df.columns else []
@@ -1258,10 +1314,9 @@ elif st.session_state.page == 'recherche_avancee':
     if cible_comp and cible_comp in competitions:
         def_comp = [cible_comp]
         
-    # --- NOUVEAU : BARRE DE RECHERCHE BUTEUR ---
+    # --- BARRE DE RECHERCHE BUTEUR ---
     f_buteur = st.text_input("⚽ Rechercher un buteur (ex: Zidane, Shevchenko...) :", placeholder="Tapez le nom d'un joueur...")
     st.write("") 
-    # ------------------------------------------
     
     col1, col2 = st.columns(2)
     with col1:
@@ -1287,7 +1342,6 @@ elif st.session_state.page == 'recherche_avancee':
         buteur_norm = supprimer_accents(f_buteur).lower()
         if 'Buteurs' in df_filtre.columns:
             df_filtre = df_filtre[df_filtre['Buteurs'].astype(str).apply(supprimer_accents).str.lower().str.contains(buteur_norm, na=False)]
-    # ----------------------------------------------
     
     if f_equipes: df_filtre = df_filtre[df_filtre['Domicile'].isin(f_equipes) | df_filtre['Extérieur'].isin(f_equipes)]
     if f_comps: df_filtre = df_filtre[df_filtre['Compétition'].isin(f_comps)]
@@ -1565,6 +1619,125 @@ elif st.session_state.page == 'arborescence':
             st.write("---")
 
             afficher_resultats(df_final)
+
+# ==========================================
+# PAGE : DOCUMENTAIRES & ÉMISSIONS
+# ==========================================
+elif st.session_state.page == 'documentaires':
+    st.header("🎞️ Documentaires & Émissions")
+    st.markdown("<p style='color: gray; font-size:16px;'>Plongez dans l'histoire à travers les reportages, magazines et documentaires du Grenier.</p>", unsafe_allow_html=True)
+    st.write("---")
+
+    if df_docus.empty:
+        st.warning("Le catalogue documentaire est actuellement vide ou en cours de chargement.")
+    else:
+        # --- 🔍 MOTEUR DE RECHERCHE INTUITIF ---
+        recherche_doc = st.text_input("🔍 Recherche par mot-clé :", placeholder="Ex: Zidane, Coupe du Monde, Téléfoot, 1998...")
+        
+        # Filtres avancés
+        col_f1, col_f2, col_f3 = st.columns(3)
+        
+        # Extraction intelligente des listes pour les menus (en gérant les virgules)
+        def extraire_liste_unique(colonne):
+            valeurs = df_docus[colonne].astype(str).str.split(',').explode().str.strip()
+            return sorted([v for v in valeurs.unique() if v != ""])
+            
+        liste_types = extraire_liste_unique('Type') if 'Type' in df_docus.columns else []
+        liste_themes = extraire_liste_unique('Thème') if 'Thème' in df_docus.columns else []
+        liste_cibles = extraire_liste_unique('Club-sélection') if 'Club-sélection' in df_docus.columns else []
+
+        with col_f1: f_type = st.multiselect("🏷️ Type :", liste_types)
+        with col_f2: f_theme = st.multiselect("🎯 Thème :", liste_themes)
+        with col_f3: f_cible = st.multiselect("🏟️ Sujet (Club/Sélection) :", liste_cibles)
+        
+        st.write("---")
+        
+        # Application des filtres
+        df_docus_filtre = df_docus.copy()
+        
+        # Filtre texte global
+        if recherche_doc:
+            recherche_norm = supprimer_accents(recherche_doc).lower()
+            mask_doc = pd.Series(False, index=df_docus_filtre.index)
+            for col in df_docus_filtre.columns:
+                mask_doc = mask_doc | df_docus_filtre[col].astype(str).apply(supprimer_accents).str.lower().str.contains(recherche_norm, na=False)
+            df_docus_filtre = df_docus_filtre[mask_doc]
+            
+        # Filtres déroulants (recherche à l'intérieur des tags)
+        if f_type:
+            mask_type = df_docus_filtre['Type'].astype(str).apply(lambda x: any(t in x for t in f_type))
+            df_docus_filtre = df_docus_filtre[mask_type]
+        if f_theme:
+            mask_theme = df_docus_filtre['Thème'].astype(str).apply(lambda x: any(t in x for t in f_theme))
+            df_docus_filtre = df_docus_filtre[mask_theme]
+        if f_cible:
+            mask_cible = df_docus_filtre['Club-sélection'].astype(str).apply(lambda x: any(c in x for c in f_cible))
+            df_docus_filtre = df_docus_filtre[mask_cible]
+
+        # --- AFFICHAGE DES RÉSULTATS ---
+        st.markdown(f"**🎯 {len(df_docus_filtre)} documentaires trouvés**")
+        
+        if not df_docus_filtre.empty:
+            colonnes = st.columns(2)
+            
+            for i, (index, row) in enumerate(df_docus_filtre.iterrows()):
+                with colonnes[i % 2]:
+                    with st.container(border=True):
+                        titre = row.get('Titre', 'Titre inconnu')
+                        annee = row.get('Année', '')
+                        diffuseur = row.get('Diffuseur', '')
+                        duree = row.get('Durée (min)', 0)
+                        
+                        # En-tête de la fiche
+                        try:
+                            # Tente de convertir l'année en nombre entier si c'est possible
+                            annee_format = str(int(float(annee)))
+                        except:
+                            annee_format = str(annee)
+                            
+                        titre_affiche = f"{titre} ({annee_format})" if annee_format and annee_format.strip() != "" else titre
+                        st.markdown(f"<h4 style='margin-bottom: 5px; color: #fafafa;'>🎬 {titre_affiche}</h4>", unsafe_allow_html=True)
+                        
+                        # Les petits tags sous le titre
+                        tags_html = "<div style='display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;'>"
+                        if diffuseur: tags_html += f"<span style='background-color:#1E3A8A; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>📺 {diffuseur}</span>"
+                        if duree > 0: tags_html += f"<span style='background-color:#4B5563; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>⏱️ {duree} min</span>"
+                        
+                        # Tags dynamiques (Types et Thèmes)
+                        for t in str(row.get('Type', '')).split(','):
+                            if t.strip(): tags_html += f"<span style='background-color:#0f4c5c; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>🏷️ {t.strip()}</span>"
+                        for t in str(row.get('Thème', '')).split(','):
+                            if t.strip(): tags_html += f"<span style='background-color:#9a031e; color:white; padding: 2px 8px; border-radius: 10px; font-size:12px;'>🎯 {t.strip()}</span>"
+                            
+                        tags_html += "</div>"
+                        st.markdown(tags_html, unsafe_allow_html=True)
+                        
+                        # Informations complémentaires
+                        personnages = row.get('Personnages clés', '')
+                        if personnages:
+                            st.markdown(f"<p style='font-size: 13px; margin-bottom: 5px; color: #a1a1aa;'>👥 <b>Avec :</b> {personnages}</p>", unsafe_allow_html=True)
+                            
+                        # Bouton d'ajout au panier
+                        st.write("")
+                        doc_id = f"doc_{titre}_{annee}"
+                        in_cart = any(m.get('id_produit') == doc_id for m in st.session_state.panier)
+                        
+                        if in_cart:
+                            if st.button("✅ Ajouté (Retirer)", key=f"cart_doc_{index}_{i}", use_container_width=True):
+                                st.session_state.panier = [m for m in st.session_state.panier if m.get('id_produit') != doc_id]
+                                st.rerun()
+                        else:
+                            if st.button("🛒 Ajouter au panier (2€)", key=f"cart_doc_{index}_{i}", type="primary", use_container_width=True):
+                                doc_dict = {
+                                    'id_produit': doc_id,
+                                    'type_produit': 'documentaire',
+                                    'Titre': titre,
+                                    'Année': annee_format,
+                                    'format_choisi': 'Numérique',
+                                    'prix': 2
+                                }
+                                st.session_state.panier.append(doc_dict)
+                                st.rerun()
 
 # ==========================================
 # 🛑 PIED DE PAGE (FOOTER GLOBAL)
