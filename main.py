@@ -913,7 +913,7 @@ elif st.session_state.page == 'panier':
             if is_doc:
                 titre = article.get('Titre', '')
                 annee = article.get('Année', '')
-                titre_affiche = f"{titre} ({int(float(annee))})" if annee and str(annee).strip() != "" else titre
+                titre_affiche = f"{titre} ({annee})" if annee and str(annee).strip() != "" else titre
                 
                 with col_info:
                     st.markdown(f"🎬 **{titre_affiche}**<br><span style='color: gray; font-size: 14px;'>🏷️ Documentaire / Émission</span>", unsafe_allow_html=True)
@@ -1686,13 +1686,13 @@ elif st.session_state.page == 'documentaires':
             df_doc_display = df_docus_filtre[colonnes_docus_afficher].copy()
             df_doc_display.insert(0, "Sélection", False)
             
-            # Nettoyage visuel de l'année (robuste contre les textes comme "1998-1999")
+            # Nettoyage visuel de l'année (robuste)
             def nettoyer_annee(val):
                 if pd.isna(val): return ""
                 val_str = str(val).strip()
-                if not val_str: return ""
+                if not val_str or val_str.lower() == 'nan': return ""
                 try:
-                    # Tente de convertir en nombre entier
+                    # Tente de convertir en nombre entier pour éviter '1998.0'
                     return str(int(float(val_str)))
                 except ValueError:
                     # Si c'est du texte (ex: "Années 90"), on l'affiche tel quel
@@ -1700,7 +1700,6 @@ elif st.session_state.page == 'documentaires':
 
             if 'Année' in df_doc_display.columns:
                 df_doc_display['Année'] = df_doc_display['Année'].apply(nettoyer_annee)
-                df_doc_display['Année'] = df_doc_display['Année'].apply(lambda x: str(int(float(x))) if pd.notna(x) and str(x).strip() != "" else "")
             
             # Génération du tableau interactif
             edited_df_doc = st.data_editor(
