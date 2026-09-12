@@ -46,76 +46,77 @@ def go_home():
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
 
-# --- NOUVEAU POP-UP : BILLET DE MATCH RÉTRO ---
-@st.dialog("🎫 Feuille de Match Officielle")
-def popup_details_match(affiche, date, horaire, stade, comp, buteurs, lien_tm):
-    # Formatage visuel du billet de stade
-    ticket_html = f"""
-    <div style="
-        border: 2px dashed #d97706;
-        border-radius: 8px;
-        padding: 20px;
-        background-color: #1a1a24;
-        color: #f8f9fa;
-        font-family: 'Courier New', Courier, monospace;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-        margin-bottom: 20px;
-    ">
-        <div style="text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
-            <span style="font-size: 12px; color: #d97706; text-transform: uppercase; letter-spacing: 2px;">🏆 {comp}</span><br>
-            <span style="font-size: 22px; font-weight: bold; font-family: sans-serif;">{affiche}</span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 15px;">
-            <div><strong style="color: #9ca3af;">DATE</strong><br>{date}</div>
-            <div style="text-align: right;"><strong style="color: #9ca3af;">HEURE</strong><br>{horaire if horaire else 'Inconnue'}</div>
-        </div>
-        
-        <div style="font-size: 14px; margin-bottom: 15px;">
-            <strong style="color: #9ca3af;">STADE</strong><br>{stade}
-        </div>
-    """
+# --- NOUVEAU POP-UP : BILLET DE MATCH RÉTRO AVEC COMPOS ---
+@st.dialog("🎫 Feuille de Match Officielle", width="large")
+def popup_details_match(affiche, date, horaire, stade, comp, buteurs, lien_tm, arbitre="", affluence="", coach_dom="", coach_ext=""):
     
-    if buteurs and str(buteurs).strip() not in ['', '-', 'nan']:
-        ticket_html += f"""
-        <div style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 5px;">
-            <strong style="color: #9ca3af;">⚽ BUTEURS</strong><br>
-            <span style="font-size: 13px; font-family: sans-serif; font-style: italic;">{buteurs}</span>
-        </div>
-        """
-        
-    ticket_html += "</div>"
-    
-    st.markdown(ticket_html, unsafe_allow_html=True)
-    
-    # Bouton Transfermarkt
+    # 1. Extraction de l'ID du match pour trouver l'image
+    id_tm = ""
     if pd.notna(lien_tm) and str(lien_tm).strip() != "":
-        # Sécurisation de l'URL pour s'assurer qu'elle s'ouvre bien
+        match_id = re.search(r'spielbericht/(\d+)', str(lien_tm))
+        if match_id:
+            id_tm = match_id.group(1)
+            
+    chemin_compo = f"Compos_Images/{id_tm}.png"
+
+    # 2. En-tête style "Billet / Presse"
+    st.markdown(f"""
+    <div style="background-color: #f4f1ea; border-top: 6px solid #111; border-bottom: 6px solid #111; padding: 20px; font-family: 'Georgia', serif; color: #111; margin-bottom: 15px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
+        <div style="text-align: center; border-bottom: 1px solid #111; padding-bottom: 10px; margin-bottom: 10px;">
+            <span style="font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 2px;">{comp}</span><br>
+            <h2 style="margin: 5px 0 0 0; font-size: 24px; text-transform: uppercase; font-weight: 900;">{affiche}</h2>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px; border-bottom: 1px dotted #888; padding-bottom: 8px;">
+            <div><strong>Le {date}</strong> à {horaire if pd.notna(horaire) and horaire else '-'}</div>
+            <div style="text-align: right; font-style: italic;">{stade if pd.notna(stade) and stade else 'Stade inconnu'}</div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #444;">
+            <div><strong>👥 Affluence :</strong> {affluence if pd.notna(affluence) and affluence else 'Inconnue'}</div>
+            <div><strong>⚖️ Arbitre :</strong> {arbitre if pd.notna(arbitre) and arbitre else 'Inconnu'}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 3. Affichage du Terrain Tactique
+    if os.path.exists(chemin_compo):
+        st.image(chemin_compo, use_container_width=True)
+        # Affichage des coachs sous le terrain, alignés à gauche et à droite
+        if pd.notna(coach_dom) or pd.notna(coach_ext):
+            cd = coach_dom if pd.notna(coach_dom) and coach_dom else "-"
+            ce = coach_ext if pd.notna(coach_ext) and coach_ext else "-"
+            st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; font-size: 12px; font-style: italic; color: #333; margin-top: -10px; padding: 0 10px;">
+                <div>Coach : {cd}</div>
+                <div>Coach : {ce}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("📌 Schéma tactique indisponible pour ce match.")
+
+    # 4. Bloc des Buteurs
+    if pd.notna(buteurs) and str(buteurs).strip() not in ['', '-', 'nan']:
+        st.markdown(f"""
+        <div style="text-align: center; padding-top: 15px; border-top: 1px dotted #888; margin-top: 15px;">
+            <strong style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">⚽ Buteurs</strong><br>
+            <span style="font-size: 14px; font-family: sans-serif; font-style: italic;">{buteurs}</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # 5. Bouton d'accès direct Transfermarkt
+    if pd.notna(lien_tm) and str(lien_tm).strip() != "":
         tm_url = str(lien_tm).strip()
         if not tm_url.startswith("http"):
             tm_url = "https://" + tm_url
-            
         st.markdown(f"""
         <div style="text-align: center;">
-            <a href="{tm_url}" target="_blank" style="
-                display: inline-block;
-                background-color: #001A4D;
-                color: white;
-                padding: 12px 24px;
-                border-radius: 6px;
-                text-decoration: none;
-                font-weight: bold;
-                font-family: sans-serif;
-                border: 1px solid #003399;
-                transition: 0.2s;
-            ">
-                🔎 Voir les compositions sur Transfermarkt
+            <a href="{tm_url}" target="_blank" style="display: inline-block; background-color: #001A4D; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; font-family: sans-serif; border: 1px solid #003399;">
+                🔎 Voir les détails complets sur Transfermarkt
             </a>
-            <p style="color: gray; font-size: 12px; margin-top: 8px;">(S'ouvre dans un nouvel onglet)</p>
         </div>
         """, unsafe_allow_html=True)
-    else:
-        st.info("💡 L'archive Transfermarkt n'est pas encore synchronisée pour ce match.")
 # ----------------------------------------------
 
 @st.dialog("🧭 Guide & Contenu")
@@ -328,7 +329,14 @@ def load_data():
         return pd.DataFrame()
 
 df = load_data()
-colonnes_possibles = ['Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
+
+# Colonnes possibles, on s'assure de récupérer aussi nos nouvelles colonnes
+colonnes_possibles = [
+    'Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 
+    'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 
+    'Langue', 'Qualité', 'Commentaires sur fichier', 'Lien Transfermarkt',
+    'Arbitre', 'Affluence', 'Entraîneur Dom', 'Entraîneur Ext'
+]
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
 # 4. Chargement des données DOCUMENTAIRES (BLINDÉ)
@@ -398,7 +406,9 @@ def afficher_resultats(df_resultats):
         
         bouton_placeholder = st.empty()
         
-        df_display = df_resultats[colonnes_presentes].copy()
+        # On n'affiche pas toutes les colonnes techniques dans le tableau
+        colonnes_a_afficher = [c for c in ['Saison', 'Compétition', 'Phase', 'Date', 'Domicile', 'Score', 'Extérieur', 'Qualité'] if c in df_resultats.columns]
+        df_display = df_resultats[colonnes_a_afficher].copy()
         df_display.insert(0, "Sélection", False)
         
         edited_df = st.data_editor(
@@ -406,7 +416,7 @@ def afficher_resultats(df_resultats):
             column_config={
                 "Sélection": st.column_config.CheckboxColumn("🛒 Ajouter", default=False)
             },
-            disabled=colonnes_presentes,
+            disabled=colonnes_a_afficher,
             hide_index=True,
             use_container_width=True,
             height=400
@@ -418,7 +428,9 @@ def afficher_resultats(df_resultats):
             with bouton_placeholder:
                 if st.button(f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier", type="primary", use_container_width=True):
                     for _, row in selected_rows.iterrows():
-                        match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
+                        # Récupérer la vraie ligne complète depuis df_resultats
+                        vraie_ligne = df_resultats.loc[row.name]
+                        match_dict = {k: ("" if pd.isna(v) else v) for k, v in vraie_ligne.to_dict().items()}
                         match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
                         in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
                         
@@ -534,6 +546,11 @@ def afficher_resultats(df_resultats):
                     
                     # --- NOUVELLE LOGIQUE DES BOUTONS (DÉTAILS + PANIER) ---
                     lien_tm = row.get('Lien Transfermarkt', '')
+                    arbitre = row.get('Arbitre', '')
+                    affluence = row.get('Affluence', '')
+                    coach_dom = row.get('Entraîneur Dom', '')
+                    coach_ext = row.get('Entraîneur Ext', '')
+                    
                     match_id = f"{date_brute}_{dom}_{ext}"
                     in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
                     
@@ -548,7 +565,11 @@ def afficher_resultats(df_resultats):
                                 stade=stade_str,
                                 comp=comp_name,
                                 buteurs=buteurs,
-                                lien_tm=lien_tm
+                                lien_tm=lien_tm,
+                                arbitre=arbitre,
+                                affluence=affluence,
+                                coach_dom=coach_dom,
+                                coach_ext=coach_ext
                             )
                             
                     with col_btn_cart:
@@ -1359,7 +1380,6 @@ elif st.session_state.page == 'catalogue':
             df_catalogue = df_catalogue[df_catalogue[col_saison_nom].astype(str) == saison_choisie]
             
         if equipe_choisie != "Toutes les équipes":
-            # Sécurité au cas où les colonnes auraient sauté
             mask = pd.Series(False, index=df_catalogue.index)
             if 'Domicile' in df_catalogue.columns:
                 mask = mask | (df_catalogue['Domicile'] == equipe_choisie)
