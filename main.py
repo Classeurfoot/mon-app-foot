@@ -45,80 +45,6 @@ def go_home():
 # ==========================================
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
-
-# --- NOUVEAU POP-UP : BILLET DE MATCH RÉTRO AVEC COMPOS ---
-@st.dialog("🎫 Feuille de Match Officielle", width="large")
-def popup_details_match(affiche, date, horaire, stade, comp, buteurs, lien_tm, arbitre="", affluence="", coach_dom="", coach_ext=""):
-    
-    # 1. Extraction de l'ID du match pour trouver l'image
-    id_tm = ""
-    if pd.notna(lien_tm) and str(lien_tm).strip() != "":
-        match_id = re.search(r'spielbericht/(\d+)', str(lien_tm))
-        if match_id:
-            id_tm = match_id.group(1)
-            
-    chemin_compo = f"Compos_Images/{id_tm}.png"
-
-    # 2. En-tête style "Billet / Presse"
-    st.markdown(f"""
-    <div style="background-color: #f4f1ea; border-top: 6px solid #111; border-bottom: 6px solid #111; padding: 20px; font-family: 'Georgia', serif; color: #111; margin-bottom: 15px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
-        <div style="text-align: center; border-bottom: 1px solid #111; padding-bottom: 10px; margin-bottom: 10px;">
-            <span style="font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 2px;">{comp}</span><br>
-            <h2 style="margin: 5px 0 0 0; font-size: 24px; text-transform: uppercase; font-weight: 900;">{affiche}</h2>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px; border-bottom: 1px dotted #888; padding-bottom: 8px;">
-            <div><strong>Le {date}</strong> à {horaire if pd.notna(horaire) and horaire else '-'}</div>
-            <div style="text-align: right; font-style: italic;">{stade if pd.notna(stade) and stade else 'Stade inconnu'}</div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #444;">
-            <div><strong>👥 Affluence :</strong> {affluence if pd.notna(affluence) and affluence else 'Inconnue'}</div>
-            <div><strong>⚖️ Arbitre :</strong> {arbitre if pd.notna(arbitre) and arbitre else 'Inconnu'}</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # 3. Affichage du Terrain Tactique
-    if os.path.exists(chemin_compo):
-        st.image(chemin_compo, use_container_width=True)
-        # Affichage des coachs sous le terrain, alignés à gauche et à droite
-        if pd.notna(coach_dom) or pd.notna(coach_ext):
-            cd = coach_dom if pd.notna(coach_dom) and coach_dom else "-"
-            ce = coach_ext if pd.notna(coach_ext) and coach_ext else "-"
-            st.markdown(f"""
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-style: italic; color: #333; margin-top: -10px; padding: 0 10px;">
-                <div>Coach : {cd}</div>
-                <div>Coach : {ce}</div>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info("📌 Schéma tactique indisponible pour ce match.")
-
-    # 4. Bloc des Buteurs
-    if pd.notna(buteurs) and str(buteurs).strip() not in ['', '-', 'nan']:
-        st.markdown(f"""
-        <div style="text-align: center; padding-top: 15px; border-top: 1px dotted #888; margin-top: 15px;">
-            <strong style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">⚽ Buteurs</strong><br>
-            <span style="font-size: 14px; font-family: sans-serif; font-style: italic;">{buteurs}</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # 5. Bouton d'accès direct Transfermarkt
-    if pd.notna(lien_tm) and str(lien_tm).strip() != "":
-        tm_url = str(lien_tm).strip()
-        if not tm_url.startswith("http"):
-            tm_url = "https://" + tm_url
-        st.markdown(f"""
-        <div style="text-align: center;">
-            <a href="{tm_url}" target="_blank" style="display: inline-block; background-color: #001A4D; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; font-family: sans-serif; border: 1px solid #003399;">
-                🔎 Voir les détails complets sur Transfermarkt
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
-# ----------------------------------------------
-
 @st.dialog("🧭 Guide & Contenu")
 def popup_guide_contenu():
     st.markdown("""
@@ -292,32 +218,23 @@ MENU_ARBO = {
     }
 }
 
-# 3. Chargement des données MATCHS (BLINDÉ)
-@st.cache_data(ttl=600)
+# 3. Chargement des données MATCHS
+@st.cache_data(ttl=600)  # Le cache se vide tout seul toutes les 10 minutes !
 def load_data():
     try:
-        # Détection intelligente du séparateur (point-virgule ou virgule)
-        try:
-            df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
-            if 'Saison' not in df.columns:
-                df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig", dtype={'Score': str})
-        except:
-            df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig", dtype={'Score': str})
-
+        df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
         df.columns = df.columns.str.strip()
 
-        # Sécurisation des vérifications de colonnes
-        if 'Saison' in df.columns and 'Compétition' in df.columns:
-            df = df.dropna(subset=['Saison', 'Compétition'], how='all')
+        df = df.dropna(subset=['Saison', 'Compétition'], how='all')
         
-        if 'Domicile' in df.columns: df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
-        if 'Extérieur' in df.columns: df['Extérieur'] = df['Extérieur'].fillna("-")
-        if 'Score' in df.columns: df['Score'] = df['Score'].fillna("-")
-        if 'Stade' in df.columns: df['Stade'] = df['Stade'].fillna("Plusieurs stades")
+        df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
+        df['Extérieur'] = df['Extérieur'].fillna("-")
+        df['Score'] = df['Score'].fillna("-")
+        df['Stade'] = df['Stade'].fillna("Plusieurs stades")
         
-        if 'Domicile' in df.columns and 'Extérieur' in df.columns:
-            df = df.dropna(subset=['Domicile', 'Extérieur'])
-            
+        df = df.dropna(subset=['Domicile', 'Extérieur'])
+        df.columns = df.columns.str.strip()
+        
         if 'Date' in df.columns:
             dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
             masque_excel = dates_numeriques.notna()
@@ -329,27 +246,14 @@ def load_data():
         return pd.DataFrame()
 
 df = load_data()
-
-# Colonnes possibles, on s'assure de récupérer aussi nos nouvelles colonnes
-colonnes_possibles = [
-    'Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 
-    'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 
-    'Langue', 'Qualité', 'Commentaires sur fichier', 'Lien Transfermarkt',
-    'Arbitre', 'Affluence', 'Entraîneur Dom', 'Entraîneur Ext'
-]
+colonnes_possibles = ['Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
 
-# 4. Chargement des données DOCUMENTAIRES (BLINDÉ)
+# 4. Chargement des données DOCUMENTAIRES
 @st.cache_data(ttl=600)
 def load_docus():
     try:
-        # Détection intelligente du séparateur
-        try:
-            df_doc = pd.read_csv("docus.csv", sep=";", encoding="utf-8-sig")
-            if len(df_doc.columns) < 3:
-                df_doc = pd.read_csv("docus.csv", sep=",", encoding="utf-8-sig")
-        except:
-            df_doc = pd.read_csv("docus.csv", sep=",", encoding="utf-8-sig")
+        df_doc = pd.read_csv("docus.csv", sep=";", encoding="utf-8-sig")
         
         nouvelles_colonnes = {}
         for col in df_doc.columns:
@@ -406,9 +310,7 @@ def afficher_resultats(df_resultats):
         
         bouton_placeholder = st.empty()
         
-        # On n'affiche pas toutes les colonnes techniques dans le tableau
-        colonnes_a_afficher = [c for c in ['Saison', 'Compétition', 'Phase', 'Date', 'Domicile', 'Score', 'Extérieur', 'Qualité'] if c in df_resultats.columns]
-        df_display = df_resultats[colonnes_a_afficher].copy()
+        df_display = df_resultats[colonnes_presentes].copy()
         df_display.insert(0, "Sélection", False)
         
         edited_df = st.data_editor(
@@ -416,7 +318,7 @@ def afficher_resultats(df_resultats):
             column_config={
                 "Sélection": st.column_config.CheckboxColumn("🛒 Ajouter", default=False)
             },
-            disabled=colonnes_a_afficher,
+            disabled=colonnes_presentes,
             hide_index=True,
             use_container_width=True,
             height=400
@@ -428,9 +330,7 @@ def afficher_resultats(df_resultats):
             with bouton_placeholder:
                 if st.button(f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier", type="primary", use_container_width=True):
                     for _, row in selected_rows.iterrows():
-                        # Récupérer la vraie ligne complète depuis df_resultats
-                        vraie_ligne = df_resultats.loc[row.name]
-                        match_dict = {k: ("" if pd.isna(v) else v) for k, v in vraie_ligne.to_dict().items()}
+                        match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
                         match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
                         in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
                         
@@ -544,51 +444,25 @@ def afficher_resultats(df_resultats):
                         
                     st.write("") 
                     
-                    # --- NOUVELLE LOGIQUE DES BOUTONS (DÉTAILS + PANIER) ---
-                    lien_tm = row.get('Lien Transfermarkt', '')
-                    arbitre = row.get('Arbitre', '')
-                    affluence = row.get('Affluence', '')
-                    coach_dom = row.get('Entraîneur Dom', '')
-                    coach_ext = row.get('Entraîneur Ext', '')
-                    
                     match_id = f"{date_brute}_{dom}_{ext}"
                     in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
                     
-                    col_btn_info, col_btn_cart = st.columns(2)
-                    
-                    with col_btn_info:
-                        if st.button("🎫 Feuille de match", key=f"info_{index}_{i}", use_container_width=True):
-                            popup_details_match(
-                                affiche=f"{dom} {score} {ext}",
-                                date=date_formatee.capitalize(),
-                                horaire=horaire,
-                                stade=stade_str,
-                                comp=comp_name,
-                                buteurs=buteurs,
-                                lien_tm=lien_tm,
-                                arbitre=arbitre,
-                                affluence=affluence,
-                                coach_dom=coach_dom,
-                                coach_ext=coach_ext
-                            )
-                            
-                    with col_btn_cart:
-                        if in_cart:
-                            if st.button("✅ Ajouté", key=f"cart_{index}_{i}", use_container_width=True):
-                                st.session_state.panier = [m for m in st.session_state.panier if f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" != match_id]
-                                st.rerun()
-                        else:
-                            if st.button("🛒 Ajouter", key=f"cart_{index}_{i}", type="primary", use_container_width=True):
-                                match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items()}
-                                q = str(match_dict.get('Qualité', '')).lower()
-                                if 'dvd' in q or 'vob' in q:
-                                    match_dict['format_choisi'] = 'DVD'
-                                else:
-                                    match_dict['format_choisi'] = 'Numérique'
-                                match_dict['type_produit'] = 'match'
-                                    
-                                st.session_state.panier.append(match_dict)
-                                st.rerun()
+                    if in_cart:
+                        if st.button("✅ Ajouté (Retirer)", key=f"cart_{index}_{i}", use_container_width=True):
+                            st.session_state.panier = [m for m in st.session_state.panier if f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" != match_id]
+                            st.rerun()
+                    else:
+                        if st.button("🛒 Ajouter au panier", key=f"cart_{index}_{i}", type="primary", use_container_width=True):
+                            match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items()}
+                            q = str(match_dict.get('Qualité', '')).lower()
+                            if 'dvd' in q or 'vob' in q:
+                                match_dict['format_choisi'] = 'DVD'
+                            else:
+                                match_dict['format_choisi'] = 'Numérique'
+                            match_dict['type_produit'] = 'match'
+                                
+                            st.session_state.panier.append(match_dict)
+                            st.rerun()
 
 # ==========================================
 # 🧭 BARRE LATÉRALE PERSISTANTE
@@ -1039,7 +913,7 @@ elif st.session_state.page == 'panier':
             if is_doc:
                 titre = article.get('Titre', '')
                 annee = article.get('Année', '')
-                titre_affiche = f"{titre} ({int(float(annee))})" if annee and str(annee).strip() != "" else titre
+                titre_affiche = f"{titre} ({annee})" if annee and str(annee).strip() != "" else titre
                 
                 with col_info:
                     st.markdown(f"🎬 **{titre_affiche}**<br><span style='color: gray; font-size: 14px;'>🏷️ Documentaire / Émission</span>", unsafe_allow_html=True)
@@ -1344,53 +1218,36 @@ elif st.session_state.page == 'progression':
 # ==========================================
 # PAGE : CATALOGUE COMPLET
 # ==========================================
-elif st.session_state.page == 'catalogue':
+if st.session_state.page == 'catalogue':
     st.header("📚 Catalogue Complet (Matchs)")
     
     df_catalogue = df.copy()
     
     st.write("---")
+    col_saison, col_equipe = st.columns(2)
     
-    if df_catalogue.empty:
-        st.warning("⚠️ Impossible d'afficher le catalogue : le fichier des matchs est introuvable ou en cours de mise à jour.")
-    else:
-        col_saison, col_equipe = st.columns(2)
+    col_saison_nom = 'Saison' if 'Saison' in df_catalogue.columns else 'Année'
+    liste_saisons = ["Toutes les saisons"] + sorted(df_catalogue[col_saison_nom].dropna().unique().astype(str).tolist(), reverse=True)
+    
+    with col_saison:
+        saison_choisie = st.selectbox("📅 Filtrer par Saison :", liste_saisons)
         
-        # Détection intelligente de la colonne des années
-        col_saison_nom = 'Saison' if 'Saison' in df_catalogue.columns else ('Année' if 'Année' in df_catalogue.columns else None)
+    equipes = set(df_catalogue['Domicile'].dropna().unique()).union(set(df_catalogue['Extérieur'].dropna().unique()))
+    liste_equipes = ["Toutes les équipes"] + sorted(list(equipes))
+    
+    with col_equipe:
+        equipe_choisie = st.selectbox("⚽ Filtrer par Équipe :", liste_equipes)
+    
+    if saison_choisie != "Toutes les saisons":
+        df_catalogue = df_catalogue[df_catalogue[col_saison_nom].astype(str) == saison_choisie]
         
-        if col_saison_nom:
-            liste_saisons = ["Toutes les saisons"] + sorted(df_catalogue[col_saison_nom].dropna().unique().astype(str).tolist(), reverse=True)
-        else:
-            liste_saisons = ["Toutes les saisons"]
-            
-        with col_saison:
-            saison_choisie = st.selectbox("📅 Filtrer par Saison :", liste_saisons)
-            
-        # Extraction sécurisée des équipes
-        equipes_dom = set(df_catalogue['Domicile'].dropna().unique()) if 'Domicile' in df_catalogue.columns else set()
-        equipes_ext = set(df_catalogue['Extérieur'].dropna().unique()) if 'Extérieur' in df_catalogue.columns else set()
-        equipes = equipes_dom.union(equipes_ext)
-        liste_equipes = ["Toutes les équipes"] + sorted(list(equipes))
-        
-        with col_equipe:
-            equipe_choisie = st.selectbox("⚽ Filtrer par Équipe :", liste_equipes)
-        
-        if saison_choisie != "Toutes les saisons" and col_saison_nom:
-            df_catalogue = df_catalogue[df_catalogue[col_saison_nom].astype(str) == saison_choisie]
-            
-        if equipe_choisie != "Toutes les équipes":
-            mask = pd.Series(False, index=df_catalogue.index)
-            if 'Domicile' in df_catalogue.columns:
-                mask = mask | (df_catalogue['Domicile'] == equipe_choisie)
-            if 'Extérieur' in df_catalogue.columns:
-                mask = mask | (df_catalogue['Extérieur'] == equipe_choisie)
-            df_catalogue = df_catalogue[mask]
-        
-        st.markdown(f"**🎯 {len(df_catalogue)} match(s) trouvé(s)**")
-        st.write("---")
-        
-        afficher_resultats(df_catalogue)
+    if equipe_choisie != "Toutes les équipes":
+        df_catalogue = df_catalogue[(df_catalogue['Domicile'] == equipe_choisie) | (df_catalogue['Extérieur'] == equipe_choisie)]
+    
+    st.markdown(f"**🎯 {len(df_catalogue)} match(s) trouvé(s)**")
+    st.write("---")
+    
+    afficher_resultats(df_catalogue)
 
 elif st.session_state.page == 'ephemeride':
     aujourdhui = datetime.now()
