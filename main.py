@@ -9,6 +9,7 @@ import urllib.parse
 import plotly.express as px
 import smtplib
 from email.mime.text import MIMEText
+from pathlib import Path
 
 # 1. Configuration de la page (Optimisée SEO)
 st.set_page_config(page_title="Le Grenier du Football | Archives & Matchs de Foot Rétro en Vidéo", layout="wide")
