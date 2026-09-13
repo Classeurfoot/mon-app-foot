@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+from pathlib import Path
 from datetime import datetime
 import unicodedata
 import re
@@ -9,7 +10,6 @@ import urllib.parse
 import plotly.express as px
 import smtplib
 from email.mime.text import MIMEText
-from pathlib import Path
 
 # 1. Configuration de la page (Optimisée SEO)
 st.set_page_config(page_title="Le Grenier du Football | Archives & Matchs de Foot Rétro en Vidéo", layout="wide")
@@ -47,10 +47,153 @@ def go_home():
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
 
-# --- NOUVEAU POP-UP : BILLET DE MATCH RÉTRO ---
+# --- NOUVEAU POP-UP : FEUILLE DE MATCH GRAPHIQUE ---
+BASE_DIR = Path(__file__).resolve().parent
+FICHES_DIR = BASE_DIR / "fiches_match"
+FICHES_DIR.mkdir(exist_ok=True)
+
+def extraire_tm_id(url):
+    """Extrait l'identifiant numérique situé après /spielbericht/ dans une URL Transfermarkt."""
+    if pd.isna(url) or not str(url).strip():
+        return None
+
+    match = re.search(r"spielbericht/(\d+)", str(url))
+    return match.group(1) if match else None
+
+
+def get_match_sheet_path(lien_tm):
+    """Retourne le chemin du PNG déjà généré pour ce match, s'il existe."""
+    tm_id = extraire_tm_id(lien_tm)
+    if not tm_id:
+        return None
+
+    image_path = FICHES_DIR / f"{tm_id}.png"
+    return image_path if image_path.exists() else None
+
+
+def get_or_generate_match_sheet(row, generation_auto=False):
+    """
+    Retourne (chemin_image, erreur).
+
+    Par défaut, le site affiche uniquement les images déjà présentes dans
+    fiches_match/. Si generation_auto=True, il essaie aussi de générer la
+    fiche à partir de transfermarkt_parser.py + match_sheet_renderer_v2.py.
+    """
+    lien_tm = row.get("Lien Transfermarkt", "")
+    tm_id = extraire_tm_id(lien_tm)
+
+    if not tm_id:
+        return None, "Aucun identifiant Transfermarkt trouvé."
+
+    output_path = FICHES_DIR / f"{tm_id}.png"
+
+    # Cas normal : le PNG est déjà présent dans le dépôt / dossier local.
+    if output_path.exists():
+        return output_path, None
+
+    if not generation_auto:
+        return None, "Image graphique non générée pour ce match."
+
+    # Option prévue pour une future génération à la volée.
+    try:
+        from transfermarkt_parser import parse_transfermarkt_match
+        from match_sheet_renderer_v2 import render_match_sheet
+
+        match_data = parse_transfermarkt_match(
+            lien_tm=str(lien_tm).strip(),
+            fallback_row=row.to_dict()
+        )
+
+        render_match_sheet(
+            match=match_data,
+            output_path=str(output_path),
+            logos_dir=str(BASE_DIR / "Logos")
+        )
+
+        if output_path.exists():
+            return output_path, None
+
+        return None, "La génération n'a produit aucun fichier image."
+
+    except Exception as e:
+        return None, f"Erreur pendant la génération : {e}"
+
+
 @st.dialog("🎫 Feuille de Match Officielle")
-def popup_details_match(affiche, date, horaire, stade, comp, buteurs, lien_tm):
-    # Formatage visuel du billet de stade
+def popup_details_match(row):
+    """
+    Affiche en priorité la feuille graphique PNG du match.
+    Si elle n'existe pas encore, conserve l'ancien billet comme solution de secours.
+    """
+    dom = row.get("Domicile", "")
+    ext = row.get("Extérieur", "")
+    score = row.get("Score", "-")
+    comp = row.get("Compétition", "")
+    date_brute = row.get("Date", "")
+    horaire = row.get("Horaire", "")
+    stade = row.get("Stade", "")
+    phase = row.get("Phase", "")
+    buteurs = row.get("Buteurs", "")
+    lien_tm = row.get("Lien Transfermarkt", "")
+
+    # Formatage de la date en français, comme dans les fiches détaillées.
+    date_formatee = date_brute
+    if pd.notna(date_brute) and str(date_brute).strip():
+        try:
+            dt = datetime.strptime(str(date_brute), "%d/%m/%Y")
+            jours_fr_popup = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+            mois_fr_popup = ["janvier", "février", "mars", "avril", "mai", "juin",
+                             "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+            date_formatee = f"{jours_fr_popup[dt.weekday()]} {dt.day} {mois_fr_popup[dt.month - 1]} {dt.year}"
+        except (ValueError, TypeError):
+            date_formatee = str(date_brute)
+
+    stade_str = str(stade).strip() if pd.notna(stade) else ""
+    phase_str = str(phase).strip() if pd.notna(phase) else ""
+    if phase_str:
+        stade_str = f"{stade_str} - {phase_str}" if stade_str else phase_str
+
+    affiche = f"{dom} {score} {ext}"
+
+    # ----------------------------------------------------------
+    # 1) PRIORITÉ : afficher le PNG généré dans fiches_match/
+    # ----------------------------------------------------------
+    image_path, erreur_image = get_or_generate_match_sheet(
+        row,
+        generation_auto=False
+    )
+
+    if image_path:
+        st.image(str(image_path), use_container_width=True)
+
+        if pd.notna(lien_tm) and str(lien_tm).strip():
+            tm_url = str(lien_tm).strip()
+            if not tm_url.startswith("http"):
+                tm_url = "https://" + tm_url
+
+            st.markdown(f"""
+            <div style="text-align: center; margin-top: 10px;">
+                <a href="{tm_url}" target="_blank" style="
+                    display: inline-block;
+                    background-color: #001A4D;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    font-family: sans-serif;
+                    border: 1px solid #003399;
+                ">
+                    🔎 Voir sur Transfermarkt
+                </a>
+            </div>
+            """, unsafe_allow_html=True)
+
+        return
+
+    # ----------------------------------------------------------
+    # 2) FALLBACK : ancien billet si aucun PNG n'existe encore
+    # ----------------------------------------------------------
     ticket_html = f"""
     <div style="
         border: 2px dashed #d97706;
@@ -66,36 +209,37 @@ def popup_details_match(affiche, date, horaire, stade, comp, buteurs, lien_tm):
             <span style="font-size: 12px; color: #d97706; text-transform: uppercase; letter-spacing: 2px;">🏆 {comp}</span><br>
             <span style="font-size: 22px; font-weight: bold; font-family: sans-serif;">{affiche}</span>
         </div>
-        
+
         <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 15px;">
-            <div><strong style="color: #9ca3af;">DATE</strong><br>{date}</div>
-            <div style="text-align: right;"><strong style="color: #9ca3af;">HEURE</strong><br>{horaire if horaire else 'Inconnue'}</div>
+            <div><strong style="color: #9ca3af;">DATE</strong><br>{str(date_formatee).capitalize()}</div>
+            <div style="text-align: right;"><strong style="color: #9ca3af;">HEURE</strong><br>{horaire if pd.notna(horaire) and str(horaire).strip() else 'Inconnue'}</div>
         </div>
-        
+
         <div style="font-size: 14px; margin-bottom: 15px;">
-            <strong style="color: #9ca3af;">STADE</strong><br>{stade}
+            <strong style="color: #9ca3af;">STADE</strong><br>{stade_str if stade_str else 'Stade inconnu'}
         </div>
     """
-    
-    if buteurs and str(buteurs).strip() not in ['', '-', 'nan']:
+
+    if pd.notna(buteurs) and str(buteurs).strip() not in ["", "-", "nan"]:
         ticket_html += f"""
         <div style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 5px;">
             <strong style="color: #9ca3af;">⚽ BUTEURS</strong><br>
             <span style="font-size: 13px; font-family: sans-serif; font-style: italic;">{buteurs}</span>
         </div>
         """
-        
+
     ticket_html += "</div>"
-    
     st.markdown(ticket_html, unsafe_allow_html=True)
-    
-    # Bouton Transfermarkt
-    if pd.notna(lien_tm) and str(lien_tm).strip() != "":
-        # Sécurisation de l'URL pour s'assurer qu'elle s'ouvre bien
+
+    if erreur_image:
+        st.caption(f"ℹ️ {erreur_image}")
+
+    # Bouton Transfermarkt conservé en secours.
+    if pd.notna(lien_tm) and str(lien_tm).strip():
         tm_url = str(lien_tm).strip()
         if not tm_url.startswith("http"):
             tm_url = "https://" + tm_url
-            
+
         st.markdown(f"""
         <div style="text-align: center;">
             <a href="{tm_url}" target="_blank" style="
@@ -117,6 +261,7 @@ def popup_details_match(affiche, date, horaire, stade, comp, buteurs, lien_tm):
         """, unsafe_allow_html=True)
     else:
         st.info("💡 L'archive Transfermarkt n'est pas encore synchronisée pour ce match.")
+
 # ----------------------------------------------
 
 @st.dialog("🧭 Guide & Contenu")
@@ -542,15 +687,7 @@ def afficher_resultats(df_resultats):
                     
                     with col_btn_info:
                         if st.button("🎫 Feuille de match", key=f"info_{index}_{i}", use_container_width=True):
-                            popup_details_match(
-                                affiche=f"{dom} {score} {ext}",
-                                date=date_formatee.capitalize(),
-                                horaire=horaire,
-                                stade=stade_str,
-                                comp=comp_name,
-                                buteurs=buteurs,
-                                lien_tm=lien_tm
-                            )
+                            popup_details_match(row)
                             
                     with col_btn_cart:
                         if in_cart:
