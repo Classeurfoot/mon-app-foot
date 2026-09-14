@@ -119,7 +119,7 @@ def popup_fiche_manquante():
     contenu_fiche_manquante()
 
 
-@st.dialog("🎫 Feuille de match")
+@st.dialog("🎫 Feuille de match", width="large")
 def popup_details_match(row):
     """
     Affiche la feuille graphique V7 du match.
@@ -163,112 +163,7 @@ def popup_details_match(row):
             unsafe_allow_html=True
         )
 
-# ----------------------------------------------------------
-    # 1) PRIORITÉ : afficher le PNG généré dans fiches_match/
-    # ----------------------------------------------------------
-    image_path, erreur_image = get_or_generate_match_sheet(
-        row,
-        generation_auto=False
-    )
-
-    if image_path:
-        st.image(str(image_path), use_container_width=True)
-
-        if pd.notna(lien_tm) and str(lien_tm).strip():
-            tm_url = str(lien_tm).strip()
-            if not tm_url.startswith("http"):
-                tm_url = "https://" + tm_url
-
-            st.markdown(f"""
-            <div style="text-align: center; margin-top: 10px;">
-                <a href="{tm_url}" target="_blank" style="
-                    display: inline-block;
-                    background-color: #001A4D;
-                    color: white;
-                    padding: 10px 20px;
-                    border-radius: 6px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    font-family: sans-serif;
-                    border: 1px solid #003399;
-                ">
-                    🔎 Voir sur Transfermarkt
-                </a>
-            </div>
-            """, unsafe_allow_html=True)
-
-        return
-
-    # ----------------------------------------------------------
-    # 2) FALLBACK : ancien billet si aucun PNG n'existe encore
-    # ----------------------------------------------------------
-    ticket_html = f"""
-    <div style="
-        border: 2px dashed #d97706;
-        border-radius: 8px;
-        padding: 20px;
-        background-color: #1a1a24;
-        color: #f8f9fa;
-        font-family: 'Courier New', Courier, monospace;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-        margin-bottom: 20px;
-    ">
-        <div style="text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
-            <span style="font-size: 12px; color: #d97706; text-transform: uppercase; letter-spacing: 2px;">🏆 {comp}</span><br>
-            <span style="font-size: 22px; font-weight: bold; font-family: sans-serif;">{affiche}</span>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 15px;">
-            <div><strong style="color: #9ca3af;">DATE</strong><br>{str(date_formatee).capitalize()}</div>
-            <div style="text-align: right;"><strong style="color: #9ca3af;">HEURE</strong><br>{horaire if pd.notna(horaire) and str(horaire).strip() else 'Inconnue'}</div>
-        </div>
-
-        <div style="font-size: 14px; margin-bottom: 15px;">
-            <strong style="color: #9ca3af;">STADE</strong><br>{stade_str if stade_str else 'Stade inconnu'}
-        </div>
-    """
-
-    if pd.notna(buteurs) and str(buteurs).strip() not in ["", "-", "nan"]:
-        ticket_html += f"""
-        <div style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 5px;">
-            <strong style="color: #9ca3af;">⚽ BUTEURS</strong><br>
-            <span style="font-size: 13px; font-family: sans-serif; font-style: italic;">{buteurs}</span>
-        </div>
-        """
-
-    ticket_html += "</div>"
-    st.markdown(ticket_html, unsafe_allow_html=True)
-
-    if erreur_image:
-        st.caption(f"ℹ️ {erreur_image}")
-
-    # Bouton Transfermarkt conservé en secours.
-    if pd.notna(lien_tm) and str(lien_tm).strip():
-        tm_url = str(lien_tm).strip()
-        if not tm_url.startswith("http"):
-            tm_url = "https://" + tm_url
-
-        st.markdown(f"""
-        <div style="text-align: center;">
-            <a href="{tm_url}" target="_blank" style="
-                display: inline-block;
-                background-color: #001A4D;
-                color: white;
-                padding: 12px 24px;
-                border-radius: 6px;
-                text-decoration: none;
-                font-weight: bold;
-                font-family: sans-serif;
-                border: 1px solid #003399;
-                transition: 0.2s;
-            ">
-                🔎 Voir les compositions sur Transfermarkt
-            </a>
-            <p style="color: gray; font-size: 12px; margin-top: 8px;">(S'ouvre dans un nouvel onglet)</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.info("💡 L'archive Transfermarkt n'est pas encore synchronisée pour ce match.")
+    return
 
 # ----------------------------------------------
 
