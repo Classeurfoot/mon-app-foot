@@ -47,10 +47,10 @@ def go_home():
 # ⚙️ FONCTIONS DES POP-UPS (INFORMATIONS)
 # ==========================================
 
-# --- NOUVEAU POP-UP : FEUILLE DE MATCH GRAPHIQUE ---
+# --- POP-UPS : FEUILLES DE MATCH V7 ---
 BASE_DIR = Path(__file__).resolve().parent
-FICHES_DIR = Path("fiches_match_v7")
-FICHES_DIR.mkdir(exist_ok=True)
+FICHES_DIR = BASE_DIR / "fiches_match_v7"
+
 
 def extraire_tm_id(url):
     """Extrait l'identifiant numérique situé après /spielbericht/ dans une URL Transfermarkt."""
@@ -62,100 +62,108 @@ def extraire_tm_id(url):
 
 
 def get_match_sheet_path(lien_tm):
-    """Retourne le chemin du PNG déjà généré pour ce match, s'il existe."""
+    """
+    Retourne le chemin de la fiche PNG V7 si elle existe.
+    Sinon retourne None.
+    """
     tm_id = extraire_tm_id(lien_tm)
+
     if not tm_id:
         return None
 
     image_path = FICHES_DIR / f"{tm_id}.png"
-    return image_path if image_path.exists() else None
+    return image_path if image_path.is_file() else None
 
 
-def get_or_generate_match_sheet(row, generation_auto=False):
+def contenu_fiche_manquante():
+    """Contenu visuel commun du message 'fiche manquante'."""
+    st.markdown(
+        """
+        <div style="
+            text-align: center;
+            padding: 30px 12px 35px 12px;
+        ">
+            <div style="
+                font-size: 42px;
+                margin-bottom: 12px;
+            ">
+                📄
+            </div>
+
+            <div style="
+                font-size: 22px;
+                font-weight: 700;
+                margin-bottom: 8px;
+            ">
+                Fiche de match indisponible
+            </div>
+
+            <div style="
+                font-size: 15px;
+                color: #9ca3af;
+                line-height: 1.5;
+            ">
+                Cette fiche n'a pas encore été créée.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+@st.dialog("🎫 Feuille de match")
+def popup_fiche_manquante():
     """
-    Retourne (chemin_image, erreur).
-
-    Par défaut, le site affiche uniquement les images déjà présentes dans
-    fiches_match/. Si generation_auto=True, il essaie aussi de générer la
-    fiche à partir de transfermarkt_parser.py + match_sheet_renderer_v2.py.
+    Pop-up affiché lorsqu'aucun PNG V7 n'existe encore pour le match.
     """
-    lien_tm = row.get("Lien Transfermarkt", "")
-    tm_id = extraire_tm_id(lien_tm)
-
-    if not tm_id:
-        return None, "Aucun identifiant Transfermarkt trouvé."
-
-    output_path = FICHES_DIR / f"{tm_id}.png"
-
-    # Cas normal : le PNG est déjà présent dans le dépôt / dossier local.
-    if output_path.exists():
-        return output_path, None
-
-    if not generation_auto:
-        return None, "Image graphique non générée pour ce match."
-
-    # Option prévue pour une future génération à la volée.
-    try:
-        from transfermarkt_parser import parse_transfermarkt_match
-        from match_sheet_renderer_v2 import render_match_sheet
-
-        match_data = parse_transfermarkt_match(
-            lien_tm=str(lien_tm).strip(),
-            fallback_row=row.to_dict()
-        )
-
-        render_match_sheet(
-            match=match_data,
-            output_path=str(output_path),
-            logos_dir=str(BASE_DIR / "Logos")
-        )
-
-        if output_path.exists():
-            return output_path, None
-
-        return None, "La génération n'a produit aucun fichier image."
-
-    except Exception as e:
-        return None, f"Erreur pendant la génération : {e}"
+    contenu_fiche_manquante()
 
 
-@st.dialog("🎫 Feuille de Match Officielle")
+@st.dialog("🎫 Feuille de match")
 def popup_details_match(row):
     """
-    Affiche en priorité la feuille graphique PNG du match.
-    Si elle n'existe pas encore, conserve l'ancien billet comme solution de secours.
+    Affiche la feuille graphique V7 du match.
+    Si le fichier disparaît entre le clic et l'ouverture, affiche le message
+    'fiche indisponible' plutôt qu'un ancien billet de secours.
     """
-    dom = row.get("Domicile", "")
-    ext = row.get("Extérieur", "")
-    score = row.get("Score", "-")
-    comp = row.get("Compétition", "")
-    date_brute = row.get("Date", "")
-    horaire = row.get("Horaire", "")
-    stade = row.get("Stade", "")
-    phase = row.get("Phase", "")
-    buteurs = row.get("Buteurs", "")
     lien_tm = row.get("Lien Transfermarkt", "")
+    image_path = get_match_sheet_path(lien_tm)
 
-    # Formatage de la date en français, comme dans les fiches détaillées.
-    date_formatee = date_brute
-    if pd.notna(date_brute) and str(date_brute).strip():
-        try:
-            dt = datetime.strptime(str(date_brute), "%d/%m/%Y")
-            jours_fr_popup = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-            mois_fr_popup = ["janvier", "février", "mars", "avril", "mai", "juin",
-                             "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
-            date_formatee = f"{jours_fr_popup[dt.weekday()]} {dt.day} {mois_fr_popup[dt.month - 1]} {dt.year}"
-        except (ValueError, TypeError):
-            date_formatee = str(date_brute)
+    if not image_path:
+        contenu_fiche_manquante()
+        return
 
-    stade_str = str(stade).strip() if pd.notna(stade) else ""
-    phase_str = str(phase).strip() if pd.notna(phase) else ""
-    if phase_str:
-        stade_str = f"{stade_str} - {phase_str}" if stade_str else phase_str
+    st.image(str(image_path), use_container_width=True)
 
-    affiche = f"{dom} {score} {ext}"
+    # Lien vers la source Transfermarkt, uniquement lorsque la fiche existe.
+    if pd.notna(lien_tm) and str(lien_tm).strip():
+        tm_url = str(lien_tm).strip()
 
-    # ----------------------------------------------------------
+        if not tm_url.startswith("http"):
+            tm_url = "https://" + tm_url
+
+        st.markdown(
+            f"""
+            <div style="text-align: center; margin-top: 10px;">
+                <a href="{tm_url}" target="_blank" style="
+                    display: inline-block;
+                    background-color: #001A4D;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    font-family: sans-serif;
+                    border: 1px solid #003399;
+                ">
+                    🔎 Voir sur Transfermarkt
+                </a>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+# ----------------------------------------------------------
     # 1) PRIORITÉ : afficher le PNG généré dans fiches_match/
     # ----------------------------------------------------------
     image_path, erreur_image = get_or_generate_match_sheet(
@@ -687,7 +695,12 @@ def afficher_resultats(df_resultats):
                     
                     with col_btn_info:
                         if st.button("🎫 Feuille de match", key=f"info_{index}_{i}", use_container_width=True):
-                            popup_details_match(row)
+                            image_path = get_match_sheet_path(lien_tm)
+
+                            if image_path:
+                                popup_details_match(row)
+                            else:
+                                popup_fiche_manquante()
                             
                     with col_btn_cart:
                         if in_cart:
