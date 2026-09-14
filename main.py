@@ -49,7 +49,7 @@ def go_home():
 
 # --- NOUVEAU POP-UP : FEUILLE DE MATCH GRAPHIQUE ---
 BASE_DIR = Path(__file__).resolve().parent
-FICHES_DIR = BASE_DIR / "fiches_match"
+FICHES_DIR = Path("fiches_match_v7")
 FICHES_DIR.mkdir(exist_ok=True)
 
 def extraire_tm_id(url):
