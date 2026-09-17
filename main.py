@@ -859,6 +859,18 @@ if st.session_state.page == 'accueil':
     
     st.write("---")
     
+    # --- ⚽ NOUVEAUTÉ : FICHES DE MATCH ENRICHIES ---
+    with st.container(border=True):
+        st.markdown("""
+            <div style='text-align: center;'>
+                <h4 style='margin: 0 0 8px 0; color: #d97706;'>⚽ Nouveauté : les fiches de match s’enrichissent !</h4>
+                <p style='margin: 0; font-size: 14.5px; color: #e2e8f0; line-height: 1.5;'>
+                    Un simple clic sur « Feuille de match » permet désormais d’afficher les compositions d’équipes, les entraîneurs et plusieurs informations complémentaires sur la rencontre.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+    # -----------------------------------------------------
+
     # --- 🔍 BARRE DE RECHERCHE RAPIDE MISE À JOUR (SANS ACCENTS) ---
     recherche_rapide = st.text_input("🔍 Recherche Rapide (Matchs)", placeholder="Tapez une équipe, une compétition, un joueur, une année, un stade...")
     if recherche_rapide:
