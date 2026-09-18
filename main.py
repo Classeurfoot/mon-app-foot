@@ -598,40 +598,131 @@ def afficher_resultats(df_resultats):
     mode = st.radio("Mode d'affichage :", ["📊 Tableau classique", "🃏 Fiches détaillées"], horizontal=True)
     
     if mode == "📊 Tableau classique":
-        st.markdown("<p style='color: gray; font-size:14px;'>☑️ Cochez les matchs dans la première colonne, puis cliquez sur le bouton bleu apparu juste au-dessus du tableau pour les ajouter au panier.</p>", unsafe_allow_html=True)
-        
+        st.markdown(
+            "<p style='color: gray; font-size:14px;'>"
+            "☑️ Cochez les matchs dans la première colonne pour les ajouter au panier. "
+            "Le bouton <b>🎫 Infos</b> permet d’ouvrir directement la feuille de match "
+            "et, lorsqu’elle existe, la capture vidéo associée."
+            "</p>",
+            unsafe_allow_html=True
+        )
+
         bouton_placeholder = st.empty()
-        
-        df_display = df_resultats[colonnes_presentes].copy()
+
+        # On repart d'un ordre de lignes propre afin que le clic dans la colonne
+        # "Infos match" corresponde exactement à la bonne ligne de df_resultats.
+        df_resultats_table = df_resultats.reset_index(drop=True)
+        df_display = df_resultats_table[colonnes_presentes].copy()
         df_display.insert(0, "Sélection", False)
-        
+
+        # Streamlit récent : vraie colonne avec bouton cliquable.
+        # Un fallback en case à cocher est conservé pour éviter de casser le site
+        # si l'environnement Streamlit est momentanément plus ancien.
+        button_column_disponible = hasattr(st.column_config, "ButtonColumn")
+
+        # Clé stable et spécifique au tableau actuellement affiché.
+        contexte_table = (
+            f"{st.session_state.get('page', 'page')}_"
+            f"{len(df_resultats_table)}_"
+            f"{str(df_resultats_table.iloc[0].get('Date', '')) if len(df_resultats_table) else 'vide'}_"
+            f"{str(df_resultats_table.iloc[-1].get('Date', '')) if len(df_resultats_table) else 'vide'}"
+        )
+        contexte_table = re.sub(r"[^a-zA-Z0-9_]+", "_", contexte_table)
+        info_click_key = f"info_match_click_{contexte_table}"
+
+        if button_column_disponible:
+            df_display.insert(1, "Infos match", "🎫 Infos")
+            config_infos = st.column_config.ButtonColumn(
+                "Infos match",
+                width="small",
+                help="Ouvrir la feuille de match et les captures disponibles",
+                type="secondary",
+                key=info_click_key,
+            )
+        else:
+            df_display.insert(1, "Infos match", False)
+            config_infos = st.column_config.CheckboxColumn(
+                "🎫 Infos",
+                default=False,
+                help="Ouvrir la feuille de match et les captures disponibles",
+            )
+
         edited_df = st.data_editor(
             df_display,
             column_config={
-                "Sélection": st.column_config.CheckboxColumn("🛒 Ajouter", default=False)
+                "Sélection": st.column_config.CheckboxColumn(
+                    "🛒 Ajouter",
+                    default=False,
+                    width="small",
+                ),
+                "Infos match": config_infos,
             },
             disabled=colonnes_presentes,
             hide_index=True,
             use_container_width=True,
             height=400
         )
-        
+
+        # --- OUVERTURE DU POP-UP DEPUIS LE TABLEAU CLASSIQUE ---
+        ligne_infos = None
+
+        if button_column_disponible:
+            click_infos = st.session_state.get(info_click_key)
+            if click_infos is not None:
+                try:
+                    position = int(click_infos["row"])
+                    if 0 <= position < len(df_resultats_table):
+                        ligne_infos = df_resultats_table.iloc[position]
+                except (TypeError, ValueError, KeyError, IndexError):
+                    ligne_infos = None
+        else:
+            # Fallback pour une ancienne version de Streamlit :
+            # la première case "Infos" cochée ouvre le même pop-up.
+            lignes_infos = edited_df[edited_df["Infos match"] == True]
+            if not lignes_infos.empty:
+                try:
+                    position = int(lignes_infos.index[0])
+                    if 0 <= position < len(df_resultats_table):
+                        ligne_infos = df_resultats_table.iloc[position]
+                except (TypeError, ValueError, IndexError):
+                    ligne_infos = None
+
+        if ligne_infos is not None:
+            lien_tm_infos = ligne_infos.get("Lien Transfermarkt", "")
+            image_path_infos = get_match_sheet_path(lien_tm_infos)
+
+            if image_path_infos:
+                popup_details_match(ligne_infos)
+            else:
+                popup_fiche_manquante()
+
         selected_rows = edited_df[edited_df["Sélection"] == True]
-        
+
         if len(selected_rows) > 0:
             with bouton_placeholder:
-                if st.button(f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier", type="primary", use_container_width=True):
+                if st.button(
+                    f"🛒 Ajouter les {len(selected_rows)} match(s) sélectionné(s) au panier",
+                    type="primary",
+                    use_container_width=True
+                ):
                     for _, row in selected_rows.iterrows():
-                        match_dict = {k: ("" if pd.isna(v) else v) for k, v in row.to_dict().items() if k != "Sélection"}
+                        match_dict = {
+                            k: ("" if pd.isna(v) else v)
+                            for k, v in row.to_dict().items()
+                            if k not in {"Sélection", "Infos match"}
+                        }
                         match_id = f"{match_dict.get('Date', '')}_{match_dict.get('Domicile', '')}_{match_dict.get('Extérieur', '')}"
-                        in_cart = any(f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id for m in st.session_state.panier)
-                        
+                        in_cart = any(
+                            f"{m.get('Date', '')}_{m.get('Domicile', '')}_{m.get('Extérieur', '')}" == match_id
+                            for m in st.session_state.panier
+                        )
+
                         if not in_cart:
                             q = str(match_dict.get('Qualité', '')).lower()
                             match_dict['format_choisi'] = 'DVD' if 'dvd' in q or 'vob' in q else 'Numérique'
                             match_dict['type_produit'] = 'match'
                             st.session_state.panier.append(match_dict)
-                    
+
                     st.rerun()
 
     else:
