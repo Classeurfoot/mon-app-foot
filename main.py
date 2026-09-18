@@ -1091,6 +1091,34 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
+    # --- 🖼️ NOUVEAUTÉ : CAPTURES D'ARCHIVE ---
+    with st.container(border=True):
+        st.markdown("""
+            <div style='
+                text-align: center;
+                max-width: 950px;
+                margin: 0 auto;
+                padding: 8px 20px;
+            '>
+                <h4 style='
+                    margin: 0 0 10px 0;
+                    color: #d97706;
+                    text-align: center;
+                '>
+                    🖼️ Nouveau dans les fiches de match : les captures d’archive
+                </h4>
+                <p style='
+                    margin: 0 auto;
+                    font-size: 14.5px;
+                    color: #e2e8f0;
+                    line-height: 1.6;
+                    text-align: center;
+                '>
+                    Pour une grande partie des rencontres, vous pouvez désormais visualiser une capture directement dans la fiche : Coupe du Monde, Euro, compétitions françaises et Milan AC.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
     # --- ⚽ NOUVEAUTÉ : FICHES DE MATCH ENRICHIES ---
     with st.container(border=True):
         st.markdown("""
