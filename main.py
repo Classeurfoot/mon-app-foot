@@ -50,6 +50,7 @@ def go_home():
 # --- POP-UPS : FEUILLES DE MATCH V7 ---
 BASE_DIR = Path(__file__).resolve().parent
 FICHES_DIR = BASE_DIR / "fiches_match_v7"
+CAPTURES_DIR = BASE_DIR / "captures"
 
 
 def extraire_tm_id(url):
@@ -73,6 +74,142 @@ def get_match_sheet_path(lien_tm):
 
     image_path = FICHES_DIR / f"{tm_id}.png"
     return image_path if image_path.is_file() else None
+
+
+
+def normaliser_element_capture(valeur):
+    """
+    Normalise une valeur pour comparer les noms de captures :
+    accents, espaces, tirets, underscores et ponctuation sont ignorés.
+    """
+    if pd.isna(valeur):
+        return ""
+
+    texte = str(valeur).strip().lower()
+    texte = "".join(
+        c for c in unicodedata.normalize("NFD", texte)
+        if unicodedata.category(c) != "Mn"
+    )
+    return re.sub(r"[^a-z0-9]", "", texte)
+
+
+def date_capture_iso(valeur):
+    """Convertit une date du CSV (ex. 21/02/2004) en 2004-02-21 si possible."""
+    if pd.isna(valeur) or not str(valeur).strip():
+        return ""
+
+    texte = str(valeur).strip()
+
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(texte, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
+    return ""
+
+
+@st.cache_data(ttl=300)
+def lister_fichiers_captures():
+    """
+    Liste les images du dossier captures.
+    Le cache est actualisé toutes les 5 minutes.
+    """
+    if not CAPTURES_DIR.is_dir():
+        return []
+
+    extensions = {".jpg", ".jpeg", ".png", ".webp"}
+    return sorted(
+        str(p)
+        for p in CAPTURES_DIR.rglob("*")
+        if p.is_file() and p.suffix.lower() in extensions
+    )
+
+
+def get_match_capture_paths(row):
+    """
+    Retourne toutes les captures correspondant au match.
+
+    Conventions reconnues notamment :
+      2003-2004__serie-a__milan__inter.jpg
+      2003-2004__serie-a__milan__inter__2.jpg
+
+    Le code accepte aussi une convention enrichie avec date/diffuseur :
+      2003-2004__serie-a__2004-02-21__milan__inter__sky.jpg
+
+    Une petite tolérance est prévue pour les anciens noms où un séparateur
+    simple '_' aurait été utilisé à la place de '__'.
+    """
+    saison = str(row.get("Saison", "") or "").strip()
+    competition = str(row.get("Compétition", "") or "").strip()
+    domicile = str(row.get("Domicile", "") or "").strip()
+    exterieur = str(row.get("Extérieur", "") or "").strip()
+    date_match = date_capture_iso(row.get("Date", ""))
+
+    if not all([saison, competition, domicile, exterieur]):
+        return []
+
+    saison_n = normaliser_element_capture(saison)
+    competition_n = normaliser_element_capture(competition)
+    domicile_n = normaliser_element_capture(domicile)
+    exterieur_n = normaliser_element_capture(exterieur)
+
+    # Clé de secours pour la convention simple actuelle.
+    cle_simple = saison_n + competition_n + domicile_n + exterieur_n
+
+    resultats = []
+
+    for chemin_str in lister_fichiers_captures():
+        chemin = Path(chemin_str)
+        stem = chemin.stem
+        parties = stem.split("__")
+
+        trouve = False
+
+        # Convention structurée avec "__"
+        if len(parties) >= 4:
+            fichier_saison = normaliser_element_capture(parties[0])
+            fichier_comp = normaliser_element_capture(parties[1])
+
+            if fichier_saison == saison_n and fichier_comp == competition_n:
+                # Avec date ISO dans le nom.
+                if len(parties) >= 5 and re.fullmatch(r"\d{4}-\d{2}-\d{2}", parties[2]):
+                    fichier_date = parties[2]
+                    fichier_dom = normaliser_element_capture(parties[3])
+                    fichier_ext = normaliser_element_capture(parties[4])
+
+                    if (
+                        fichier_dom == domicile_n
+                        and fichier_ext == exterieur_n
+                        and (not date_match or fichier_date == date_match)
+                    ):
+                        trouve = True
+
+                # Convention actuelle : saison__competition__domicile__exterieur
+                else:
+                    fichier_dom = normaliser_element_capture(parties[2])
+                    fichier_ext = normaliser_element_capture(parties[3])
+
+                    if fichier_dom == domicile_n and fichier_ext == exterieur_n:
+                        trouve = True
+
+        # Tolérance : compare le nom entier sans séparateurs.
+        # Permet notamment de retrouver "brescia_juventus" même si un "__" manque.
+        if not trouve:
+            stem_n = normaliser_element_capture(stem)
+
+            if stem_n == cle_simple:
+                trouve = True
+            elif stem_n.startswith(cle_simple):
+                reste = stem_n[len(cle_simple):]
+                if reste.isdigit():
+                    trouve = True
+
+        if trouve:
+            resultats.append(chemin)
+
+    # Évite les doublons éventuels et conserve un ordre stable.
+    return sorted(set(resultats), key=lambda p: p.name.lower())
 
 
 def contenu_fiche_manquante():
@@ -134,6 +271,24 @@ def popup_details_match(row):
         return
 
     st.image(str(image_path), use_container_width=True)
+
+    # --- CAPTURES DU MATCH ---
+    captures = get_match_capture_paths(row)
+
+    if captures:
+        st.divider()
+
+        titre_capture = "📺 Capture du match" if len(captures) == 1 else "📺 Captures du match"
+        st.markdown(
+            f"<h4 style='text-align:center; margin: 4px 0 12px 0;'>{titre_capture}</h4>",
+            unsafe_allow_html=True
+        )
+
+        for capture_path in captures:
+            st.image(
+                str(capture_path),
+                use_container_width=True
+            )
 
     # Lien vers la source Transfermarkt, uniquement lorsque la fiche existe.
     if pd.notna(lien_tm) and str(lien_tm).strip():
