@@ -259,20 +259,20 @@ def popup_fiche_manquante():
 @st.dialog("🎫 Feuille de match", width="large")
 def popup_details_match(row):
     """
-    Affiche la feuille graphique V7 du match.
-    Si le fichier disparaît entre le clic et l'ouverture, affiche le message
-    'fiche indisponible' plutôt qu'un ancien billet de secours.
+    Affiche la feuille graphique V7 lorsqu'elle existe et les captures du match
+    indépendamment de la présence de la fiche de composition.
     """
     lien_tm = row.get("Lien Transfermarkt", "")
     image_path = get_match_sheet_path(lien_tm)
 
-    if not image_path:
+    # --- FICHE DE MATCH / COMPOSITION ---
+    if image_path:
+        st.image(str(image_path), use_container_width=True)
+    else:
         contenu_fiche_manquante()
-        return
-
-    st.image(str(image_path), use_container_width=True)
 
     # --- CAPTURES DU MATCH ---
+    # Les captures restent affichées même lorsqu'aucune fiche PNG V7 n'existe.
     captures = get_match_capture_paths(row)
 
     if captures:
@@ -688,13 +688,9 @@ def afficher_resultats(df_resultats):
                     ligne_infos = None
 
         if ligne_infos is not None:
-            lien_tm_infos = ligne_infos.get("Lien Transfermarkt", "")
-            image_path_infos = get_match_sheet_path(lien_tm_infos)
-
-            if image_path_infos:
-                popup_details_match(ligne_infos)
-            else:
-                popup_fiche_manquante()
+            # Ouvre toujours le popup complet :
+            # une capture peut exister même sans fiche de composition.
+            popup_details_match(ligne_infos)
 
         selected_rows = edited_df[edited_df["Sélection"] == True]
 
@@ -836,12 +832,9 @@ def afficher_resultats(df_resultats):
                     
                     with col_btn_info:
                         if st.button("🎫 Feuille de match", key=f"info_{index}_{i}", use_container_width=True):
-                            image_path = get_match_sheet_path(lien_tm)
-
-                            if image_path:
-                                popup_details_match(row)
-                            else:
-                                popup_fiche_manquante()
+                            # Ouvre toujours le popup complet :
+                            # une capture peut exister même sans fiche de composition.
+                            popup_details_match(row)
                             
                     with col_btn_cart:
                         if in_cart:
@@ -1091,34 +1084,6 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
-    # --- 🖼️ NOUVEAUTÉ : CAPTURES D'ARCHIVE ---
-    with st.container(border=True):
-        st.markdown("""
-            <div style='
-                text-align: center;
-                max-width: 950px;
-                margin: 0 auto;
-                padding: 8px 20px;
-            '>
-                <h4 style='
-                    margin: 0 0 10px 0;
-                    color: #d97706;
-                    text-align: center;
-                '>
-                    🖼️ Nouveau dans les fiches de match : les captures d’archive
-                </h4>
-                <p style='
-                    margin: 0 auto;
-                    font-size: 14.5px;
-                    color: #e2e8f0;
-                    line-height: 1.6;
-                    text-align: center;
-                '>
-                    Pour une grande partie des rencontres, vous pouvez désormais visualiser une capture directement dans la fiche : Coupe du Monde, Euro, compétitions françaises et Milan AC.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
     # --- ⚽ NOUVEAUTÉ : FICHES DE MATCH ENRICHIES ---
     with st.container(border=True):
         st.markdown("""
