@@ -7,6 +7,7 @@ import unicodedata
 import re
 import base64
 import urllib.parse
+import json
 import plotly.express as px
 import smtplib
 from email.mime.text import MIMEText
@@ -93,6 +94,60 @@ def normaliser_element_capture(valeur):
     return re.sub(r"[^a-z0-9]", "", texte)
 
 
+ALIASES_EQUIPES_FILE = BASE_DIR / "clubs_complet.json"
+
+
+@st.cache_data
+def charger_aliases_equipes():
+    """
+    Charge clubs_complet.json et construit :
+        alias normalisé -> équipe/pays canonique normalisé
+
+    Les alias ambigus sont ignorés pour éviter les faux rapprochements.
+    """
+    if not ALIASES_EQUIPES_FILE.is_file():
+        return {}
+
+    try:
+        with open(ALIASES_EQUIPES_FILE, "r", encoding="utf-8-sig") as f:
+            donnees = json.load(f)
+    except Exception:
+        return {}
+
+    candidats = {}
+
+    for canonique, variantes in donnees.items():
+        canonique_n = normaliser_element_capture(canonique)
+        if not canonique_n:
+            continue
+
+        toutes_variantes = [canonique]
+        if isinstance(variantes, list):
+            toutes_variantes.extend(variantes)
+
+        for variante in toutes_variantes:
+            variante_n = normaliser_element_capture(variante)
+            if variante_n:
+                candidats.setdefault(variante_n, set()).add(canonique_n)
+
+    return {
+        variante_n: next(iter(cibles))
+        for variante_n, cibles in candidats.items()
+        if len(cibles) == 1
+    }
+
+
+ALIASES_EQUIPES = charger_aliases_equipes()
+
+
+def normaliser_equipe_capture(valeur):
+    """
+    Normalise le nom puis applique les alias de clubs/sélections.
+    """
+    valeur_n = normaliser_element_capture(valeur)
+    return ALIASES_EQUIPES.get(valeur_n, valeur_n)
+
+
 def date_capture_iso(valeur):
     """Convertit une date du CSV (ex. 21/02/2004) en 2004-02-21 si possible."""
     if pd.isna(valeur) or not str(valeur).strip():
@@ -151,8 +206,8 @@ def get_match_capture_paths(row):
 
     saison_n = normaliser_element_capture(saison)
     competition_n = normaliser_element_capture(competition)
-    domicile_n = normaliser_element_capture(domicile)
-    exterieur_n = normaliser_element_capture(exterieur)
+    domicile_n = normaliser_equipe_capture(domicile)
+    exterieur_n = normaliser_equipe_capture(exterieur)
 
     # Clé de secours pour la convention simple actuelle.
     cle_simple = saison_n + competition_n + domicile_n + exterieur_n
@@ -175,8 +230,8 @@ def get_match_capture_paths(row):
                 # Avec date ISO dans le nom.
                 if len(parties) >= 5 and re.fullmatch(r"\d{4}-\d{2}-\d{2}", parties[2]):
                     fichier_date = parties[2]
-                    fichier_dom = normaliser_element_capture(parties[3])
-                    fichier_ext = normaliser_element_capture(parties[4])
+                    fichier_dom = normaliser_equipe_capture(parties[3])
+                    fichier_ext = normaliser_equipe_capture(parties[4])
 
                     if (
                         fichier_dom == domicile_n
@@ -187,8 +242,8 @@ def get_match_capture_paths(row):
 
                 # Convention actuelle : saison__competition__domicile__exterieur
                 else:
-                    fichier_dom = normaliser_element_capture(parties[2])
-                    fichier_ext = normaliser_element_capture(parties[3])
+                    fichier_dom = normaliser_equipe_capture(parties[2])
+                    fichier_ext = normaliser_equipe_capture(parties[3])
 
                     if fichier_dom == domicile_n and fichier_ext == exterieur_n:
                         trouve = True
@@ -259,20 +314,19 @@ def popup_fiche_manquante():
 @st.dialog("🎫 Feuille de match", width="large")
 def popup_details_match(row):
     """
-    Affiche la feuille graphique V7 lorsqu'elle existe et les captures du match
-    indépendamment de la présence de la fiche de composition.
+    Affiche la fiche graphique V7 lorsqu'elle existe.
+    Les captures sont recherchées et affichées même si la fiche de composition
+    n'existe pas encore.
     """
     lien_tm = row.get("Lien Transfermarkt", "")
     image_path = get_match_sheet_path(lien_tm)
 
-    # --- FICHE DE MATCH / COMPOSITION ---
     if image_path:
         st.image(str(image_path), use_container_width=True)
     else:
         contenu_fiche_manquante()
 
     # --- CAPTURES DU MATCH ---
-    # Les captures restent affichées même lorsqu'aucune fiche PNG V7 n'existe.
     captures = get_match_capture_paths(row)
 
     if captures:
@@ -688,8 +742,6 @@ def afficher_resultats(df_resultats):
                     ligne_infos = None
 
         if ligne_infos is not None:
-            # Ouvre toujours le popup complet :
-            # une capture peut exister même sans fiche de composition.
             popup_details_match(ligne_infos)
 
         selected_rows = edited_df[edited_df["Sélection"] == True]
@@ -832,8 +884,6 @@ def afficher_resultats(df_resultats):
                     
                     with col_btn_info:
                         if st.button("🎫 Feuille de match", key=f"info_{index}_{i}", use_container_width=True):
-                            # Ouvre toujours le popup complet :
-                            # une capture peut exister même sans fiche de composition.
                             popup_details_match(row)
                             
                     with col_btn_cart:
@@ -1084,6 +1134,34 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
+    # --- 🖼️ NOUVEAUTÉ : CAPTURES D'ARCHIVE ---
+    with st.container(border=True):
+        st.markdown("""
+            <div style='
+                text-align: center;
+                max-width: 950px;
+                margin: 0 auto;
+                padding: 8px 20px;
+            '>
+                <h4 style='
+                    margin: 0 0 10px 0;
+                    color: #d97706;
+                    text-align: center;
+                '>
+                    🖼️ Nouveau dans les fiches de match : les captures d’archive
+                </h4>
+                <p style='
+                    margin: 0 auto;
+                    font-size: 14.5px;
+                    color: #e2e8f0;
+                    line-height: 1.6;
+                    text-align: center;
+                '>
+                    Pour une grande partie des rencontres, vous pouvez désormais visualiser une capture directement dans la fiche : Coupe du Monde, Euro, compétitions françaises et Milan AC.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
     # --- ⚽ NOUVEAUTÉ : FICHES DE MATCH ENRICHIES ---
     with st.container(border=True):
         st.markdown("""
