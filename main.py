@@ -7,16 +7,7 @@ import unicodedata
 import re
 import base64
 import urllib.parse
-import urllib.request
-import urllib.error
 import json
-import csv
-import io
-import time
-import hashlib
-from collections import defaultdict, deque
-from datetime import timezone, timedelta
-from zoneinfo import ZoneInfo
 import plotly.express as px
 import smtplib
 from email.mime.text import MIMEText
@@ -103,6 +94,60 @@ def normaliser_element_capture(valeur):
     return re.sub(r"[^a-z0-9]", "", texte)
 
 
+ALIASES_EQUIPES_FILE = BASE_DIR / "clubs_complet.json"
+
+
+@st.cache_data
+def charger_aliases_equipes():
+    """
+    Charge clubs_complet.json et construit :
+        alias normalisé -> équipe/pays canonique normalisé
+
+    Les alias ambigus sont ignorés pour éviter les faux rapprochements.
+    """
+    if not ALIASES_EQUIPES_FILE.is_file():
+        return {}
+
+    try:
+        with open(ALIASES_EQUIPES_FILE, "r", encoding="utf-8-sig") as f:
+            donnees = json.load(f)
+    except Exception:
+        return {}
+
+    candidats = {}
+
+    for canonique, variantes in donnees.items():
+        canonique_n = normaliser_element_capture(canonique)
+        if not canonique_n:
+            continue
+
+        toutes_variantes = [canonique]
+        if isinstance(variantes, list):
+            toutes_variantes.extend(variantes)
+
+        for variante in toutes_variantes:
+            variante_n = normaliser_element_capture(variante)
+            if variante_n:
+                candidats.setdefault(variante_n, set()).add(canonique_n)
+
+    return {
+        variante_n: next(iter(cibles))
+        for variante_n, cibles in candidats.items()
+        if len(cibles) == 1
+    }
+
+
+ALIASES_EQUIPES = charger_aliases_equipes()
+
+
+def normaliser_equipe_capture(valeur):
+    """
+    Normalise le nom puis applique les alias de clubs/sélections.
+    """
+    valeur_n = normaliser_element_capture(valeur)
+    return ALIASES_EQUIPES.get(valeur_n, valeur_n)
+
+
 def date_capture_iso(valeur):
     """Convertit une date du CSV (ex. 21/02/2004) en 2004-02-21 si possible."""
     if pd.isna(valeur) or not str(valeur).strip():
@@ -161,8 +206,8 @@ def get_match_capture_paths(row):
 
     saison_n = normaliser_element_capture(saison)
     competition_n = normaliser_element_capture(competition)
-    domicile_n = normaliser_element_capture(domicile)
-    exterieur_n = normaliser_element_capture(exterieur)
+    domicile_n = normaliser_equipe_capture(domicile)
+    exterieur_n = normaliser_equipe_capture(exterieur)
 
     # Clé de secours pour la convention simple actuelle.
     cle_simple = saison_n + competition_n + domicile_n + exterieur_n
@@ -185,8 +230,8 @@ def get_match_capture_paths(row):
                 # Avec date ISO dans le nom.
                 if len(parties) >= 5 and re.fullmatch(r"\d{4}-\d{2}-\d{2}", parties[2]):
                     fichier_date = parties[2]
-                    fichier_dom = normaliser_element_capture(parties[3])
-                    fichier_ext = normaliser_element_capture(parties[4])
+                    fichier_dom = normaliser_equipe_capture(parties[3])
+                    fichier_ext = normaliser_equipe_capture(parties[4])
 
                     if (
                         fichier_dom == domicile_n
@@ -197,8 +242,8 @@ def get_match_capture_paths(row):
 
                 # Convention actuelle : saison__competition__domicile__exterieur
                 else:
-                    fichier_dom = normaliser_element_capture(parties[2])
-                    fichier_ext = normaliser_element_capture(parties[3])
+                    fichier_dom = normaliser_equipe_capture(parties[2])
+                    fichier_ext = normaliser_equipe_capture(parties[3])
 
                     if fichier_dom == domicile_n and fichier_ext == exterieur_n:
                         trouve = True
@@ -269,18 +314,17 @@ def popup_fiche_manquante():
 @st.dialog("🎫 Feuille de match", width="large")
 def popup_details_match(row):
     """
-    Affiche la feuille graphique V7 du match.
-    Si le fichier disparaît entre le clic et l'ouverture, affiche le message
-    'fiche indisponible' plutôt qu'un ancien billet de secours.
+    Affiche la fiche graphique V7 lorsqu'elle existe.
+    Les captures sont recherchées et affichées même si la fiche de composition
+    n'existe pas encore.
     """
     lien_tm = row.get("Lien Transfermarkt", "")
     image_path = get_match_sheet_path(lien_tm)
 
-    if not image_path:
+    if image_path:
+        st.image(str(image_path), use_container_width=True)
+    else:
         contenu_fiche_manquante()
-        return
-
-    st.image(str(image_path), use_container_width=True)
 
     # --- CAPTURES DU MATCH ---
     captures = get_match_capture_paths(row)
@@ -505,850 +549,45 @@ MENU_ARBO = {
     }
 }
 
-# 3. CHARGEMENT / SYNCHRONISATION AUTOMATIQUE NOTION -> matchs.csv
-# =============================================================================
-#
-# Principe :
-#   - Notion devient la source principale des matchs.
-#   - Au premier démarrage, le script rapproche les pages Notion du matchs.csv
-#     existant afin de conserver les numéros "Match".
-#   - Les nouvelles pages reçoivent ensuite le numéro suivant, dans l'ordre
-#     de leur date de création Notion.
-#   - "Notion ID" est ajouté au CSV. À partir de là, les synchronisations
-#     suivantes sont incrémentales : seules les pages modifiées depuis la
-#     dernière synchro sont demandées à Notion.
-#   - Si GITHUB_TOKEN est configuré, le nouveau matchs.csv est poussé
-#     automatiquement dans le dépôt GitHub.
-#   - En cas de panne Notion, le dernier matchs.csv reste utilisé.
-#
-# Secrets Streamlit attendus :
-#   NOTION_TOKEN
-#   NOTION_DATA_SOURCE_ID
-#   GITHUB_TOKEN
-#
-# Secrets optionnels :
-#   NOTION_VERSION = "2026-03-11"
-#   GITHUB_REPO = "Classeurfoot/mon-app-foot"
-#   GITHUB_BRANCH = "main"
-#
-# IMPORTANT : aucun token ne doit être écrit directement dans main.py.
-# =============================================================================
-
-MATCHS_CSV_PATH = BASE_DIR / "matchs.csv"
-NOTION_META_COLUMNS = ["Notion ID", "Notion créé le", "Notion modifié le"]
-
-BOOTSTRAP_SIGNATURES = [
-    [
-        "Saison", "Compétition", "Phase", "Journée", "Date", "Horaire",
-        "Domicile", "Extérieur", "Score", "Diffuseur", "Langue", "Qualité",
-        "Commentaires sur fichier", "Date ajout",
-    ],
-    [
-        "Saison", "Compétition", "Phase", "Journée", "Date", "Horaire",
-        "Domicile", "Extérieur", "Score", "Diffuseur", "Langue", "Qualité",
-        "Commentaires sur fichier",
-    ],
-    [
-        "Saison", "Compétition", "Date", "Horaire",
-        "Domicile", "Extérieur", "Diffuseur", "Langue", "Qualité",
-    ],
-    [
-        "Saison", "Compétition", "Date", "Domicile", "Extérieur",
-        "Diffuseur", "Langue", "Qualité",
-    ],
-    [
-        "Saison", "Compétition", "Date", "Domicile", "Extérieur",
-    ],
-]
-
-
-def _secret(name, default=""):
-    """Lit d'abord st.secrets puis, en local, une variable d'environnement."""
-    try:
-        value = st.secrets.get(name, default)
-    except Exception:
-        value = os.getenv(name, default)
-    if value is None:
-        return ""
-    return str(value).strip()
-
-
-def _normaliser_sync(value):
-    if value is None:
-        return ""
-    try:
-        if pd.isna(value):
-            return ""
-    except Exception:
-        pass
-    s = str(value).strip()
-    s = "".join(
-        c for c in unicodedata.normalize("NFD", s)
-        if unicodedata.category(c) != "Mn"
-    )
-    s = s.lower()
-    s = re.sub(r"\s+", " ", s)
-    return s
-
-
-def _lire_csv_local():
-    """Charge le matchs.csv du dépôt sans modifier ses colonnes."""
-    if not MATCHS_CSV_PATH.is_file():
-        return pd.DataFrame(), ";"
-
-    raw = MATCHS_CSV_PATH.read_text(encoding="utf-8-sig", errors="replace")
-    first_line = raw.splitlines()[0] if raw.splitlines() else ""
-    sep = ";" if first_line.count(";") >= first_line.count(",") else ","
-
-    try:
-        df_local = pd.read_csv(
-            MATCHS_CSV_PATH,
-            sep=sep,
-            encoding="utf-8-sig",
-            dtype=str,
-            keep_default_na=False,
-        )
-    except Exception:
-        alt = "," if sep == ";" else ";"
-        df_local = pd.read_csv(
-            MATCHS_CSV_PATH,
-            sep=alt,
-            encoding="utf-8-sig",
-            dtype=str,
-            keep_default_na=False,
-        )
-        sep = alt
-
-    df_local.columns = [str(c).strip() for c in df_local.columns]
-    return df_local.fillna(""), sep
-
-
-def _api_json(url, method="GET", headers=None, payload=None, retries=5):
-    """Requête JSON standard library avec gestion 429 et erreurs serveur."""
-    headers = dict(headers or {})
-    body = None
-    if payload is not None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers.setdefault("Content-Type", "application/json")
-
-    last_error = None
-
-    for attempt in range(1, retries + 1):
-        req = urllib.request.Request(
-            url,
-            data=body,
-            headers=headers,
-            method=method,
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=45) as response:
-                data = response.read()
-                if not data:
-                    return {}
-                return json.loads(data.decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            last_error = exc
-            code = exc.code
-
-            if code == 429 and attempt < retries:
-                try:
-                    wait = float(exc.headers.get("Retry-After", "2"))
-                except Exception:
-                    wait = 2.0
-                time.sleep(max(1.0, min(wait, 15.0)))
-                continue
-
-            if 500 <= code < 600 and attempt < retries:
-                time.sleep(min(2 * attempt, 10))
-                continue
-
-            try:
-                detail = exc.read().decode("utf-8", errors="replace")
-            except Exception:
-                detail = str(exc)
-            raise RuntimeError(f"HTTP {code} : {detail[:800]}") from exc
-
-        except Exception as exc:
-            last_error = exc
-            if attempt < retries:
-                time.sleep(min(2 * attempt, 10))
-                continue
-            raise
-
-    raise RuntimeError(str(last_error) if last_error else "Erreur réseau inconnue")
-
-
-def _notion_headers(token, notion_version):
-    return {
-        "Authorization": f"Bearer {token}",
-        "Notion-Version": notion_version,
-        "Content-Type": "application/json",
-    }
-
-
-def _notion_query_pages(token, datasource_id, notion_version, edited_after=None):
-    """
-    Lit toutes les pages utiles.
-    Si edited_after est fourni, ne récupère que les pages modifiées ensuite.
-    """
-    url = f"https://api.notion.com/v1/data_sources/{datasource_id}/query"
-    headers = _notion_headers(token, notion_version)
-
-    pages = []
-    cursor = None
-
-    while True:
-        payload = {"page_size": 100}
-
-        if cursor:
-            payload["start_cursor"] = cursor
-
-        if edited_after:
-            payload["filter"] = {
-                "timestamp": "last_edited_time",
-                "last_edited_time": {"after": edited_after},
-            }
-
-        data = _api_json(
-            url,
-            method="POST",
-            headers=headers,
-            payload=payload,
-        )
-
-        pages.extend(data.get("results", []))
-
-        if not data.get("has_more"):
-            break
-
-        cursor = data.get("next_cursor")
-        if not cursor:
-            break
-
-        time.sleep(0.34)
-
-    return pages
-
-
-def _rich_text_plain(items):
-    if not items:
-        return ""
-    return "".join(
-        str(x.get("plain_text", "") or "")
-        for x in items
-    ).strip()
-
-
-def _date_value_to_fr(start):
-    if not start:
-        return ""
-
-    s = str(start).strip()
-    try:
-        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
-        if "T" not in s:
-            return dt.strftime("%d/%m/%Y")
-        try:
-            dt = dt.astimezone(ZoneInfo("Europe/Paris"))
-        except Exception:
-            pass
-        return dt.strftime("%d/%m/%Y %H:%M")
-    except Exception:
-        return s
-
-
-def _iso_to_paris_display(value):
-    if not value:
-        return ""
-    try:
-        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        try:
-            dt = dt.astimezone(ZoneInfo("Europe/Paris"))
-        except Exception:
-            pass
-        return dt.strftime("%d/%m/%Y %H:%M")
-    except Exception:
-        return str(value)
-
-
-def _notion_prop_value(prop, column_name=""):
-    """Convertit les principaux types de propriétés Notion en texte CSV."""
-    if not isinstance(prop, dict):
-        return ""
-
-    typ = prop.get("type")
-    value = prop.get(typ) if typ else None
-
-    if typ in ("title", "rich_text"):
-        return _rich_text_plain(value or [])
-
-    if typ == "number":
-        if value is None:
-            return ""
-        try:
-            f = float(value)
-            return str(int(f)) if f.is_integer() else str(f)
-        except Exception:
-            return str(value)
-
-    if typ in ("select", "status"):
-        return (value or {}).get("name", "") if isinstance(value, dict) else ""
-
-    if typ == "multi_select":
-        return ", ".join(
-            str(x.get("name", "")).strip()
-            for x in (value or [])
-            if str(x.get("name", "")).strip()
-        )
-
-    if typ == "date":
-        if not isinstance(value, dict):
-            return ""
-        return _date_value_to_fr(value.get("start"))
-
-    if typ == "checkbox":
-        return "Oui" if value else "Non"
-
-    if typ in ("url", "email", "phone_number"):
-        return "" if value is None else str(value)
-
-    if typ in ("created_time", "last_edited_time"):
-        return _iso_to_paris_display(value)
-
-    if typ in ("created_by", "last_edited_by"):
-        if isinstance(value, dict):
-            return str(value.get("name") or value.get("id") or "")
-        return ""
-
-    if typ == "people":
-        return ", ".join(
-            str(x.get("name") or x.get("id") or "").strip()
-            for x in (value or [])
-            if str(x.get("name") or x.get("id") or "").strip()
-        )
-
-    if typ == "relation":
-        return ", ".join(
-            str(x.get("id", "")).strip()
-            for x in (value or [])
-            if str(x.get("id", "")).strip()
-        )
-
-    if typ == "files":
-        vals = []
-        for item in value or []:
-            if not isinstance(item, dict):
-                continue
-            name = str(item.get("name", "") or "").strip()
-            file_obj = item.get(item.get("type"), {}) if item.get("type") else {}
-            url = file_obj.get("url", "") if isinstance(file_obj, dict) else ""
-            vals.append(name or url)
-        return ", ".join(x for x in vals if x)
-
-    if typ == "formula" and isinstance(value, dict):
-        inner_type = value.get("type")
-        if inner_type:
-            return _notion_prop_value(
-                {"type": inner_type, inner_type: value.get(inner_type)},
-                column_name,
-            )
-        return ""
-
-    if typ == "rollup" and isinstance(value, dict):
-        inner_type = value.get("type")
-        if inner_type == "array":
-            parts = []
-            for item in value.get("array", []) or []:
-                v = _notion_prop_value(item, column_name)
-                if str(v).strip():
-                    parts.append(str(v).strip())
-            return ", ".join(parts)
-        if inner_type:
-            return _notion_prop_value(
-                {"type": inner_type, inner_type: value.get(inner_type)},
-                column_name,
-            )
-        return ""
-
-    if value is None:
-        return ""
-
-    if isinstance(value, (str, int, float, bool)):
-        return str(value)
-
-    return ""
-
-
-def _page_to_row(page):
-    props = page.get("properties") or {}
-    row = {}
-
-    for name, prop in props.items():
-        if str(name).strip() == "Match":
-            continue
-        row[str(name).strip()] = _notion_prop_value(prop, str(name).strip())
-
-    created = str(page.get("created_time") or "")
-    edited = str(page.get("last_edited_time") or "")
-
-    if not str(row.get("Date ajout", "")).strip():
-        row["Date ajout"] = _iso_to_paris_display(created)
-
-    row["Notion ID"] = str(page.get("id") or "")
-    row["Notion créé le"] = created
-    row["Notion modifié le"] = edited
-    row["_created_iso"] = created
-
-    return row
-
-
-def _signature(row, columns):
-    return tuple(
-        _normaliser_sync(row.get(col, ""))
-        for col in columns
-    )
-
-
-def _numero_int(value):
-    try:
-        return int(float(str(value).strip()))
-    except Exception:
-        return None
-
-
-def _bootstrap_existing_numbers(notion_rows, old_df):
-    """
-    Première synchronisation :
-    rapproche chaque page Notion avec le CSV existant et conserve son Match.
-    Les pages réellement nouvelles reçoivent ensuite max(Match)+1, etc.
-    """
-    old_records = (
-        old_df.fillna("").to_dict("records")
-        if not old_df.empty else []
-    )
-
-    max_match = 0
-    for r in old_records:
-        n = _numero_int(r.get("Match"))
-        if n is not None:
-            max_match = max(max_match, n)
-
-    indexes = []
-    for cols in BOOTSTRAP_SIGNATURES:
-        idx = defaultdict(deque)
-        for pos, old in enumerate(old_records):
-            n = _numero_int(old.get("Match"))
-            if n is None:
-                continue
-            sig = _signature(old, cols)
-            if any(sig):
-                idx[sig].append((n, pos))
-        for sig in list(idx):
-            idx[sig] = deque(sorted(idx[sig], key=lambda x: x[0]))
-        indexes.append((cols, idx))
-
-    used_old_positions = set()
-    unmatched = []
-
-    notion_rows = sorted(
-        notion_rows,
-        key=lambda r: (
-            str(r.get("_created_iso", "")),
-            str(r.get("Notion ID", "")),
-        ),
-    )
-
-    for row in notion_rows:
-        assigned = None
-
-        for cols, idx in indexes:
-            sig = _signature(row, cols)
-            q = idx.get(sig)
-            if not q:
-                continue
-
-            while q and q[0][1] in used_old_positions:
-                q.popleft()
-
-            if q:
-                assigned, old_pos = q.popleft()
-                used_old_positions.add(old_pos)
-                break
-
-        if assigned is not None:
-            row["Match"] = str(assigned)
-        else:
-            unmatched.append(row)
-
-    for row in unmatched:
-        max_match += 1
-        row["Match"] = str(max_match)
-
-    return notion_rows
-
-
-def _merge_incremental(old_df, changed_rows):
-    """
-    Mise à jour par Notion ID.
-    Les nouvelles pages reçoivent le numéro suivant dans l'ordre de création.
-    """
-    old_records = (
-        old_df.fillna("").to_dict("records")
-        if not old_df.empty else []
-    )
-
-    by_id = {}
-    max_match = 0
-
-    for pos, row in enumerate(old_records):
-        notion_id = str(row.get("Notion ID", "") or "").strip()
-        if notion_id:
-            by_id[notion_id] = pos
-        n = _numero_int(row.get("Match"))
-        if n is not None:
-            max_match = max(max_match, n)
-
-    changed_rows = sorted(
-        changed_rows,
-        key=lambda r: (
-            str(r.get("_created_iso", "")),
-            str(r.get("Notion ID", "")),
-        ),
-    )
-
-    for fresh in changed_rows:
-        notion_id = str(fresh.get("Notion ID", "") or "").strip()
-
-        if notion_id in by_id:
-            pos = by_id[notion_id]
-            old_match = old_records[pos].get("Match", "")
-            new_row = dict(old_records[pos])
-            for k, v in fresh.items():
-                if not k.startswith("_"):
-                    new_row[k] = v
-            new_row["Match"] = old_match
-            old_records[pos] = new_row
-        else:
-            max_match += 1
-            new_row = {
-                k: v for k, v in fresh.items()
-                if not k.startswith("_")
-            }
-            new_row["Match"] = str(max_match)
-            old_records.append(new_row)
-            if notion_id:
-                by_id[notion_id] = len(old_records) - 1
-
-    return old_records
-
-
-def _final_dataframe(records, old_columns):
-    """Conserve l'ordre historique des colonnes, puis ajoute les nouvelles."""
-    cleaned = []
-    all_keys = set()
-
-    for row in records:
-        r = {
-            str(k): ("" if v is None else str(v))
-            for k, v in row.items()
-            if not str(k).startswith("_")
-        }
-        cleaned.append(r)
-        all_keys.update(r.keys())
-
-    final_columns = ["Match"]
-
-    for c in old_columns:
-        if c != "Match" and c in all_keys and c not in final_columns:
-            final_columns.append(c)
-
-    extras = sorted(
-        c for c in all_keys
-        if c not in final_columns and c not in NOTION_META_COLUMNS
-    )
-    final_columns.extend(extras)
-
-    for c in NOTION_META_COLUMNS:
-        if c in all_keys and c not in final_columns:
-            final_columns.append(c)
-
-    df_new = pd.DataFrame(cleaned)
-    for c in final_columns:
-        if c not in df_new.columns:
-            df_new[c] = ""
-
-    df_new = df_new[final_columns].fillna("")
-
-    if "Match" in df_new.columns:
-        df_new["_match_sort"] = pd.to_numeric(df_new["Match"], errors="coerce")
-        df_new = (
-            df_new
-            .sort_values(
-                by=["_match_sort", "Match"],
-                ascending=[True, True],
-                na_position="last",
-                kind="stable",
-            )
-            .drop(columns=["_match_sort"])
-            .reset_index(drop=True)
-        )
-
-    return df_new
-
-
-def _csv_bytes(df_new, sep):
-    sio = io.StringIO(newline="")
-    df_new.to_csv(
-        sio,
-        index=False,
-        sep=sep,
-        lineterminator="\n",
-        quoting=csv.QUOTE_MINIMAL,
-    )
-    return ("\ufeff" + sio.getvalue()).encode("utf-8")
-
-
-def _github_push_matchs_csv(new_bytes):
-    """
-    Remplace matchs.csv dans GitHub seulement si le contenu a changé.
-    """
-    token = _secret("GITHUB_TOKEN")
-    if not token:
-        return "sans_github", "GITHUB_TOKEN absent"
-
-    repo = _secret("GITHUB_REPO", "Classeurfoot/mon-app-foot")
-    branch = _secret("GITHUB_BRANCH", "main")
-
-    if "/" not in repo:
-        return "erreur", "GITHUB_REPO invalide"
-
-    api_url = f"https://api.github.com/repos/{repo}/contents/matchs.csv"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "Le-Grenier-du-Football-Notion-Sync",
-    }
-
-    meta = _api_json(
-        f"{api_url}?ref={urllib.parse.quote(branch)}",
-        method="GET",
-        headers=headers,
-    )
-    sha = str(meta.get("sha") or "")
-
-    try:
-        old_bytes = MATCHS_CSV_PATH.read_bytes()
-        if hashlib.sha256(old_bytes).digest() == hashlib.sha256(new_bytes).digest():
-            return "identique", "matchs.csv déjà à jour"
-    except Exception:
-        pass
-
-    payload = {
-        "message": "Synchronisation automatique Notion vers matchs.csv",
-        "content": base64.b64encode(new_bytes).decode("ascii"),
-        "branch": branch,
-    }
-    if sha:
-        payload["sha"] = sha
-
-    _api_json(
-        api_url,
-        method="PUT",
-        headers=headers,
-        payload=payload,
-    )
-
-    return "pousse", "matchs.csv mis à jour sur GitHub"
-
-
-def _parse_iso(value):
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except Exception:
-        return None
-
-
-def _dernier_edit_notion(df_local):
-    if df_local.empty or "Notion modifié le" not in df_local.columns:
-        return None
-
-    dates = [
-        _parse_iso(v)
-        for v in df_local["Notion modifié le"].astype(str).tolist()
-        if str(v).strip()
-    ]
-    dates = [x for x in dates if x is not None]
-
-    if not dates:
-        return None
-
-    latest = max(dates) - timedelta(seconds=3)
-    return latest.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _sync_notion_dataframe():
-    token = _secret("NOTION_TOKEN")
-    datasource_id = (
-        _secret("NOTION_DATA_SOURCE_ID")
-        or _secret("NOTION_DATABASE_ID")
-    )
-    notion_version = _secret("NOTION_VERSION", "2026-03-11")
-
-    old_df, sep = _lire_csv_local()
-
-    if not token or not datasource_id:
-        return old_df, {
-            "source": "csv",
-            "notion": False,
-            "github": "non_configure",
-            "pages_lues": 0,
-            "mode": "csv",
-        }
-
-    has_ids = (
-        not old_df.empty
-        and "Notion ID" in old_df.columns
-        and old_df["Notion ID"].astype(str).str.strip().ne("").mean() >= 0.90
-    )
-
-    edited_after = _dernier_edit_notion(old_df) if has_ids else None
-    mode = "incremental" if edited_after else "complet"
-
-    try:
-        pages = _notion_query_pages(
-            token,
-            datasource_id,
-            notion_version,
-            edited_after=edited_after,
-        )
-    except Exception:
-        if edited_after:
-            try:
-                pages = _notion_query_pages(
-                    token,
-                    datasource_id,
-                    notion_version,
-                    edited_after=None,
-                )
-                mode = "complet_secours"
-                has_ids = False
-            except Exception:
-                return old_df, {
-                    "source": "csv_secours",
-                    "notion": False,
-                    "github": "non_tente",
-                    "pages_lues": 0,
-                    "mode": "erreur_notion",
-                }
-        else:
-            return old_df, {
-                "source": "csv_secours",
-                "notion": False,
-                "github": "non_tente",
-                "pages_lues": 0,
-                "mode": "erreur_notion",
-            }
-
-    notion_rows = [_page_to_row(p) for p in pages]
-
-    if has_ids and mode == "incremental":
-        if not notion_rows:
-            return old_df, {
-                "source": "csv_a_jour",
-                "notion": True,
-                "github": "identique",
-                "pages_lues": 0,
-                "mode": mode,
-            }
-        records = _merge_incremental(old_df, notion_rows)
-    else:
-        records = _bootstrap_existing_numbers(notion_rows, old_df)
-
-    df_new = _final_dataframe(records, list(old_df.columns))
-    new_bytes = _csv_bytes(df_new, sep)
-
-    try:
-        github_status, github_message = _github_push_matchs_csv(new_bytes)
-    except Exception:
-        github_status, github_message = "erreur", "échec mise à jour GitHub"
-
-    return df_new, {
-        "source": "notion",
-        "notion": True,
-        "github": github_status,
-        "github_message": github_message,
-        "pages_lues": len(pages),
-        "mode": mode,
-    }
-
-
-@st.cache_data(ttl=300, show_spinner=False)
+# 3. Chargement des données MATCHS (BLINDÉ)
+@st.cache_data(ttl=600)
 def load_data():
-    """
-    Charge depuis Notion quand la connexion est configurée.
-    En cas de problème, le dernier matchs.csv du dépôt reste le secours.
-    """
     try:
-        df_sync, _sync_info = _sync_notion_dataframe()
+        # Détection intelligente du séparateur (point-virgule ou virgule)
+        try:
+            df = pd.read_csv("matchs.csv", sep=";", encoding="utf-8-sig", dtype={'Score': str})
+            if 'Saison' not in df.columns:
+                df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig", dtype={'Score': str})
+        except:
+            df = pd.read_csv("matchs.csv", sep=",", encoding="utf-8-sig", dtype={'Score': str})
 
-        if df_sync is None or df_sync.empty:
-            df_sync, _ = _lire_csv_local()
-
-        df = df_sync.copy()
         df.columns = df.columns.str.strip()
 
-        if "Saison" in df.columns and "Compétition" in df.columns:
-            df = df.dropna(subset=["Saison", "Compétition"], how="all")
-
-        if "Domicile" in df.columns:
-            df["Domicile"] = df["Domicile"].replace("", "Multiplex / Divers").fillna("Multiplex / Divers")
-        if "Extérieur" in df.columns:
-            df["Extérieur"] = df["Extérieur"].replace("", "-").fillna("-")
-        if "Score" in df.columns:
-            df["Score"] = df["Score"].replace("", "-").fillna("-")
-        if "Stade" in df.columns:
-            df["Stade"] = df["Stade"].replace("", "Plusieurs stades").fillna("Plusieurs stades")
-
-        if "Domicile" in df.columns and "Extérieur" in df.columns:
-            df = df.dropna(subset=["Domicile", "Extérieur"])
-
-        if "Date" in df.columns:
-            dates_numeriques = pd.to_numeric(df["Date"], errors="coerce")
+        # Sécurisation des vérifications de colonnes
+        if 'Saison' in df.columns and 'Compétition' in df.columns:
+            df = df.dropna(subset=['Saison', 'Compétition'], how='all')
+        
+        if 'Domicile' in df.columns: df['Domicile'] = df['Domicile'].fillna("Multiplex / Divers")
+        if 'Extérieur' in df.columns: df['Extérieur'] = df['Extérieur'].fillna("-")
+        if 'Score' in df.columns: df['Score'] = df['Score'].fillna("-")
+        if 'Stade' in df.columns: df['Stade'] = df['Stade'].fillna("Plusieurs stades")
+        
+        if 'Domicile' in df.columns and 'Extérieur' in df.columns:
+            df = df.dropna(subset=['Domicile', 'Extérieur'])
+            
+        if 'Date' in df.columns:
+            dates_numeriques = pd.to_numeric(df['Date'], errors='coerce')
             masque_excel = dates_numeriques.notna()
-            if masque_excel.any():
-                dates_converties = pd.to_datetime(
-                    dates_numeriques[masque_excel],
-                    unit="D",
-                    origin="1899-12-30",
-                )
-                df.loc[masque_excel, "Date"] = dates_converties.dt.strftime("%d/%m/%Y")
-
+            dates_converties = pd.to_datetime(dates_numeriques[masque_excel], unit='D', origin='1899-12-30')
+            df.loc[masque_excel, 'Date'] = dates_converties.dt.strftime('%d/%m/%Y')
         return df
-
     except Exception as e:
-        try:
-            df, _ = _lire_csv_local()
-            if not df.empty:
-                return df
-        except Exception:
-            pass
-
         st.error(f"Erreur de lecture matchs : {e}")
         return pd.DataFrame()
 
-
 df = load_data()
-
-colonnes_possibles = [
-    "Match", "Saison", "Compétition", "Phase", "Date", "Horaire", "Journée",
-    "Domicile", "Score", "Extérieur", "Buteurs", "Stade", "Diffuseur",
-    "Langue", "Qualité", "Commentaires sur fichier",
-]
+colonnes_possibles = ['Match','Saison', 'Compétition', 'Phase', 'Date', 'Horaire', 'Journée', 'Domicile', 'Score', 'Extérieur', 'Buteurs', 'Stade', 'Diffuseur', 'Langue', 'Qualité', 'Commentaires sur fichier']
 colonnes_presentes = [c for c in colonnes_possibles if c in df.columns]
-
 
 # 4. Chargement des données DOCUMENTAIRES (BLINDÉ)
 @st.cache_data(ttl=600)
@@ -1503,13 +742,7 @@ def afficher_resultats(df_resultats):
                     ligne_infos = None
 
         if ligne_infos is not None:
-            lien_tm_infos = ligne_infos.get("Lien Transfermarkt", "")
-            image_path_infos = get_match_sheet_path(lien_tm_infos)
-
-            if image_path_infos:
-                popup_details_match(ligne_infos)
-            else:
-                popup_fiche_manquante()
+            popup_details_match(ligne_infos)
 
         selected_rows = edited_df[edited_df["Sélection"] == True]
 
@@ -1651,12 +884,7 @@ def afficher_resultats(df_resultats):
                     
                     with col_btn_info:
                         if st.button("🎫 Feuille de match", key=f"info_{index}_{i}", use_container_width=True):
-                            image_path = get_match_sheet_path(lien_tm)
-
-                            if image_path:
-                                popup_details_match(row)
-                            else:
-                                popup_fiche_manquante()
+                            popup_details_match(row)
                             
                     with col_btn_cart:
                         if in_cart:
