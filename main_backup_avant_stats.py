@@ -1134,61 +1134,141 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
-    # --- 🖼️ NOUVEAUTÉ : CAPTURES D'ARCHIVE ---
-    with st.container(border=True):
-        st.markdown("""
-            <div style='
-                text-align: center;
-                max-width: 950px;
-                margin: 0 auto;
-                padding: 8px 20px;
-            '>
-                <h4 style='
-                    margin: 0 0 10px 0;
-                    color: #d97706;
-                    text-align: center;
-                '>
-                    🖼️ Nouveau dans les fiches de match : les captures d’archive
-                </h4>
-                <p style='
-                    margin: 0 auto;
-                    font-size: 14.5px;
-                    color: #e2e8f0;
-                    line-height: 1.6;
-                    text-align: center;
-                '>
-                    Pour une grande partie des rencontres, vous pouvez désormais visualiser une capture directement dans la fiche : Coupe du Monde, Euro, compétitions françaises et Milan AC.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+    # --- NOUVEAUTÉS DU GRENIER : FICHE + CAPTURE ---
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            margin: 10px auto 14px auto;
+        ">
+            <h2 style="
+                margin:0;
+                font-size:28px;
+                font-weight:600;
+            ">
+                Nouveautés du grenier
+            </h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # --- ⚽ NOUVEAUTÉ : FICHES DE MATCH ENRICHIES ---
-    with st.container(border=True):
-        st.markdown("""
-            <div style='
-                text-align: center;
-                max-width: 950px;
-                margin: 0 auto;
-                padding: 8px 20px;
-            '>
-                <h4 style='
-                    margin: 0 0 10px 0;
-                    color: #d97706;
-                    text-align: center;
-                '>
-                    ⚽ Nouveauté : les fiches de match s’enrichissent !
-                </h4>
-                <p style='
-                    margin: 0 auto;
-                    font-size: 14.5px;
-                    color: #e2e8f0;
-                    line-height: 1.6;
-                    text-align: center;
-                '>
-                    Un simple clic sur « Feuille de match » permet désormais d’afficher les compositions d’équipes, les entraîneurs et plusieurs informations complémentaires sur la rencontre.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+    nouveaute_compo_b64 = get_base64_image("nouveaute_fiche_match.png")
+    nouveaute_capture_b64 = get_base64_image("nouveaute_capture_match.jpg")
+
+    col_nouv_1, col_nouv_2 = st.columns(2, gap="medium")
+
+    with col_nouv_1:
+        with st.container(border=True):
+            st.markdown(
+                """
+                <div style="
+                    text-align:center;
+                    min-height:118px;
+                    padding:0 8px;
+                ">
+                    <h3 style="
+                        margin:0 0 6px 0;
+                        font-size:20px;
+                    ">
+                        ⚽ Fiches de match enrichies
+                    </h3>
+                    <p style="
+                        margin:0 auto;
+                        max-width:520px;
+                        font-size:14px;
+                        line-height:1.45;
+                        color:#d1d5db;
+                    ">
+                        Un simple clic sur « Feuille de match » permet désormais
+                        d’afficher les compositions d’équipes, les entraîneurs
+                        et plusieurs informations complémentaires sur la rencontre
+                        (tout n’est pas encore à jour).
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            if nouveaute_compo_b64:
+                st.markdown(
+                    f"""
+                    <div style="
+                        text-align:center;
+                        margin-top:8px;
+                        margin-bottom:2px;
+                    ">
+                        <img
+                            src="data:image/png;base64,{nouveaute_compo_b64}"
+                            style="
+                                width:100%;
+                                max-width:430px;
+                                height:auto;
+                                border-radius:7px;
+                                display:block;
+                                margin:0 auto;
+                            "
+                        >
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+    with col_nouv_2:
+        with st.container(border=True):
+            st.markdown(
+                """
+                <div style="
+                    text-align:center;
+                    min-height:118px;
+                    padding:0 8px;
+                ">
+                    <h3 style="
+                        margin:0 0 6px 0;
+                        font-size:20px;
+                    ">
+                        🖼️ Captures images
+                    </h3>
+                    <p style="
+                        margin:0 auto;
+                        max-width:520px;
+                        font-size:14px;
+                        line-height:1.45;
+                        color:#d1d5db;
+                    ">
+                        Pour une grande partie des rencontres, vous pouvez désormais
+                        visualiser une capture directement dans la fiche
+                        (tout n’est pas encore à jour).
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            if nouveaute_capture_b64:
+                st.markdown(
+                    f"""
+                    <div style="
+                        text-align:center;
+                        margin-top:8px;
+                        margin-bottom:2px;
+                    ">
+                        <img
+                            src="data:image/jpeg;base64,{nouveaute_capture_b64}"
+                            style="
+                                width:100%;
+                                max-width:390px;
+                                height:auto;
+                                border-radius:7px;
+                                display:block;
+                                margin:0 auto;
+                            "
+                        >
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
     # -----------------------------------------------------
     
     st.write("---")
