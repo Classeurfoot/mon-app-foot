@@ -1134,140 +1134,132 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
-    # --- NOUVEAUTÉS DU GRENIER : FICHE + CAPTURE ---
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            margin: 10px auto 14px auto;
-        ">
-            <h2 style="
-                margin:0;
-                font-size:28px;
-                font-weight:600;
-            ">
-                Nouveautés du grenier
-            </h2>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+    # --- NOUVEAUTÉS DU GRENIER : VERSION COMPACTE ---
     nouveaute_compo_b64 = get_base64_image("nouveaute_fiche_match.png")
     nouveaute_capture_b64 = get_base64_image("nouveaute_capture_match.jpg")
 
-    col_nouv_1, col_nouv_2 = st.columns(2, gap="medium")
+    st.markdown(
+        f"""
+        <style>
+            .lgf-nouveautes {{
+                max-width: 980px;
+                margin: 18px auto 8px auto;
+            }}
 
-    with col_nouv_1:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div style="
-                    text-align:center;
-                    min-height:118px;
-                    padding:0 8px;
-                ">
-                    <h3 style="
-                        margin:0 0 6px 0;
-                        font-size:20px;
-                    ">
-                        ⚽ Fiches de match enrichies
-                    </h3>
-                    <p style="
-                        margin:0 auto;
-                        max-width:520px;
-                        font-size:14px;
-                        line-height:1.45;
-                        color:#d1d5db;
-                    ">
+            .lgf-nouveautes-titre {{
+                text-align: center;
+                font-size: 27px;
+                font-weight: 650;
+                margin: 0 0 16px 0;
+            }}
+
+            .lgf-nouveautes-grid {{
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 18px;
+            }}
+
+            .lgf-nouveaute-card {{
+                border: 1px solid #3f3f46;
+                border-radius: 10px;
+                padding: 14px 16px 16px 16px;
+                background: rgba(255,255,255,0.012);
+                text-align: center;
+                overflow: hidden;
+            }}
+
+            .lgf-nouveaute-card h3 {{
+                margin: 0 0 7px 0;
+                font-size: 19px;
+                line-height: 1.25;
+            }}
+
+            .lgf-nouveaute-card p {{
+                max-width: 430px;
+                margin: 0 auto 12px auto;
+                color: #d1d5db;
+                font-size: 13.5px;
+                line-height: 1.42;
+            }}
+
+            .lgf-nouveaute-image {{
+                width: auto;
+                height: auto;
+                display: block;
+                margin: 0 auto;
+                border-radius: 7px;
+            }}
+
+            .lgf-nouveaute-image-compo {{
+                max-width: 365px;
+                max-height: 305px;
+            }}
+
+            .lgf-nouveaute-image-capture {{
+                max-width: 380px;
+                max-height: 285px;
+            }}
+
+            @media (max-width: 800px) {{
+                .lgf-nouveautes {{
+                    max-width: 560px;
+                    margin-top: 12px;
+                }}
+
+                .lgf-nouveautes-grid {{
+                    grid-template-columns: 1fr;
+                    gap: 12px;
+                }}
+
+                .lgf-nouveautes-titre {{
+                    font-size: 24px;
+                }}
+
+                .lgf-nouveaute-image-compo,
+                .lgf-nouveaute-image-capture {{
+                    max-width: 100%;
+                    height: auto;
+                }}
+            }}
+        </style>
+
+        <div class="lgf-nouveautes">
+            <div class="lgf-nouveautes-titre">Nouveautés du grenier</div>
+
+            <div class="lgf-nouveautes-grid">
+
+                <div class="lgf-nouveaute-card">
+                    <h3>⚽ Fiches de match enrichies</h3>
+                    <p>
                         Un simple clic sur « Feuille de match » permet désormais
                         d’afficher les compositions d’équipes, les entraîneurs
                         et plusieurs informations complémentaires sur la rencontre
                         (tout n’est pas encore à jour).
                     </p>
+                    {
+                        f'<img class="lgf-nouveaute-image lgf-nouveaute-image-compo" src="data:image/png;base64,{nouveaute_compo_b64}">'
+                        if nouveaute_compo_b64 else ""
+                    }
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
 
-            if nouveaute_compo_b64:
-                st.markdown(
-                    f"""
-                    <div style="
-                        text-align:center;
-                        margin-top:8px;
-                        margin-bottom:2px;
-                    ">
-                        <img
-                            src="data:image/png;base64,{nouveaute_compo_b64}"
-                            style="
-                                width:100%;
-                                max-width:430px;
-                                height:auto;
-                                border-radius:7px;
-                                display:block;
-                                margin:0 auto;
-                            "
-                        >
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-    with col_nouv_2:
-        with st.container(border=True):
-            st.markdown(
-                """
-                <div style="
-                    text-align:center;
-                    min-height:118px;
-                    padding:0 8px;
-                ">
-                    <h3 style="
-                        margin:0 0 6px 0;
-                        font-size:20px;
-                    ">
-                        🖼️ Captures images
-                    </h3>
-                    <p style="
-                        margin:0 auto;
-                        max-width:520px;
-                        font-size:14px;
-                        line-height:1.45;
-                        color:#d1d5db;
-                    ">
+                <div class="lgf-nouveaute-card">
+                    <h3>🖼️ Captures images</h3>
+                    <p>
                         Pour une grande partie des rencontres, vous pouvez désormais
                         visualiser une capture directement dans la fiche
                         (tout n’est pas encore à jour).
                     </p>
+                    {
+                        f'<img class="lgf-nouveaute-image lgf-nouveaute-image-capture" src="data:image/jpeg;base64,{nouveaute_capture_b64}">'
+                        if nouveaute_capture_b64 else ""
+                    }
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
 
-            if nouveaute_capture_b64:
-                st.markdown(
-                    f"""
-                    <div style="
-                        text-align:center;
-                        margin-top:8px;
-                        margin-bottom:2px;
-                    ">
-                        <img
-                            src="data:image/jpeg;base64,{nouveaute_capture_b64}"
-                            style="
-                                width:100%;
-                                max-width:390px;
-                                height:auto;
-                                border-radius:7px;
-                                display:block;
-                                margin:0 auto;
-                            "
-                        >
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # -----------------------------------------------------
     
