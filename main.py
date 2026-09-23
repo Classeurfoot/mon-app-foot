@@ -1134,133 +1134,61 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
-    # --- NOUVEAUTÉS DU GRENIER : VERSION COMPACTE ---
-    nouveaute_compo_b64 = get_base64_image("nouveaute_fiche_match.png")
-    nouveaute_capture_b64 = get_base64_image("nouveaute_capture_match.jpg")
-
-    st.markdown(
-        f"""
-        <style>
-            .lgf-nouveautes {{
-                max-width: 980px;
-                margin: 18px auto 8px auto;
-            }}
-
-            .lgf-nouveautes-titre {{
+    # --- 🖼️ NOUVEAUTÉ : CAPTURES D'ARCHIVE ---
+    with st.container(border=True):
+        st.markdown("""
+            <div style='
                 text-align: center;
-                font-size: 27px;
-                font-weight: 650;
-                margin: 0 0 16px 0;
-            }}
-
-            .lgf-nouveautes-grid {{
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 18px;
-            }}
-
-            .lgf-nouveaute-card {{
-                border: 1px solid #3f3f46;
-                border-radius: 10px;
-                padding: 14px 16px 16px 16px;
-                background: rgba(255,255,255,0.012);
-                text-align: center;
-                overflow: hidden;
-            }}
-
-            .lgf-nouveaute-card h3 {{
-                margin: 0 0 7px 0;
-                font-size: 19px;
-                line-height: 1.25;
-            }}
-
-            .lgf-nouveaute-card p {{
-                max-width: 430px;
-                margin: 0 auto 12px auto;
-                color: #d1d5db;
-                font-size: 13.5px;
-                line-height: 1.42;
-            }}
-
-            .lgf-nouveaute-image {{
-                width: auto;
-                height: auto;
-                display: block;
+                max-width: 950px;
                 margin: 0 auto;
-                border-radius: 7px;
-            }}
-
-            .lgf-nouveaute-image-compo {{
-                max-width: 365px;
-                max-height: 305px;
-            }}
-
-            .lgf-nouveaute-image-capture {{
-                max-width: 380px;
-                max-height: 285px;
-            }}
-
-            @media (max-width: 800px) {{
-                .lgf-nouveautes {{
-                    max-width: 560px;
-                    margin-top: 12px;
-                }}
-
-                .lgf-nouveautes-grid {{
-                    grid-template-columns: 1fr;
-                    gap: 12px;
-                }}
-
-                .lgf-nouveautes-titre {{
-                    font-size: 24px;
-                }}
-
-                .lgf-nouveaute-image-compo,
-                .lgf-nouveaute-image-capture {{
-                    max-width: 100%;
-                    height: auto;
-                }}
-            }}
-        </style>
-
-        <div class="lgf-nouveautes">
-            <div class="lgf-nouveautes-titre">Nouveautés du grenier</div>
-
-            <div class="lgf-nouveautes-grid">
-
-                <div class="lgf-nouveaute-card">
-                    <h3>⚽ Fiches de match enrichies</h3>
-                    <p>
-                        Un simple clic sur « Feuille de match » permet désormais
-                        d’afficher les compositions d’équipes, les entraîneurs
-                        et plusieurs informations complémentaires sur la rencontre
-                        (tout n’est pas encore à jour).
-                    </p>
-                    {
-                        f'<img class="lgf-nouveaute-image lgf-nouveaute-image-compo" src="data:image/png;base64,{nouveaute_compo_b64}">'
-                        if nouveaute_compo_b64 else ""
-                    }
-                </div>
-
-                <div class="lgf-nouveaute-card">
-                    <h3>🖼️ Captures images</h3>
-                    <p>
-                        Pour une grande partie des rencontres, vous pouvez désormais
-                        visualiser une capture directement dans la fiche
-                        (tout n’est pas encore à jour).
-                    </p>
-                    {
-                        f'<img class="lgf-nouveaute-image lgf-nouveaute-image-capture" src="data:image/jpeg;base64,{nouveaute_capture_b64}">'
-                        if nouveaute_capture_b64 else ""
-                    }
-                </div>
-
+                padding: 8px 20px;
+            '>
+                <h4 style='
+                    margin: 0 0 10px 0;
+                    color: #d97706;
+                    text-align: center;
+                '>
+                    🖼️ Nouveau dans les fiches de match : les captures d’archive
+                </h4>
+                <p style='
+                    margin: 0 auto;
+                    font-size: 14.5px;
+                    color: #e2e8f0;
+                    line-height: 1.6;
+                    text-align: center;
+                '>
+                    Pour une grande partie des rencontres, vous pouvez désormais visualiser une capture directement dans la fiche : Coupe du Monde, Euro, compétitions françaises et Milan AC.
+                </p>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        """, unsafe_allow_html=True)
 
+    # --- ⚽ NOUVEAUTÉ : FICHES DE MATCH ENRICHIES ---
+    with st.container(border=True):
+        st.markdown("""
+            <div style='
+                text-align: center;
+                max-width: 950px;
+                margin: 0 auto;
+                padding: 8px 20px;
+            '>
+                <h4 style='
+                    margin: 0 0 10px 0;
+                    color: #d97706;
+                    text-align: center;
+                '>
+                    ⚽ Nouveauté : les fiches de match s’enrichissent !
+                </h4>
+                <p style='
+                    margin: 0 auto;
+                    font-size: 14.5px;
+                    color: #e2e8f0;
+                    line-height: 1.6;
+                    text-align: center;
+                '>
+                    Un simple clic sur « Feuille de match » permet désormais d’afficher les compositions d’équipes, les entraîneurs et plusieurs informations complémentaires sur la rencontre.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     # -----------------------------------------------------
     
     st.write("---")
