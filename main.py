@@ -1055,7 +1055,7 @@ with st.sidebar:
     if st.button("✨ Archives Dépoussiérées", use_container_width=True):
         st.session_state.page = 'pepites'
         st.rerun()
-    if st.button("🎯 Progression Collection", use_container_width=True):
+    if st.button("🎯 Objectifs Collection", use_container_width=True):
         st.session_state.page = 'progression'
         st.rerun()
         
@@ -1657,48 +1657,318 @@ elif st.session_state.page == 'pepites':
 # PAGE : PROGRESSION DE LA COLLECTION
 # ==========================================
 elif st.session_state.page == 'progression':
-    st.header("🎯 Progression de la Collection")
+    st.header("🎯 Objectifs de Collection")
+    st.caption(
+        "Une vue simple des grandes séries historiques du Grenier : "
+        "éditions représentées, finales présentes et éléments encore manquants."
+    )
     st.divider()
 
-    if 'Phase' in df.columns:
-        mask_finale = df['Phase'].astype(str).str.strip().str.lower().isin(['finale', 'final'])
-        mask_cdm = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-        cdm_possedees = df[mask_cdm & mask_finale]['Compétition'].nunique()
-        total_cdm = 22
-        pct_cdm = min(100, int((cdm_possedees / total_cdm) * 100))
+    colonnes_requises = {'Compétition', 'Saison', 'Phase'}
 
-        mask_euro = df['Compétition'].str.contains(r"\bEuro\b|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires|Europa|Coupe d'Europe", na=False, case=False, regex=True)
-        euro_possedees = df[mask_euro & mask_finale]['Compétition'].nunique()
-        total_euro = 17
-        pct_euro = min(100, int((euro_possedees / total_euro) * 100))
-
-        mask_c1 = df['Compétition'].str.contains("Champions League|Coupe d'Europe des clubs champions", na=False, case=False)
-        c1_possedees = df[mask_c1 & mask_finale]['Saison'].nunique() if 'Saison' in df.columns else len(df[mask_c1 & mask_finale])
-        total_c1 = 69
-        pct_c1 = min(100, int((c1_possedees / total_c1) * 100))
-
-        col_prog1, col_prog2, col_prog3 = st.columns(3)
-        with col_prog1:
-            st.markdown(f"**Coupe du Monde** ({cdm_possedees}/{total_cdm})")
-            st.progress(pct_cdm / 100.0, text=f"{pct_cdm}% des Finales")
-        with col_prog2:
-            st.markdown(f"**Euro** ({euro_possedees}/{total_euro})")
-            st.progress(pct_euro / 100.0, text=f"{pct_euro}% des Finales")
-        with col_prog3:
-            st.markdown(f"**Ligue des Champions** ({c1_possedees}/{total_c1})")
-            st.progress(pct_c1 / 100.0, text=f"{pct_c1}% des Finales")
-            
-        st.write("---")
-        eds_cdm = df[mask_cdm]['Compétition'].nunique()
-        eds_euro = df[mask_euro]['Compétition'].nunique()
-        
-        st.markdown(f"**Éditions de Coupe du Monde :** {eds_cdm}/{total_cdm}")
-        st.progress(min(1.0, eds_cdm/total_cdm))
-        st.write("")
-        st.markdown(f"**Éditions d'Euro :** {eds_euro}/{total_euro}")
-        st.progress(min(1.0, eds_euro/total_euro))
+    if not colonnes_requises.issubset(df.columns):
+        st.warning(
+            "Les colonnes Compétition, Saison et Phase sont nécessaires "
+            "pour calculer les objectifs de collection."
+        )
     else:
-        st.warning("La colonne 'Phase' n'est pas présente dans votre fichier pour calculer les finales.")
+        # -------------------------------------------------
+        # OUTILS DE CALCUL
+        # -------------------------------------------------
+        def progression_normaliser(valeur):
+            if pd.isna(valeur):
+                return ""
+            txt = str(valeur).strip().lower()
+            txt = ''.join(
+                c for c in unicodedata.normalize('NFD', txt)
+                if unicodedata.category(c) != 'Mn'
+            )
+            return re.sub(r'\s+', ' ', txt)
+
+        def extraire_annee_edition(valeur_saison, valeur_date=""):
+            """
+            Pour les compétitions de sélections :
+            - 1982 -> 1982
+            - 2020 -> 2020
+            - 1997-1998 -> 1997 (secours)
+            """
+            saison = str(valeur_saison or "").strip()
+
+            # Cas classique : édition exprimée directement par une année.
+            m = re.fullmatch(r'\s*((?:19|20)\d{2})\s*', saison)
+            if m:
+                return int(m.group(1))
+
+            # Cas de secours : première année à 4 chiffres dans Saison.
+            annees = re.findall(r'(?:19|20)\d{2}', saison)
+            if annees:
+                return int(annees[0])
+
+            # Dernier secours : année de la date du match.
+            date_txt = str(valeur_date or "").strip()
+            for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(date_txt, fmt).year
+                except ValueError:
+                    pass
+
+            return None
+
+        def saison_c1_canonique(valeur_saison):
+            """
+            Normalise :
+              1955-56   -> 1955-1956
+              1992-1993 -> 1992-1993
+            """
+            s = str(valeur_saison or "").strip()
+
+            m = re.search(r'((?:19|20)\d{2})\s*[-/]\s*((?:19|20)\d{2})', s)
+            if m:
+                return f"{int(m.group(1)):04d}-{int(m.group(2)):04d}"
+
+            m = re.search(r'((?:19|20)\d{2})\s*[-/]\s*(\d{2})(?!\d)', s)
+            if m:
+                debut = int(m.group(1))
+                fin_courte = int(m.group(2))
+                siecle = (debut // 100) * 100
+                fin = siecle + fin_courte
+                if fin < debut:
+                    fin += 100
+                return f"{debut:04d}-{fin:04d}"
+
+            return None
+
+        def libelle_saison_c1(saison):
+            """Affichage compact : 1955-1956 -> 1955-56."""
+            if not saison or "-" not in saison:
+                return str(saison or "")
+            debut, fin = saison.split("-", 1)
+            return f"{debut}-{fin[-2:]}"
+
+        def est_finale(valeur_phase):
+            phase = progression_normaliser(valeur_phase)
+            return phase in {"finale", "final"}
+
+        def liste_compacte(valeurs):
+            valeurs = list(valeurs)
+            if not valeurs:
+                return "✅ Aucune"
+            return " • ".join(str(v) for v in valeurs)
+
+        # -------------------------------------------------
+        # PÉRIMÈTRES DES 3 COMPÉTITIONS
+        # -------------------------------------------------
+        comp_norm = df['Compétition'].astype(str).apply(progression_normaliser)
+        phase_finale = df['Phase'].apply(est_finale)
+
+        # Coupe du Monde : exclut éliminatoires et Coupe du Monde des clubs.
+        mask_cdm = (
+            comp_norm.str.contains("coupe du monde", na=False)
+            & ~comp_norm.str.contains("eliminatoires", na=False)
+            & ~comp_norm.str.contains("clubs", na=False)
+        )
+
+        # Euro / Championnat d'Europe : exclut Europa League / Coupes d'Europe.
+        mask_euro = (
+            (
+                comp_norm.str.contains(r'\beuro\b', regex=True, na=False)
+                | comp_norm.str.contains("championnat d europe", na=False)
+            )
+            & ~comp_norm.str.contains("eliminatoires", na=False)
+            & ~comp_norm.str.contains("europa", na=False)
+            & ~comp_norm.str.contains("coupe d europe", na=False)
+        )
+
+        # C1 / Champions League.
+        mask_c1 = (
+            comp_norm.str.contains("champions league", na=False)
+            | comp_norm.str.contains("coupe d europe des clubs champions", na=False)
+        )
+
+        # -------------------------------------------------
+        # LISTES DE RÉFÉRENCE
+        # -------------------------------------------------
+        editions_cdm_reference = [
+            1930, 1934, 1938,
+            1950, 1954, 1958, 1962, 1966,
+            1970, 1974, 1978, 1982, 1986,
+            1990, 1994, 1998, 2002, 2006,
+            2010, 2014, 2018, 2022, 2026,
+        ]
+
+        # La Coupe du Monde 2026 n'est comptée comme objectif qu'une fois terminée.
+        maintenant = datetime.now()
+        if maintenant < datetime(2026, 7, 20):
+            editions_cdm_reference = [x for x in editions_cdm_reference if x <= 2022]
+
+        editions_euro_reference = [
+            1960, 1964, 1968, 1972, 1976,
+            1980, 1984, 1988, 1992, 1996,
+            2000, 2004, 2008, 2012, 2016,
+            2020, 2024,
+        ]
+
+        # C1 : de 1955-56 à la dernière saison terminée.
+        # À partir de juin, on considère que la saison venant de s'achever est complète.
+        annee_fin_derniere_c1 = maintenant.year if maintenant.month >= 6 else maintenant.year - 1
+        debut_derniere_c1 = annee_fin_derniere_c1 - 1
+
+        saisons_c1_reference = [
+            f"{debut:04d}-{debut + 1:04d}"
+            for debut in range(1955, debut_derniere_c1 + 1)
+        ]
+
+        # -------------------------------------------------
+        # EXTRACTION DES ÉDITIONS PRÉSENTES
+        # -------------------------------------------------
+        def editions_selection(mask):
+            sous_df = df[mask].copy()
+            presentes = set()
+
+            for _, ligne in sous_df.iterrows():
+                annee = extraire_annee_edition(
+                    ligne.get('Saison', ''),
+                    ligne.get('Date', '')
+                )
+                if annee is not None:
+                    presentes.add(annee)
+
+            return presentes
+
+        def finales_selection(mask):
+            sous_df = df[mask & phase_finale].copy()
+            presentes = set()
+
+            for _, ligne in sous_df.iterrows():
+                annee = extraire_annee_edition(
+                    ligne.get('Saison', ''),
+                    ligne.get('Date', '')
+                )
+                if annee is not None:
+                    presentes.add(annee)
+
+            return presentes
+
+        def saisons_c1(mask):
+            presentes = set()
+            for valeur in df.loc[mask, 'Saison'].dropna():
+                saison = saison_c1_canonique(valeur)
+                if saison:
+                    presentes.add(saison)
+            return presentes
+
+        cdm_editions = editions_selection(mask_cdm) & set(editions_cdm_reference)
+        cdm_finales = finales_selection(mask_cdm) & set(editions_cdm_reference)
+
+        euro_editions = editions_selection(mask_euro) & set(editions_euro_reference)
+        euro_finales = finales_selection(mask_euro) & set(editions_euro_reference)
+
+        c1_editions = saisons_c1(mask_c1) & set(saisons_c1_reference)
+        c1_finales = saisons_c1(mask_c1 & phase_finale) & set(saisons_c1_reference)
+
+        # -------------------------------------------------
+        # DONNÉES DES CARTES
+        # -------------------------------------------------
+        objectifs = [
+            {
+                "titre": "🌍 Coupe du Monde",
+                "matchs": int(mask_cdm.sum()),
+                "reference": editions_cdm_reference,
+                "editions": cdm_editions,
+                "finales": cdm_finales,
+                "format": lambda x: str(x),
+            },
+            {
+                "titre": "🇪🇺 Euro",
+                "matchs": int(mask_euro.sum()),
+                "reference": editions_euro_reference,
+                "editions": euro_editions,
+                "finales": euro_finales,
+                "format": lambda x: str(x),
+            },
+            {
+                "titre": "🏆 C1 / Champions League",
+                "matchs": int(mask_c1.sum()),
+                "reference": saisons_c1_reference,
+                "editions": c1_editions,
+                "finales": c1_finales,
+                "format": libelle_saison_c1,
+            },
+        ]
+
+        colonnes = st.columns(3)
+
+        for col, obj in zip(colonnes, objectifs):
+            total = len(obj["reference"])
+            nb_editions = len(obj["editions"])
+            nb_finales = len(obj["finales"])
+
+            pct_editions = (nb_editions / total) if total else 0
+            pct_finales = (nb_finales / total) if total else 0
+            finales_manquantes = total - nb_finales
+
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"### {obj['titre']}")
+                    st.metric("Matchs archivés", f"{obj['matchs']:,}".replace(",", " "))
+
+                    st.markdown(f"**Éditions représentées : {nb_editions}/{total}**")
+                    st.progress(
+                        min(1.0, pct_editions),
+                        text=f"{round(pct_editions * 100)} %"
+                    )
+
+                    st.markdown(f"**Finales présentes : {nb_finales}/{total}**")
+                    st.progress(
+                        min(1.0, pct_finales),
+                        text=f"{round(pct_finales * 100)} %"
+                    )
+
+                    if finales_manquantes == 0:
+                        st.success("✅ Toutes les finales sont présentes")
+                    else:
+                        st.caption(
+                            f"🔎 {finales_manquantes} finale"
+                            f"{'s' if finales_manquantes > 1 else ''} à compléter"
+                        )
+
+        st.write("")
+        st.markdown("### 🔎 Détail des manques")
+        st.caption(
+            "Une édition est considérée comme représentée dès qu'au moins un match "
+            "de cette édition figure dans le catalogue. Une finale est détectée "
+            "lorsque la propriété Phase vaut « Finale » ou « Final »."
+        )
+
+        onglets = st.tabs([
+            "🌍 Coupe du Monde",
+            "🇪🇺 Euro",
+            "🏆 C1 / Champions League",
+        ])
+
+        for onglet, obj in zip(onglets, objectifs):
+            reference = obj["reference"]
+            manquantes_editions = [
+                obj["format"](x)
+                for x in reference
+                if x not in obj["editions"]
+            ]
+            manquantes_finales = [
+                obj["format"](x)
+                for x in reference
+                if x not in obj["finales"]
+            ]
+
+            with onglet:
+                c_manque1, c_manque2 = st.columns(2)
+
+                with c_manque1:
+                    st.markdown("**Éditions totalement absentes**")
+                    st.write(liste_compacte(manquantes_editions))
+
+                with c_manque2:
+                    st.markdown("**Finales manquantes**")
+                    st.write(liste_compacte(manquantes_finales))
 
 # ==========================================
 # PAGE : CATALOGUE COMPLET
