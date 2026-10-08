@@ -1055,8 +1055,8 @@ with st.sidebar:
     if st.button("✨ Archives Dépoussiérées", use_container_width=True):
         st.session_state.page = 'pepites'
         st.rerun()
-    if st.button("🎯 Progression Collection", use_container_width=True):
-        st.session_state.page = 'progression'
+    if st.button("⭐ Ma sélection personnelle", use_container_width=True):
+        st.session_state.page = 'selection_personnelle'
         st.rerun()
         
     st.divider()
@@ -1134,62 +1134,6 @@ if st.session_state.page == 'accueil':
         </div>
     """, unsafe_allow_html=True)
     
-    # --- 🖼️ NOUVEAUTÉ : CAPTURES D'ARCHIVE ---
-    with st.container(border=True):
-        st.markdown("""
-            <div style='
-                text-align: center;
-                max-width: 950px;
-                margin: 0 auto;
-                padding: 8px 20px;
-            '>
-                <h4 style='
-                    margin: 0 0 10px 0;
-                    color: #d97706;
-                    text-align: center;
-                '>
-                    🖼️ Nouveau dans les fiches de match : les captures d’archive
-                </h4>
-                <p style='
-                    margin: 0 auto;
-                    font-size: 14.5px;
-                    color: #e2e8f0;
-                    line-height: 1.6;
-                    text-align: center;
-                '>
-                    Pour une grande partie des rencontres, vous pouvez désormais visualiser une capture directement dans la fiche : Coupe du Monde, Euro, compétitions françaises et Milan AC.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # --- ⚽ NOUVEAUTÉ : FICHES DE MATCH ENRICHIES ---
-    with st.container(border=True):
-        st.markdown("""
-            <div style='
-                text-align: center;
-                max-width: 950px;
-                margin: 0 auto;
-                padding: 8px 20px;
-            '>
-                <h4 style='
-                    margin: 0 0 10px 0;
-                    color: #d97706;
-                    text-align: center;
-                '>
-                    ⚽ Nouveauté : les fiches de match s’enrichissent !
-                </h4>
-                <p style='
-                    margin: 0 auto;
-                    font-size: 14.5px;
-                    color: #e2e8f0;
-                    line-height: 1.6;
-                    text-align: center;
-                '>
-                    Un simple clic sur « Feuille de match » permet désormais d’afficher les compositions d’équipes, les entraîneurs et plusieurs informations complémentaires sur la rencontre.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-    # -----------------------------------------------------
     
     st.write("---")
     
@@ -1654,51 +1598,60 @@ elif st.session_state.page == 'pepites':
     afficher_resultats(df_pepites)
 
 # ==========================================
-# PAGE : PROGRESSION DE LA COLLECTION
+# PAGE : MA SÉLECTION PERSONNELLE
 # ==========================================
-elif st.session_state.page == 'progression':
-    st.header("🎯 Progression de la Collection")
-    st.divider()
+elif st.session_state.page == 'selection_personnelle':
+    selection_personnelle_texte = "Ma sélection personnelle\nIl y a des matchs qu'on regarde, d'autres qu'on oublie… et puis il y a ceux qui restent gravés dans notre mémoire.\nCette sélection n'a pas vocation à réunir les plus beaux matchs de l'histoire du football. Ce sont simplement des rencontres qui, pour une raison ou une autre, ont marqué ma passion. Un exploit individuel, un scénario improbable, une soirée européenne, une émotion particulière ou un souvenir vécu dans les tribunes.\nCertains choix paraîtront évidents, d'autres beaucoup moins. Et c'est justement ce qui fait tout l'intérêt de cette sélection : elle est entièrement subjective. Ce ne sont pas nécessairement les plus grands matchs de l'histoire. Ce sont ceux qui ont marqué la mienne.\n________________________________________\nAC Milan 4–0 FC Barcelone\nLigue des champions 1993-1994 · Finale · 18 mai 1994\nLe match qui a tout commencé.\nLe Milan de Capello face à la Dream Team de Cruyff. Sur le papier, une finale de rêve. Sur le terrain, une démonstration rossonera. Un doublé de Massaro, un lob génial de Savićević et Desailly pour parachever le chef-d'œuvre. Quatre buts, une leçon de football et un Barcelone complètement dépassé.\nMais au-delà du résultat, ce match occupe une place à part dans mes souvenirs. C'est le premier grand rendez-vous de football dont je garde une véritable image à la télévision. Celui qui ouvre, en quelque sorte, mon histoire de passionné. Et difficile d'imaginer plus belle entrée en matière qu'un Milan triomphant sur la scène européenne.\n________________________________________\nAC Milan 3–0 Manchester United\nLigue des champions 2006-2007 · Demi-finale retour · 2 mai 2007\nUne nuit de pluie, un San Siro incandescent et un Milan irrésistible.\nAprès la défaite 3-2 à Old Trafford, le Milan doit renverser Manchester United pour retrouver la finale de la Ligue des champions. Sous une pluie battante, les Rossoneri livrent une prestation magistrale. Kaká ouvre le score, Seedorf double la mise et Gilardino parachève la démonstration. Le Manchester de Cristiano Ronaldo, Rooney et Ferguson est complètement étouffé.\nCe qui rend cette rencontre si particulière à mes yeux, c'est cette impression de perfection collective. Le Milan d'Ancelotti joue avec une maîtrise impressionnante, porté par un Kaká au sommet de son art. L'ambiance, la pluie, la tension et la qualité du football proposé font de cette soirée l'une des plus belles démonstrations européennes que j'associe au Milan.\n________________________________________\nFrance 2–1 Italie\nEuro 2000 · Finale · 2 juillet 2000 · Après prolongation, but en or\nQuelques secondes qui changent tout.\nL'Italie tient son titre européen. Delvecchio a ouvert le score et les Azzurri se rapprochent du sacre. Del Piero manque notamment un face-à-face qui aurait probablement scellé la rencontre. Puis, dans les ultimes secondes du temps réglementaire, Wiltord surgit pour arracher une prolongation que plus personne n'attendait. Quelques minutes plus tard, Trezeguet reprend magistralement un centre de Pirès et offre le titre à la France d'une volée du gauche.\nJ'étais encore jeune à l'époque, mais les images de cette finale sont restées gravées dans ma mémoire. Ce sentiment de voir la victoire s'échapper, puis cette explosion de joie complètement folle sur le but en or de Trezeguet… Ce but reste, aujourd'hui encore, l'un de ceux qui m'ont procuré le plus d'émotions dans toute ma vie de passionné de football.\n________________________________________\nArgentine 2–2 Angleterre (4–3 t.a.b.)\nCoupe du monde 1998 · Huitième de finale · 30 juin 1998\nDu génie, de la tension et une rivalité légendaire.\nCe huitième de finale possède absolument tout ce que j'aime dans le football. Deux grandes nations, une rivalité historique et un scénario complètement fou. Quatre buts en première période, dont cette chevauchée fantastique de Michael Owen, seulement 18 ans, qui traverse la défense argentine pour inscrire l'un des plus beaux buts du Mondial. Sans oublier l'égalisation de Zanetti sur une combinaison de coup franc parfaitement exécutée.\nEt puis il y a ce moment qui fait basculer la rencontre : l'expulsion de David Beckham, coupable d'un geste d'humeur sur Diego Simeone. Réduite à dix, l'Angleterre résiste jusqu'aux tirs au but, où l'Argentine finit par s'imposer.\nCe match représente pour moi tout ce qui rend une Coupe du monde fascinante : du talent, des gestes exceptionnels, de la tension, de la controverse et une issue dramatique. Une rencontre dont on se souvient aussi bien pour les exploits individuels que pour les moments qui ont changé son histoire.\n________________________________________\nRoumanie 3–2 Argentine\nCoupe du monde 1994 · Huitième de finale · 3 juillet 1994\nLe football romantique des années 90 dans toute sa splendeur.\nLa Roumanie de Gheorghe Hagi face à l'Argentine de Batistuta et Simeone. Une rencontre ouverte, spectaculaire, où la créativité prend souvent le pas sur les calculs tactiques. Ilie Dumitrescu inscrit un doublé, Hagi ajoute un troisième but et les Roumains éliminent l'une des grandes nations du football mondial.\nCe match, c'est aussi une certaine idée du football des années 90. Des numéros 10 inspirés, des équipes capables de se projeter rapidement vers l'avant et cette liberté qui pouvait rendre une rencontre totalement imprévisible. La Roumanie de cette époque reste une équipe fascinante, et ce succès face à l'Argentine en est probablement la plus belle illustration. Un match qui donne envie de replonger dans les archives du Mondial américain.\n________________________________________\nAC Milan 3–0 Inter Milan\nSerie A 2010-2011 · 31e journée · 2 avril 2011\nUn derby, trois buts et cette fois, j'étais dans les tribunes.\nCertains matchs marquent par leur scénario. D'autres par la qualité du spectacle. Celui-ci occupe une place à part pour une raison beaucoup plus personnelle : j'étais à San Siro pour assister à ce Derby della Madonnina.\nLe Milan joue une grande partie de sa saison face à son rival intériste. Pato ouvre le score presque immédiatement, inscrit un doublé en seconde période, puis Cassano transforme un penalty pour sceller une victoire éclatante. Les Rossoneri prennent une option importante dans la course au Scudetto, qu'ils remporteront quelques semaines plus tard.\nMais au-delà du résultat, il y a l'expérience d'un derby milanais vécu de l'intérieur. L'ambiance de San Siro, la rivalité, les chants et le bonheur de voir le Milan dominer l'Inter. Un souvenir forcément différent des autres : celui-là, je ne l'ai pas seulement regardé, je l'ai vécu.\n________________________________________\nManchester United 4–3 Real Madrid\nLigue des champions 2002-2003 · Quart de finale retour · 23 avril 2003\nLe soir où Ronaldo a conquis Old Trafford.\nIl existe des matchs où le résultat devient presque secondaire. Celui-ci en fait partie. Manchester United s'impose 4-3, mais c'est le Real Madrid qui se qualifie après sa victoire 3-1 à l'aller. Et au milieu de cette soirée folle, un homme attire toute la lumière : Ronaldo.\nLe Brésilien inscrit un triplé d'une classe exceptionnelle, au point de recevoir une ovation du public d'Old Trafford lorsqu'il quitte la pelouse. Voir les supporters adverses saluer une telle performance, c'est aussi cela, la grandeur du football.\nEntre le talent de Ronaldo, les buts de Beckham, les occasions et la qualité des joueurs présents sur le terrain, ce quart de finale reste à mes yeux l'une des plus belles affiches européennes des années 2000. Une rencontre qui rappelle pourquoi cette époque des Galactiques me fascine autant.\n________________________________________\nBrésil 1–7 Allemagne\nCoupe du monde 2014 · Demi-finale · 8 juillet 2014\nLe match auquel personne ne voulait croire.\nUne demi-finale de Coupe du monde. Le Brésil joue à domicile, devant un pays entier qui rêve d'une sixième étoile. En face, une Allemagne redoutablement organisée. On s'attend à un choc historique. On assiste à quelque chose d'absolument inimaginable.\nCinq buts allemands en moins d'une demi-heure, une Seleção totalement dépassée et un stade plongé dans la stupeur. Müller, Klose, Kroos, Khedira puis Schürrle participent à une démonstration qui dépasse l'entendement.\nCe match n'est pas dans ma sélection pour sa beauté technique ou son suspense. Il y figure parce qu'il défie toute logique. Même avec les années, revoir ce tableau d'affichage provoque la même incrédulité. C'est l'une de ces rencontres qui rappellent que le football peut parfois produire des scénarios qu'aucun scénariste n'oserait imaginer.\n________________________________________\nAS Monaco 3–1 Real Madrid\nLigue des champions 2003-2004 · Quart de finale retour · 6 avril 2004\nLe soir où Monaco a fait tomber les Galactiques.\nBattue 4-2 au stade Santiago-Bernabéu, l'AS Monaco semble condamnée face au Real Madrid des Zidane, Ronaldo, Figo et Raúl. Lorsque ce dernier ouvre le score au Louis-II, la mission paraît impossible. Pourtant, les Monégasques vont renverser la montagne madrilène. Giuly égalise avant la pause, Morientes, prêté par le Real, marque contre son ancien club, puis Giuly inscrit le but d'une qualification historique.\nCe qui me plaît dans cette rencontre, c'est ce contraste entre deux mondes. D'un côté, les stars et les millions du Real Madrid. De l'autre, une équipe monégasque pleine d'audace, portée par un collectif remarquable. Et au milieu, Morientes, dont l'histoire ajoute une dimension presque romanesque à cette confrontation. Une de ces soirées où le football rappelle que rien n'est jamais écrit à l'avance.\n________________________________________\nAC Milan 3–2 Inter Milan\nSerie A 2003-2004 · 21e journée · 21 février 2004\nMené 2-0 dans le derby, le Milan a choisi de renverser l'histoire.\nUn Derby della Madonnina ne ressemble jamais à un autre. Mais celui du 21 février 2004 possède ce supplément de folie qui le rend inoubliable. À la pause, l'Inter mène 2-0 grâce à Stanković et Cristiano Zanetti. Pour le Milan d'Ancelotti, la soirée tourne au cauchemar.\nPuis tout bascule. Tomasson réduit le score, Kaká égalise dans la foulée et Seedorf libère San Siro d'une frappe lointaine extraordinaire. En une mi-temps, le Milan transforme une défaite annoncée en victoire mémorable.\nJ'aime particulièrement ce match parce qu'il réunit tout ce qui fait la saveur d'un derby : la rivalité, la tension, la frustration et cette explosion de joie lorsque le scénario devient improbable. Et forcément, voir le Milan retourner une telle situation face à l'Inter, cela donne encore plus de saveur au souvenir.\n________________________________________\nEspagne 1–3 France\nCoupe du monde 2006 · Huitième de finale · 27 juin 2006\n« Vas-y mon petit ! »\nLa France arrive en huitième de finale après un premier tour laborieux. Face à elle, une Espagne séduisante, jeune et ambitieuse, qui semble prête à tourner la page d'une génération française vieillissante. Lorsque David Villa ouvre le score, les doutes réapparaissent.\nPuis vient cette accélération de Franck Ribéry, lancé dans la profondeur par Patrick Vieira. Et surtout, cette envolée de Thierry Gilardi aux commentaires : « Vas-y mon petit ! » Quelques secondes plus tard, Ribéry élimine Casillas et égalise. Une action devenue indissociable de la voix et de l'enthousiasme de Gilardi.\nVieira donne ensuite l'avantage aux Bleus avant que Zidane ne scelle la qualification d'un dernier geste plein de classe.\nCe match marque pour moi le véritable début de l'épopée française de 2006. Et impossible de revoir le but de Ribéry sans entendre immédiatement la voix de Thierry Gilardi. Certaines actions restent dans les mémoires autant pour leur beauté que pour les commentaires qui les accompagnent.\n________________________________________\nManchester United 2–1 Bayern Munich\nLigue des champions 1998-1999 · Finale · 26 mai 1999\nDeux minutes pour entrer dans l'éternité.\nIl reste quelques instants à jouer au Camp Nou. Le Bayern Munich mène depuis la sixième minute grâce à Mario Basler et se dirige vers le titre européen. Les Allemands ont même touché les montants au cours de la seconde période. Manchester United semble battu.\nEt puis survient l'invraisemblable. Sheringham égalise dans le temps additionnel. Quelques secondes plus tard, Solskjær surgit pour offrir la victoire aux Red Devils. Le Bayern passe du rêve au cauchemar sans même avoir le temps de comprendre ce qui lui arrive.\nCe match illustre parfaitement ce qui me fascine dans le football : cette capacité à faire basculer des destins en quelques secondes. Pendant 90 minutes, une histoire s'écrit. Puis, en deux corners, tout est effacé. Impossible de ne pas garder une place pour une finale pareille dans une collection de souvenirs.\n________________________________________\nCorée du Sud 2–1 Italie\nCoupe du monde 2002 · Huitième de finale · 18 juin 2002 · Après prolongation, but en or\nUn match dont la controverse n'a jamais vraiment disparu.\nLa Coupe du monde 2002 réserve son lot de surprises, mais ce Corée du Sud–Italie reste probablement l'une des rencontres les plus controversées de la compétition. Vieri ouvre le score pour les Azzurri, qui semblent maîtriser leur destin. La Corée égalise en fin de match avant que la prolongation ne vire au chaos. Totti est expulsé, plusieurs décisions de l'arbitre Byron Moreno suscitent la colère des Italiens et Ahn Jung-hwan finit par éliminer l'Italie d'un but en or.\nCe match n'est pas ici pour sa qualité de jeu. Il représente une autre facette du football, celle des injustices ressenties, des polémiques interminables et des rencontres qui continuent de faire débat des décennies plus tard. Une soirée qui laisse un goût amer aux amoureux du football italien, mais qui mérite sa place tant elle a marqué l'histoire des Coupes du monde.\n________________________________________\nReal Madrid 2–1 Bayer Leverkusen\nLigue des champions 2001-2002 · Finale · 15 mai 2002\nLe plus beau but de ma vie de passionné.\nIl y a des gestes qui traversent les époques et que l'on pourrait regarder des centaines de fois sans jamais s'en lasser. Cette reprise de volée de Zinédine Zidane en fait partie. En finale de la Ligue des champions, alors que le Real Madrid et le Bayer Leverkusen sont à égalité, Roberto Carlos adresse un centre aérien vers l'entrée de la surface. Zidane ajuste ses appuis et déclenche une volée du gauche absolument parfaite, qui vient se loger dans la lucarne de Hans-Jörg Butt.\nLa coordination, la pureté du geste, la trajectoire du ballon, le contexte d'une finale européenne… Tout est exceptionnel.\nPour moi, c'est tout simplement le plus beau but que j'aie vu dans ma vie de passionné de football. Plus de vingt ans après, je ne me lasse toujours pas de revoir cette merveille. Un instant de grâce qui suffit à lui seul à rendre cette finale éternelle.\n________________________________________\nPortugal 1–0 Pays-Bas\nCoupe du monde 2006 · Huitième de finale · 25 juin 2006\nLe match où le football a perdu les pédales.\nIl y a des rencontres mémorables pour leur beauté, d'autres pour leur scénario. Et puis il y a Portugal–Pays-Bas 2006. Un match devenu célèbre sous le surnom de « Bataille de Nuremberg ».\nManiche inscrit l'unique but de la rencontre, mais le score passe presque au second plan. Les fautes se multiplient, les provocations aussi, les joueurs s'affrontent et l'arbitre russe Valentin Ivanov distribue pas moins de seize cartons jaunes et quatre rouges. Costinha, Deco, Boulahrouz et Van Bronckhorst sont expulsés.\nPourquoi retenir un tel match ? Justement parce qu'il ne ressemble à aucun autre. C'est une rencontre complètement excessive, parfois absurde, où la tension prend progressivement le dessus sur le jeu. Pas forcément une grande publicité pour le football, mais un spectacle tellement invraisemblable qu'il en devient impossible à oublier.\n________________________________________\nCette sélection est évidemment incomplète, et elle le restera sans doute toujours. Parce qu'avec le football, les souvenirs s'accumulent, les émotions se renouvellent et il y a toujours un nouveau match qui mérite une place dans le Grenier.\nEt vous, quels sont les matchs qui ont marqué votre histoire avec le football ?"
 
-    if 'Phase' in df.columns:
-        mask_finale = df['Phase'].astype(str).str.strip().str.lower().isin(['finale', 'final'])
-        mask_cdm = df['Compétition'].str.contains("Coupe du Monde", na=False, case=False) & ~df['Compétition'].str.contains("Eliminatoires", na=False, case=False)
-        cdm_possedees = df[mask_cdm & mask_finale]['Compétition'].nunique()
-        total_cdm = 22
-        pct_cdm = min(100, int((cdm_possedees / total_cdm) * 100))
+    blocs_selection = [
+        bloc.strip()
+        for bloc in selection_personnelle_texte.split("________________________________________")
+        if bloc.strip()
+    ]
 
-        mask_euro = df['Compétition'].str.contains(r"\bEuro\b|Championnat d'Europe", na=False, case=False, regex=True) & ~df['Compétition'].str.contains("Eliminatoires|Europa|Coupe d'Europe", na=False, case=False, regex=True)
-        euro_possedees = df[mask_euro & mask_finale]['Compétition'].nunique()
-        total_euro = 17
-        pct_euro = min(100, int((euro_possedees / total_euro) * 100))
+    intro = blocs_selection[0].splitlines()
+    st.header("⭐ " + intro[0])
 
-        mask_c1 = df['Compétition'].str.contains("Champions League|Coupe d'Europe des clubs champions", na=False, case=False)
-        c1_possedees = df[mask_c1 & mask_finale]['Saison'].nunique() if 'Saison' in df.columns else len(df[mask_c1 & mask_finale])
-        total_c1 = 69
-        pct_c1 = min(100, int((c1_possedees / total_c1) * 100))
+    if len(intro) > 1:
+        st.markdown(
+            f"<p style='font-size:18px; font-style:italic; color:#d1d5db;'>{intro[1]}</p>",
+            unsafe_allow_html=True
+        )
 
-        col_prog1, col_prog2, col_prog3 = st.columns(3)
-        with col_prog1:
-            st.markdown(f"**Coupe du Monde** ({cdm_possedees}/{total_cdm})")
-            st.progress(pct_cdm / 100.0, text=f"{pct_cdm}% des Finales")
-        with col_prog2:
-            st.markdown(f"**Euro** ({euro_possedees}/{total_euro})")
-            st.progress(pct_euro / 100.0, text=f"{pct_euro}% des Finales")
-        with col_prog3:
-            st.markdown(f"**Ligue des Champions** ({c1_possedees}/{total_c1})")
-            st.progress(pct_c1 / 100.0, text=f"{pct_c1}% des Finales")
-            
-        st.write("---")
-        eds_cdm = df[mask_cdm]['Compétition'].nunique()
-        eds_euro = df[mask_euro]['Compétition'].nunique()
-        
-        st.markdown(f"**Éditions de Coupe du Monde :** {eds_cdm}/{total_cdm}")
-        st.progress(min(1.0, eds_cdm/total_cdm))
+    for paragraphe in intro[2:]:
+        st.write(paragraphe)
+
+    st.write("")
+
+    for bloc in blocs_selection[1:-1]:
+        lignes_bloc = [ligne.strip() for ligne in bloc.splitlines() if ligne.strip()]
+        if not lignes_bloc:
+            continue
+
+        with st.container(border=True):
+            st.subheader(lignes_bloc[0])
+
+            if len(lignes_bloc) > 1:
+                st.caption(lignes_bloc[1])
+
+            if len(lignes_bloc) > 2:
+                st.markdown(f"**{lignes_bloc[2]}**")
+
+            for paragraphe in lignes_bloc[3:]:
+                st.write(paragraphe)
+
+    if len(blocs_selection) > 1:
         st.write("")
-        st.markdown(f"**Éditions d'Euro :** {eds_euro}/{total_euro}")
-        st.progress(min(1.0, eds_euro/total_euro))
-    else:
-        st.warning("La colonne 'Phase' n'est pas présente dans votre fichier pour calculer les finales.")
+        st.divider()
+
+        conclusion = [
+            ligne.strip()
+            for ligne in blocs_selection[-1].splitlines()
+            if ligne.strip()
+        ]
+
+        for paragraphe in conclusion:
+            st.write(paragraphe)
 
 # ==========================================
 # PAGE : CATALOGUE COMPLET
