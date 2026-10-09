@@ -1136,7 +1136,14 @@ if st.session_state.page == 'accueil':
     
     
     st.write("---")
-    
+
+    # --- BANNIÈRE D'ACCUEIL, SOUS LE TEXTE DE PRÉSENTATION ---
+    banniere_accueil = BASE_DIR / "banniere_accueil.png"
+    if banniere_accueil.is_file():
+        st.image(str(banniere_accueil), use_container_width=True)
+
+    st.write("")
+
     # --- 🔍 BARRE DE RECHERCHE RAPIDE MISE À JOUR (SANS ACCENTS) ---
     recherche_rapide = st.text_input("🔍 Recherche Rapide (Matchs)", placeholder="Tapez une équipe, une compétition, un joueur, une année, un stade...")
     if recherche_rapide:
